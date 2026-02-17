@@ -3,7 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SignupForm } from '../../components/auth/SignupForm';
 import { BrowserRouter } from 'react-router-dom';
-import * as AuthContextModule from '../../context/AuthContext';
 
 // Mock the useAuth hook
 const mockSignUp = vi.fn();
@@ -41,16 +40,16 @@ describe('SignupForm', () => {
     renderSignupForm();
     
     expect(screen.getByText(/create your account/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/you@example.com/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/create a strong password/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create free account/i })).toBeInTheDocument();
   });
 
   it('validates email format on blur', async () => {
     const user = userEvent.setup();
     renderSignupForm();
     
-    const emailInput = screen.getByLabelText(/email address/i);
+    const emailInput = screen.getByPlaceholderText(/you@example.com/i);
     await user.type(emailInput, 'invalid-email');
     await user.tab();
     
@@ -63,7 +62,7 @@ describe('SignupForm', () => {
     const user = userEvent.setup();
     renderSignupForm();
     
-    const emailInput = screen.getByLabelText(/email address/i);
+    const emailInput = screen.getByPlaceholderText(/you@example.com/i);
     await user.type(emailInput, 'test@example.com');
     await user.tab();
     
@@ -76,14 +75,14 @@ describe('SignupForm', () => {
     const user = userEvent.setup();
     renderSignupForm();
     
-    const passwordInput = screen.getByLabelText(/^password$/i);
+    const passwordInput = screen.getByPlaceholderText(/create a strong password/i);
     await user.type(passwordInput, 'weak');
     
     await waitFor(() => {
       // Password strength indicator should be visible
       expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument();
-      expect(screen.getByText(/at least 1 uppercase letter/i)).toBeInTheDocument();
-      expect(screen.getByText(/at least 1 number/i)).toBeInTheDocument();
+      expect(screen.getByText(/one uppercase letter/i)).toBeInTheDocument();
+      expect(screen.getByText(/one number/i)).toBeInTheDocument();
     });
   });
 
@@ -93,9 +92,9 @@ describe('SignupForm', () => {
     
     renderSignupForm();
     
-    await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/^password$/i), 'StrongPass123');
-    await user.click(screen.getByRole('button', { name: /sign up/i }));
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), 'test@example.com');
+    await user.type(screen.getByPlaceholderText(/create a strong password/i), 'StrongPass123');
+    await user.click(screen.getByRole('button', { name: /create free account/i }));
     
     await waitFor(() => {
       expect(mockSignUp).toHaveBeenCalledWith('test@example.com', 'StrongPass123');
@@ -109,9 +108,9 @@ describe('SignupForm', () => {
     
     renderSignupForm();
     
-    await user.type(screen.getByLabelText(/email address/i), 'existing@example.com');
-    await user.type(screen.getByLabelText(/^password$/i), 'StrongPass123');
-    await user.click(screen.getByRole('button', { name: /sign up/i }));
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), 'existing@example.com');
+    await user.type(screen.getByPlaceholderText(/create a strong password/i), 'StrongPass123');
+    await user.click(screen.getByRole('button', { name: /create free account/i }));
     
     await waitFor(() => {
       expect(screen.getByText(new RegExp(errorMessage, 'i'))).toBeInTheDocument();
@@ -122,9 +121,9 @@ describe('SignupForm', () => {
     const user = userEvent.setup();
     renderSignupForm();
     
-    await user.type(screen.getByLabelText(/email address/i), 'invalid-email');
-    await user.type(screen.getByLabelText(/^password$/i), 'StrongPass123');
-    await user.click(screen.getByRole('button', { name: /sign up/i }));
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), 'invalid-email');
+    await user.type(screen.getByPlaceholderText(/create a strong password/i), 'StrongPass123');
+    await user.click(screen.getByRole('button', { name: /create free account/i }));
     
     await waitFor(() => {
       expect(mockSignUp).not.toHaveBeenCalled();
@@ -135,9 +134,9 @@ describe('SignupForm', () => {
     const user = userEvent.setup();
     renderSignupForm();
     
-    await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/^password$/i), 'weak');
-    await user.click(screen.getByRole('button', { name: /sign up/i}));
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), 'test@example.com');
+    await user.type(screen.getByPlaceholderText(/create a strong password/i), 'weak');
+    await user.click(screen.getByRole('button', { name: /create free account/i}));
     
     await waitFor(() => {
       expect(mockSignUp).not.toHaveBeenCalled();
@@ -153,9 +152,9 @@ describe('SignupForm', () => {
     
     renderSignupForm();
     
-    await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/^password$/i), 'StrongPass123');
-    await user.click(screen.getByRole('button', { name: /sign up/i }));
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), 'test@example.com');
+    await user.type(screen.getByPlaceholderText(/create a strong password/i), 'StrongPass123');
+    await user.click(screen.getByRole('button', { name: /create free account/i }));
     
     await waitFor(() => {
       expect(screen.getByText(/too many signup emails/i)).toBeInTheDocument();
