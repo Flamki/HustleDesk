@@ -1,0 +1,584 @@
+export type TemplateCategory = 'Proposal' | 'Outreach' | 'Follow-up' | 'Client Mgmt';
+
+export type TemplateDef = {
+  key: string;
+  title: string;
+  description: string;
+  category: TemplateCategory;
+  content: string;
+  tags: string[];
+  likes: number;
+};
+
+const asTemplate = (t: TemplateDef): TemplateDef => t;
+
+// Keep templates ASCII-only for consistent rendering across email clients + PDFs.
+const BASE_TEMPLATES: TemplateDef[] = [
+  asTemplate({
+    key: 'proposal_specialist_cover_letter',
+    title: 'Specialist Cover Letter (Upwork)',
+    description: 'Problem-first proposal that proves niche fit, outlines a clear plan, and ends with an easy next step.',
+    category: 'Proposal',
+    content: `Hi [Client Name],
+
+I read your post about [Project Name] and it sounds like the main goal is [Outcome], but the risk is [Risk / Pain Point].
+
+Here is how I would approach this:
+1. Clarify success metrics + scope (10 minutes)
+2. Build the first working version of [Deliverable] with [Key Constraint]
+3. Review + iterate with you, then hand off with documentation
+
+Relevant experience:
+- [1-2 line proof: similar project + result]
+- [Tooling / stack match]
+
+If you are open to it, I can share a quick outline (or a short Loom) for the first 48 hours of work.
+
+Best,
+[Your Name]`,
+    tags: ['Upwork', 'Proposal', 'High intent'],
+    likes: 1240,
+  }),
+  asTemplate({
+    key: 'proposal_short_bullets',
+    title: 'Short Proposal (Bullets Only)',
+    description: 'Fast, scannable proposal for busy clients. Works well when the job post is clear.',
+    category: 'Proposal',
+    content: `Hi [Client Name],
+
+I can help with [Project Name]. Here is what I will do:
+- [Step 1]
+- [Step 2]
+- [Step 3]
+
+Timeline: [X days]
+Budget: [Fixed price or hourly]
+
+2 questions:
+1. [Question 1]
+2. [Question 2]
+
+If that looks good, I can start [Start day/time].
+
+[Your Name]`,
+    tags: ['Short', 'Direct', 'Low friction'],
+    likes: 980,
+  }),
+  asTemplate({
+    key: 'proposal_fixed_price_milestones',
+    title: 'Fixed-Price Proposal With Milestones',
+    description: 'De-risks fixed-price by splitting scope into clear milestones with acceptance criteria.',
+    category: 'Proposal',
+    content: `Hi [Client Name],
+
+For [Project Name], I recommend a fixed-price plan broken into milestones:
+
+Milestone 1: Discovery + plan ([Price])
+- Confirm requirements
+- Define success metrics
+- Produce a short implementation plan
+
+Milestone 2: Build ([Price])
+- Implement [Core feature set]
+- QA + edge cases
+- Weekly progress updates
+
+Milestone 3: Polish + handoff ([Price])
+- Final revisions
+- Documentation
+- Handoff call (optional)
+
+Total: [Total Price]
+Timeline: [X days/weeks]
+
+If you want, I can write the milestones in your platform format so everything is crystal clear.
+
+Best,
+[Your Name]`,
+    tags: ['Fixed price', 'Milestones', 'Scope control'],
+    likes: 720,
+  }),
+  asTemplate({
+    key: 'proposal_discovery_call',
+    title: 'Discovery Call Pitch',
+    description: 'Useful when the post is vague or high stakes. Moves the client into a structured call quickly.',
+    category: 'Proposal',
+    content: `Hi [Client Name],
+
+Before I quote accurately for [Project Name], I want to avoid assumptions.
+
+Can we do a 15-minute discovery call where I ask:
+- What does success look like in 30 days?
+- What is the current workflow and what is broken?
+- Any deadlines, constraints, or non-negotiables?
+
+After the call, I will send:
+- A clear scope summary
+- A recommended approach
+- A fixed price or an hourly estimate (your choice)
+
+If you share 2-3 times that work for you, I will send a calendar link.
+
+Best,
+[Your Name]`,
+    tags: ['Sales', 'Discovery', 'Clarity'],
+    likes: 640,
+  }),
+  asTemplate({
+    key: 'proposal_retainer_pitch',
+    title: 'Retainer Pitch (Monthly Support)',
+    description: 'Convert a one-off project into recurring monthly revenue with a simple retainer structure.',
+    category: 'Proposal',
+    content: `Hi [Client Name],
+
+Now that we have [Completed Work], the best next step is to keep momentum with ongoing support.
+
+I can offer a monthly retainer:
+- [Hours or deliverables] per month
+- Priority response time: [X hours]
+- Includes: [What is included]
+- Rate: [Monthly price]
+
+This is typically more cost-effective than ad-hoc work because it reduces context switching and keeps delivery consistent.
+
+If you want, I can propose 2 retainer options (light and full) so you can choose.
+
+Best,
+[Your Name]`,
+    tags: ['Upsell', 'Retainer', 'Recurring'],
+    likes: 670,
+  }),
+  asTemplate({
+    key: 'proposal_scope_questions',
+    title: 'Scope Clarification Questions',
+    description: 'Send when the job post is unclear. Turns vague requirements into a clear scope fast.',
+    category: 'Proposal',
+    content: `Hi [Client Name],
+
+To quote [Project Name] accurately, I have a few quick questions:
+1. What is the primary goal? (Revenue, leads, speed, UX, reliability)
+2. What is the deadline (if any) and why?
+3. Do you have examples of what you like (2-3 links/screenshots)?
+4. What is in scope vs out of scope?
+5. Who will approve deliverables?
+
+Once you reply, I will send a clear scope summary plus a fixed price or hourly estimate.
+
+Best,
+[Your Name]`,
+    tags: ['Discovery', 'Clarity', 'Reduce rework'],
+    likes: 820,
+  }),
+  asTemplate({
+    key: 'proposal_portfolio_case_study',
+    title: 'Portfolio + Case Study Proposal',
+    description: 'Great for premium clients: short plan + one relevant case study to build confidence.',
+    category: 'Proposal',
+    content: `Hi [Client Name],
+
+I can help with [Project Name]. The fastest path is:
+- Week 1: [Plan]
+- Week 2: [Plan]
+
+Here is a relevant case study:
+[Project / Client]
+- Problem: [Problem]
+- Work: [What you did]
+- Result: [Measured outcome]
+
+If you share [Required access/assets], I can start on [Date] and send the first update within 24-48 hours.
+
+Best,
+[Your Name]`,
+    tags: ['Premium', 'Proof', 'Case study'],
+    likes: 690,
+  }),
+  asTemplate({
+    key: 'outreach_value_first_cold_email',
+    title: 'Value-First Cold Email',
+    description: 'Start with a specific observation and offer a tiny deliverable before asking for anything.',
+    category: 'Outreach',
+    content: `Hi [Name],
+
+I have been following [Company Name] and I liked [Specific detail].
+
+I noticed one opportunity to improve [Area] that could impact [Metric]. It is small, but it is usually high leverage.
+
+If you want, I can send a 2-minute Loom showing:
+- What I noticed
+- Why it matters
+- How to fix it quickly
+
+Should I send it over?
+
+Thanks,
+[Your Name]`,
+    tags: ['Cold email', 'High response', 'Loom'],
+    likes: 856,
+  }),
+  asTemplate({
+    key: 'outreach_short_loom_audit',
+    title: 'Short Loom Audit Offer',
+    description: 'Offer a free micro-audit with a clear time box. High reply rate for agencies and SaaS.',
+    category: 'Outreach',
+    content: `Hi [Name],
+
+Quick idea for [Company Name]:
+
+I can record a 3-minute Loom showing 3 fixes to improve [Metric] on [Page / Flow]. No pitch in the video, just actionable points.
+
+If you want it, reply with:
+- the URL
+- the main goal (signups, bookings, sales)
+
+I will send it today.
+
+Best,
+[Your Name]`,
+    tags: ['Loom', 'Offer', 'Value first'],
+    likes: 740,
+  }),
+  asTemplate({
+    key: 'outreach_referral_request',
+    title: 'Referral Request (Warm)',
+    description: 'Ask a past client for an intro in a way that is easy for them to act on.',
+    category: 'Outreach',
+    content: `Hi [Name],
+
+Hope you are doing well. Quick question: do you know anyone who needs help with [Service] right now?
+
+If yes, I can send a short blurb you can forward. If not, no worries.
+
+Thanks,
+[Your Name]`,
+    tags: ['Referrals', 'Warm', 'Short'],
+    likes: 610,
+  }),
+  asTemplate({
+    key: 'outreach_linkedin_connect',
+    title: 'LinkedIn Connection Note (Not Spammy)',
+    description: 'A human connection request that references something real and does not pitch immediately.',
+    category: 'Outreach',
+    content: `Hi [Name],
+
+I saw your post about [Topic] and your point about [Detail] was spot on.
+
+I work with [Industry] teams on [What you do]. Would love to connect and learn from your posts.
+
+[Your Name]`,
+    tags: ['LinkedIn', 'Short', 'Networking'],
+    likes: 430,
+  }),
+  asTemplate({
+    key: 'outreach_reactivate_old_lead',
+    title: 'Re-Engage Old Lead',
+    description: 'Revive a past conversation with a clear, low-pressure prompt and a specific update.',
+    category: 'Outreach',
+    content: `Hi [Name],
+
+Quick check-in. Last time we spoke about [Project/Topic], you mentioned [Context].
+
+I recently helped a client with something similar and thought of you. If [Goal] is still on your radar, I can share a short plan.
+
+No worries if timing is not right. Want me to send it?
+
+Best,
+[Your Name]`,
+    tags: ['Warm lead', 'Reactivation', 'Short'],
+    likes: 510,
+  }),
+  asTemplate({
+    key: 'followup_gentle_nudge',
+    title: 'Gentle Nudge Follow-Up',
+    description: 'Polite follow-up after sending a proposal. Asks a simple yes/no to unblock.',
+    category: 'Follow-up',
+    content: `Hi [Name],
+
+Just bumping this. Are you still looking for help with [Project Name]?
+
+If you went a different direction, totally fine. A quick note helps me close it out on my end.
+
+Best,
+[Your Name]`,
+    tags: ['Short', 'Polite', '3-day'],
+    likes: 2300,
+  }),
+  asTemplate({
+    key: 'followup_call_recap',
+    title: 'Call Recap + Next Steps',
+    description: 'Send right after a discovery call to confirm scope and keep momentum.',
+    category: 'Follow-up',
+    content: `Hi [Name],
+
+Thanks for the call. Here is my quick recap of what we agreed:
+
+Goal:
+- [Goal]
+
+Scope:
+- [Item 1]
+- [Item 2]
+
+Timeline:
+- [Timeline]
+
+Next steps:
+1. I will send [Proposal / milestone breakdown] by [Date]
+2. You will confirm [Access / assets / decision]
+
+If anything above is off, reply with corrections and I will update.
+
+Best,
+[Your Name]`,
+    tags: ['Professional', 'Momentum', 'Clarity'],
+    likes: 760,
+  }),
+  asTemplate({
+    key: 'followup_after_proposal_question',
+    title: 'Follow-Up With One Clear Question',
+    description: 'Avoids "just checking in" by asking a single decision question.',
+    category: 'Follow-up',
+    content: `Hi [Name],
+
+Quick question on [Project Name]:
+Would you like me to proceed with [Option A] or [Option B]?
+
+Once I have that, I can send the exact timeline and start date.
+
+Best,
+[Your Name]`,
+    tags: ['Direct', 'Decision', 'Low friction'],
+    likes: 880,
+  }),
+  asTemplate({
+    key: 'followup_invoice_payment_reminder',
+    title: 'Invoice Payment Reminder (Polite)',
+    description: 'Friendly payment reminder that keeps the relationship intact.',
+    category: 'Follow-up',
+    content: `Hi [Client Name],
+
+Quick reminder that invoice [Invoice Number] for [Project Name] is due on [Due Date].
+
+If you already processed it, please ignore this message.
+If there is anything you need from me to close it out, tell me and I will send it right away.
+
+Thanks,
+[Your Name]`,
+    tags: ['Invoices', 'Professional', 'Simple'],
+    likes: 950,
+  }),
+  asTemplate({
+    key: 'followup_breakup',
+    title: 'Break-Up Email (Final Follow-Up)',
+    description: 'Final follow-up before marking as lost. Often triggers a response without sounding pushy.',
+    category: 'Follow-up',
+    content: `Hi [Name],
+
+Since I have not heard back, I am assuming [Project Name] is not a priority right now or you found someone else.
+
+I will close this out on my end.
+
+If you want to revisit later, reply with "reopen" and I will pick it up quickly.
+
+Best,
+[Your Name]`,
+    tags: ['Final follow-up', 'Sales', 'Psychology'],
+    likes: 1105,
+  }),
+  asTemplate({
+    key: 'client_kickoff_checklist',
+    title: 'Project Kickoff Checklist',
+    description: 'Sets expectations, reduces rework, and gathers everything you need upfront.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+Excited to start [Project Name]. To begin smoothly, I need:
+- Access: [Admin / repo / Figma / analytics]
+- Assets: [Brand guide / copy / images]
+- Stakeholders: who approves changes?
+- Deadlines: any hard dates?
+- Communication: preferred channel + response time
+
+Proposed cadence:
+- Updates: [Daily/Weekly] via [Channel]
+- Reviews: [Day/time]
+
+Once I have access + assets, I will deliver the first update by [Date].
+
+Thanks,
+[Your Name]`,
+    tags: ['Kickoff', 'Operations', 'Professional'],
+    likes: 890,
+  }),
+  asTemplate({
+    key: 'client_access_request',
+    title: 'Access Request (Clear and Specific)',
+    description: 'Ask for access without back-and-forth. Works well for dev/analytics/design work.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+To start [Project Name], I need access to:
+- [Tool 1] (role: [Admin/Editor])
+- [Tool 2]
+- [Repo/Figma/Hosting]
+
+If you prefer, you can invite me here: [Email / username]
+
+Once access is in, I will send the first update by [Date].
+
+Thanks,
+[Your Name]`,
+    tags: ['Operations', 'Access', 'Kickoff'],
+    likes: 700,
+  }),
+  asTemplate({
+    key: 'client_weekly_update',
+    title: 'Weekly Client Update',
+    description: 'A consistent structure that builds trust and reduces anxious messages.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+Weekly update for [Project Name]:
+
+Done:
+- [Item 1]
+- [Item 2]
+
+In progress:
+- [Item 1]
+
+Next:
+- [Item 1]
+- [Item 2]
+
+Risks / blockers:
+- [Blocker] (needs: [Decision / access])
+
+If you have any changes to priorities, reply with the new order and I will adjust.
+
+Best,
+[Your Name]`,
+    tags: ['Weekly', 'Trust', 'Status'],
+    likes: 1020,
+  }),
+  asTemplate({
+    key: 'client_scope_creep',
+    title: 'Scope Change / Change Request',
+    description: 'Protects your time and keeps the relationship healthy when new work appears mid-scope.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+Yes, I can add [New request].
+
+To keep things clear, this is outside the current scope of [Current scope], so we have two options:
+1. Add it as a new milestone for [Price] and extend the timeline by [X days]
+2. Swap priorities: we can replace [Lower priority item] with [New request] and keep timeline the same
+
+Which option do you prefer?
+
+Best,
+[Your Name]`,
+    tags: ['Boundaries', 'Scope', 'Professional'],
+    likes: 940,
+  }),
+  asTemplate({
+    key: 'client_pause_project',
+    title: 'Pause Project (Professional)',
+    description: 'When the client goes silent or requirements stall: pause politely and set terms.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+I am currently blocked on [Blocker]. To avoid burning hours without progress, I will pause work until we have:
+- [Decision / asset / access]
+
+Once you reply, I can resume within [X hours/days].
+
+Best,
+[Your Name]`,
+    tags: ['Boundaries', 'Professional', 'Reduce waste'],
+    likes: 680,
+  }),
+  asTemplate({
+    key: 'client_rate_increase_notice',
+    title: 'Rate Increase Notice',
+    description: 'Raise rates without losing good clients. Includes a loyalty window.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+I am writing to let you know about an upcoming change to my billing.
+
+Starting [Date], my hourly rate will be [New rate].
+
+This change lets me limit my workload and keep delivering the level of focus and quality you expect.
+
+If you would like, I can lock your current rate until [Date] if you book your next block of hours before then.
+
+Thanks for being a great partner,
+[Your Name]`,
+    tags: ['Business', 'Rates', 'Retention'],
+    likes: 540,
+  }),
+  asTemplate({
+    key: 'client_wrapup_testimonial',
+    title: 'Project Wrap-Up + Testimonial Request',
+    description: 'Close cleanly and ask for a review/testimonial with minimal friction.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+It has been a pleasure working on [Project Name]. I have delivered the final files and the last invoice is attached / sent.
+
+If you are happy with the work, would you mind leaving a short testimonial on [Platform]?
+Here is the link: [Link]
+
+If you need anything later, just reply to this thread and I will jump in.
+
+Thanks,
+[Your Name]`,
+    tags: ['Offboarding', 'Review', 'Referrals'],
+    likes: 910,
+  }),
+  asTemplate({
+    key: 'client_decline_not_a_fit',
+    title: 'Decline Project (Not a Fit)',
+    description: 'Say no without burning bridges. Keeps the door open for future work.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+Thanks for considering me for [Project Name]. After reviewing the details, I do not think I am the best fit for this specific request.
+
+If you want, I can recommend the right type of specialist to look for, or share 2-3 questions to ask candidates.
+
+Wishing you a smooth project,
+[Your Name]`,
+    tags: ['Professional', 'Boundaries', 'Reputation'],
+    likes: 520,
+  }),
+];
+
+const validateTemplate = (t: TemplateDef) => {
+  if (!t.key || !/^[a-z0-9_]+$/.test(t.key)) return `Invalid key: ${t.key}`;
+  if (!t.title.trim()) return `Template ${t.key} title is empty`;
+  if (!t.description.trim()) return `Template ${t.key} description is empty`;
+  if (!t.content.trim()) return `Template ${t.key} content is empty`;
+  if (!Array.isArray(t.tags)) return `Template ${t.key} tags missing`;
+  for (const ch of t.content) {
+    if (ch.charCodeAt(0) > 127) return `Template ${t.key} contains non-ASCII characters`;
+  }
+  return null;
+};
+
+export const getBaseTemplates = (): TemplateDef[] => {
+  const errors: string[] = [];
+  const keys = new Set<string>();
+  for (const t of BASE_TEMPLATES) {
+    if (keys.has(t.key)) errors.push(`Duplicate template key: ${t.key}`);
+    keys.add(t.key);
+    const err = validateTemplate(t);
+    if (err) errors.push(err);
+  }
+  if (errors.length) {
+    // Fail fast in dev so we never ship broken templates.
+    throw new Error(`Templates validation failed:\n${errors.join('\n')}`);
+  }
+  return BASE_TEMPLATES;
+};

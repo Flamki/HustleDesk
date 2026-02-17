@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply font-sans text-slate-900 bg-slate-50;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    overflow-x: hidden;
+  }
+
+  /* LinkGuard-inspired: deep carbon gradient + subtle mint/blue glows */
+  .dark html,
+  .dark body {
+    background:
+      radial-gradient(900px 600px at 12% -10%, rgba(16, 185, 129, 0.22), transparent 55%),
+      radial-gradient(900px 650px at 110% 10%, rgba(59, 130, 246, 0.14), transparent 55%),
+      radial-gradient(700px 500px at 60% 120%, rgba(99, 102, 241, 0.10), transparent 60%),
+      linear-gradient(180deg, #050A12 0%, #04070D 55%, #03060B 100%);
+    color: #e5e7eb;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+    height: 100%;
+    overscroll-behavior-y: none; /* Prevent "white flash" on scroll bounce/pull-to-refresh */
+    background-color: #f8fafc;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: rgba(16, 185, 129, 0.25);
+  }
+}
+
+@layer components {
+  /* Wider app container for desktop so pages don't look squeezed. */
+  .hd-app-container {
+    @apply w-full mx-auto;
+    max-width: 1480px;
+  }
+  @media (min-width: 1536px) {
+    .hd-app-container {
+      max-width: 1680px;
+    }
+  }
+
+  /* Reusable surfaces to keep the app consistent. */
+  .hd-card {
+    @apply rounded-2xl border border-slate-200/70 bg-white/70 backdrop-blur;
+    @apply shadow-sm;
+  }
+  .dark .hd-card {
+    @apply border-white/10 bg-slate-950/35;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 22px 80px rgba(0, 0, 0, 0.55);
+  }
+
+  .hd-panel {
+    @apply rounded-3xl border border-slate-200/70 bg-white/80 backdrop-blur;
+  }
+  .dark .hd-panel {
+    @apply border-white/10 bg-slate-950/45;
+  }
+
+  .hd-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white;
+    @apply bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-500;
+    @apply shadow-lg shadow-emerald-500/20;
+    @apply transition-all duration-200;
+  }
+  .dark .hd-btn-primary {
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.18), 0 18px 60px rgba(0, 0, 0, 0.55);
+  }
+
+  .hd-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold;
+    @apply text-slate-700 dark:text-slate-200;
+    @apply bg-white/60 dark:bg-slate-950/30;
+    @apply border border-slate-200/70 dark:border-white/10;
+    @apply hover:bg-white dark:hover:bg-slate-900/50;
+    @apply transition-colors;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.65);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.18);
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.85);
+  }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.28);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
