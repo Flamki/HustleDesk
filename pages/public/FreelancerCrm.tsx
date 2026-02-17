@@ -5,6 +5,7 @@ export const FreelancerCrm: React.FC = () => (
   <PublicPageTemplate
     title="Freelancer CRM"
     description="Track leads, manage job pipeline, and convert opportunities with HustleDesk Freelancer CRM."
+    path="/freelancer-crm"
     heading="Freelancer CRM That Closes More Work"
     intro="Organize leads, follow-ups, and active deals so nothing slips through."
     bullets={[

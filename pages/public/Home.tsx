@@ -8,6 +8,7 @@ export const Home: React.FC = () => {
       <SEO
         title="Freelancer CRM & Time Tracking"
         description="Manage clients, proposals, time tracking, portfolio and link-in-bio pages in one platform."
+        path="/"
       />
       <LandingPage />
     </>

@@ -5,10 +5,22 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 const isProStatus = (status) => ['active', 'trialing', 'past_due', 'unpaid'].includes(status);
 
+const readRequestStream = async (req) => {
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return chunks.length ? Buffer.concat(chunks) : null;
+};
+
 const getRawBody = async (req) => {
-  if (typeof req.body === 'string') return req.body;
-  if (req.body && typeof req.body === 'object') return JSON.stringify(req.body);
-  return '';
+  if (Buffer.isBuffer(req.rawBody)) return req.rawBody;
+  if (typeof req.rawBody === 'string') return Buffer.from(req.rawBody, 'utf8');
+
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (typeof req.body === 'string') return Buffer.from(req.body, 'utf8');
+
+  return readRequestStream(req);
 };
 
 const syncSubscriptionToUser = async (subscription) => {
@@ -99,3 +111,8 @@ export default async function handler(req, res) {
   }
 }
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};

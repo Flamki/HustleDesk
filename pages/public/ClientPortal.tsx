@@ -5,6 +5,7 @@ export const ClientPortal: React.FC = () => (
   <PublicPageTemplate
     title="Client Portal"
     description="Share progress, reports, and selected work with clients using public portal pages."
+    path="/client-portal"
     heading="Client Portal Experience"
     intro="Publish clear project visibility with secure share links and public-facing pages."
     bullets={[

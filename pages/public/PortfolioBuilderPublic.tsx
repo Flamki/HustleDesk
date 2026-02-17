@@ -5,6 +5,7 @@ export const PortfolioBuilderPublic: React.FC = () => (
   <PublicPageTemplate
     title="Portfolio Builder"
     description="Build and publish your portfolio site with customizable templates, typography, and palettes."
+    path="/portfolio-builder"
     heading="Portfolio Builder"
     intro="Launch a branded portfolio quickly with templates designed for different creator styles."
     bullets={[

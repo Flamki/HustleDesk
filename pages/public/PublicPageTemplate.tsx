@@ -5,15 +5,16 @@ import { PublicPageLayout } from './PublicPageLayout';
 type Props = {
   title: string;
   description: string;
+  path: string;
   heading: string;
   intro: string;
   bullets: string[];
 };
 
-export const PublicPageTemplate: React.FC<Props> = ({ title, description, heading, intro, bullets }) => {
+export const PublicPageTemplate: React.FC<Props> = ({ title, description, path, heading, intro, bullets }) => {
   return (
     <PublicPageLayout>
-      <SEO title={title} description={description} />
+      <SEO title={title} description={description} path={path} />
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{heading}</h1>
         <p className="mt-4 text-lg text-slate-600 leading-relaxed">{intro}</p>
@@ -28,4 +29,3 @@ export const PublicPageTemplate: React.FC<Props> = ({ title, description, headin
     </PublicPageLayout>
   );
 };
-

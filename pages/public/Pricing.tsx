@@ -5,6 +5,7 @@ export const Pricing: React.FC = () => (
   <PublicPageTemplate
     title="Pricing"
     description="Simple HustleDesk pricing for freelancers with Stripe billing and subscription management."
+    path="/pricing"
     heading="Straightforward Pricing"
     intro="Start free, then upgrade when you need advanced operations, billing, and automation."
     bullets={[
