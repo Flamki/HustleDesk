@@ -225,6 +225,14 @@ export const PRICING_PLANS: PricingPlan[] = [
 ];
 
 /**
+ * Get formatted limit display text
+ */
+export function getLimitDisplayText(limit: number): string {
+  if (limit === -1) return 'Unlimited';
+  return limit.toLocaleString();
+}
+
+/**
  * Get plan configuration by tier
  */
 export function getPlanFeatures(tier: PlanTier): PlanFeatures {
