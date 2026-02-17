@@ -46,22 +46,36 @@ export default defineConfig(({ mode }) => {
         sourcemap: false,
         cssCodeSplit: true,
         minify: 'esbuild',
-        // Chunk splitting strategy for better caching
-        rollupOptions: {
-          output: {
-            manualChunks: {
-              // Vendor chunk for large dependencies
-              vendor: ['react', 'react-dom', 'react-router-dom'],
-              // Supabase client
-              supabase: ['@supabase/supabase-js'],
-              // Icons
-              icons: ['lucide-react', 'react-icons'],
-            },
-          },
-        },
         // Asset optimization
         assetsInlineLimit: 4096, // 4kb - inline small assets
         chunkSizeWarningLimit: 1000, // Warn for chunks over 1MB
+        // Chunk splitting strategy for better caching (client build only)
+        rollupOptions: {
+          output: {
+            manualChunks(id) {
+              // Only apply manual chunks for client build, not SSR
+              if (typeof process !== 'undefined' && process.env.VITE_SSR) {
+                return undefined;
+              }
+              
+              // Vendor chunk for large dependencies
+              if (id.includes('node_modules/react/') || 
+                  id.includes('node_modules/react-dom/') || 
+                  id.includes('node_modules/react-router-dom/')) {
+                return 'vendor';
+              }
+              // Supabase client
+              if (id.includes('node_modules/@supabase/')) {
+                return 'supabase';
+              }
+              // Icons
+              if (id.includes('node_modules/lucide-react/') || 
+                  id.includes('node_modules/react-icons/')) {
+                return 'icons';
+              }
+            },
+          },
+        },
       },
       resolve: {
         alias: {
