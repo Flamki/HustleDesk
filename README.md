@@ -82,6 +82,9 @@ See `.env.example` for the complete template.
 - `npm run typecheck` TypeScript validation
 - `npm run build` production build
 - `npm run ci` typecheck + build
+- `npm run release:patch` version bump + tag + push
+- `npm run release:minor` version bump + tag + push
+- `npm run release:major` version bump + tag + push
 - `npm run preview` serve built app locally
 - `npm run loadtest:jobs`
 - `npm run loadtest:dashboard`

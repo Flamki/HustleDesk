@@ -8,6 +8,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ### Added
 - GitHub Actions CI workflow for type-check and production build.
+- Tag-based GitHub Release workflow (`v*.*.*`) with automatic release note generation.
 - Professional documentation set (architecture, API, deployment, security, runbook).
 - Vercel env template and import script.
 - Upstash-backed global rate limiting on expensive endpoints.
@@ -15,6 +16,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Changed
 - Build and bundle performance optimizations for faster startup.
 - Public site API caching behavior.
+- Added release helper scripts for patch/minor/major version pushes.
 
 ## [0.1.0] - 2026-02-17
 
