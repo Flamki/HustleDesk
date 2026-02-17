@@ -232,10 +232,13 @@ export const LinkBioBuilder: React.FC<Props> = ({ existingSite, onBack, onDeploy
   };
 
   const validateUrl = (url: string): boolean => {
-    if (!url || url === '#') return true; // Allow empty or placeholder
+    if (!url) return true; // Allow empty
+    if (url === '#') return true; // Allow anchor placeholder (will be updated by user)
     try {
-      new URL(url);
-      return true;
+      const parsed = new URL(url);
+      // Only allow safe protocols
+      const safeProtocols = ['http:', 'https:'];
+      return safeProtocols.includes(parsed.protocol);
     } catch {
       return false;
     }
@@ -541,13 +544,22 @@ export const LinkBioBuilder: React.FC<Props> = ({ existingSite, onBack, onDeploy
                         <div>
                           <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
                             Link URL
-                            {!validateUrl(l.url) && l.url !== '' && <span className="ml-2 text-rose-500 text-xs">(Invalid URL)</span>}
+                            {!validateUrl(l.url) && l.url !== '' && (
+                              <span className="ml-2 text-rose-500 text-xs">(Must start with http:// or https://)</span>
+                            )}
+                            {l.url === '#' && (
+                              <span className="ml-2 text-amber-500 text-xs">(Update placeholder before deploying)</span>
+                            )}
                           </label>
                           <input
                             value={l.url}
                             onChange={(e) => setState((o) => ({ ...o, links: o.links.map((x) => (x.id === l.id ? { ...x, url: e.target.value } : x)) }))}
                             className={`w-full rounded-lg border ${
-                              !validateUrl(l.url) && l.url !== '' ? 'border-rose-300 dark:border-rose-700' : 'border-slate-300 dark:border-slate-700'
+                              !validateUrl(l.url) && l.url !== ''
+                                ? 'border-rose-300 dark:border-rose-700'
+                                : l.url === '#'
+                                ? 'border-amber-300 dark:border-amber-700'
+                                : 'border-slate-300 dark:border-slate-700'
                             } bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500`}
                           />
                         </div>

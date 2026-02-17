@@ -8,6 +8,13 @@ import { PortfolioDesignPreview } from '../components/marketing/PortfolioDesignK
 import { mapPublicSiteToPreview } from '../components/marketing/portfolioPreviewMapper';
 import { resolvePortfolioThemeId } from '../components/marketing/portfolioThemeMapping';
 
+const EditIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+    <path d="m15 5 4 4"></path>
+  </svg>
+);
+
 type PublicData = NonNullable<Awaited<ReturnType<typeof fetchPublicSite>>['data']>;
 
 const LINK_BIO_THEME_IDS: LinkBioThemeId[] = [
@@ -71,7 +78,10 @@ const TemplateStudio: React.FC<{ data: PublicData }> = ({ data }) => {
         const raw = localStorage.getItem('user_session');
         if (raw) {
           const cached = JSON.parse(raw);
-          setShowEditButton(!!cached?.id);
+          // Validate the parsed object has expected structure
+          if (cached && typeof cached === 'object' && typeof cached.id === 'string' && cached.id.length > 0) {
+            setShowEditButton(true);
+          }
         }
       } catch {
         setShowEditButton(false);
@@ -112,10 +122,7 @@ const TemplateStudio: React.FC<{ data: PublicData }> = ({ data }) => {
             href="/app/marketing/website"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/90 hover:bg-white text-slate-900 font-semibold text-sm shadow-lg backdrop-blur-sm border border-white/20 transition-all hover:shadow-xl"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-              <path d="m15 5 4 4"></path>
-            </svg>
+            <EditIcon />
             Edit Site
           </a>
         </div>
@@ -322,8 +329,10 @@ const TemplateLinkBio: React.FC<{ data: PublicData }> = ({ data }) => {
         const raw = localStorage.getItem('user_session');
         if (raw) {
           const cached = JSON.parse(raw);
-          // Show edit button if user is authenticated
-          setShowEditButton(!!cached?.id);
+          // Validate the parsed object has expected structure
+          if (cached && typeof cached === 'object' && typeof cached.id === 'string' && cached.id.length > 0) {
+            setShowEditButton(true);
+          }
         }
       } catch {
         setShowEditButton(false);
@@ -356,10 +365,7 @@ const TemplateLinkBio: React.FC<{ data: PublicData }> = ({ data }) => {
             href="/app/marketing/website/link-in-bio"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/90 hover:bg-white text-slate-900 font-semibold text-sm shadow-lg backdrop-blur-sm border border-white/20 transition-all hover:shadow-xl"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-              <path d="m15 5 4 4"></path>
-            </svg>
+            <EditIcon />
             Edit Site
           </a>
         </div>
@@ -444,7 +450,10 @@ const TemplatePortfolio: React.FC<{ data: PublicData }> = ({ data }) => {
         const raw = localStorage.getItem('user_session');
         if (raw) {
           const cached = JSON.parse(raw);
-          setShowEditButton(!!cached?.id);
+          // Validate the parsed object has expected structure
+          if (cached && typeof cached === 'object' && typeof cached.id === 'string' && cached.id.length > 0) {
+            setShowEditButton(true);
+          }
         }
       } catch {
         setShowEditButton(false);
@@ -461,10 +470,7 @@ const TemplatePortfolio: React.FC<{ data: PublicData }> = ({ data }) => {
             href="/app/marketing/website/portfolio"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/90 hover:bg-white text-slate-900 font-semibold text-sm shadow-lg backdrop-blur-sm border border-white/20 transition-all hover:shadow-xl"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-              <path d="m15 5 4 4"></path>
-            </svg>
+            <EditIcon />
             Edit Site
           </a>
         </div>
