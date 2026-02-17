@@ -10,3 +10,4 @@ export { LoadingSpinner, LoadingOverlay, Skeleton } from './LoadingSpinner';
 export { Modal, ConfirmDialog } from './Modal';
 export { ToastProvider, useToast } from './Toast';
 export { PlatformIcon } from './PlatformIcon';
+export { ResponsiveTable } from './ResponsiveTable';
