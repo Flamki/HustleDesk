@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimitGlobal, getClientIp } from '../_shared/rate-limit.js';
+import { sanitizeEmail, sanitizeString, sanitizeSlug, detectHoneypot, logSecurityEvent } from '../_shared/security.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -22,29 +23,29 @@ const parseBody = (req) => {
   return {};
 };
 
-const isValidEmail = (email) => {
-  const e = String(email || '').trim().toLowerCase();
-  if (!e || e.length > 254) return false;
-  if (!e.includes('@')) return false;
-  // Basic sanity check (not RFC).
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-};
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
   if (!supabaseUrl || !serviceRoleKey) return json(res, 500, { error: 'Server not configured' });
 
   const body = parseBody(req);
-  const slug = String(body.slug || '').trim().toLowerCase();
-  const email = String(body.email || '').trim().toLowerCase();
-  const name = body.name ? String(body.name).trim().slice(0, 120) : null;
+  
+  // Honeypot for bots (UI should keep this hidden and empty).
+  if (detectHoneypot(body)) {
+    logSecurityEvent({
+      type: 'HONEYPOT_TRIGGERED',
+      ip: getClientIp(req),
+      timestamp: new Date().toISOString(),
+    });
+    return json(res, 200, { ok: true });
+  }
+  
+  const slug = sanitizeSlug(body.slug);
+  const email = sanitizeEmail(body.email);
+  const name = body.name ? sanitizeString(body.name, 120) : null;
   const consent = body.consent !== false;
 
-  // Honeypot for bots (UI should keep this hidden and empty).
-  if (String(body.website || '').trim()) return json(res, 200, { ok: true });
-
-  if (!slug) return json(res, 400, { error: 'slug is required' });
-  if (!isValidEmail(email)) return json(res, 400, { error: 'Valid email is required' });
+  if (!slug) return json(res, 400, { error: 'Valid slug is required' });
+  if (!email) return json(res, 400, { error: 'Valid email is required' });
 
   const ip = getClientIp(req);
   const ipLimit = await checkRateLimitGlobal({
