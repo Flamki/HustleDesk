@@ -54,13 +54,16 @@ const getQuery = (urlString) => {
 const resolveApiModulePath = (pathname) => {
   if (!pathname.startsWith('/api')) return null;
   const rest = pathname.replace(/^\/api\/?/, ''); // remove leading /api
-  if (!rest) return path.join(repoRoot, 'api', 'index.js');
+  if (!rest) return path.join(repoRoot, 'api', '[...path].js');
 
   const direct = path.join(repoRoot, 'api', `${rest}.js`);
   if (existsSync(direct)) return direct;
 
   const asIndex = path.join(repoRoot, 'api', rest, 'index.js');
   if (existsSync(asIndex)) return asIndex;
+
+  const catchAll = path.join(repoRoot, 'api', '[...path].js');
+  if (existsSync(catchAll)) return catchAll;
 
   return null;
 };
