@@ -13,6 +13,10 @@ export type PerformanceMetric = {
   tags?: Record<string, string>;
 };
 
+// Performance thresholds
+const SLOW_OPERATION_THRESHOLD_MS = 1000; // Log operations slower than 1s
+const SLOW_API_THRESHOLD_MS = 3000; // Log API calls slower than 3s
+
 class PerformanceMonitor {
   private metrics: Map<string, PerformanceMetric[]> = new Map();
   private timers: Map<string, number> = new Map();
@@ -63,7 +67,7 @@ class PerformanceMonitor {
     this.metrics.set(metric.name, metrics);
 
     // Log slow operations
-    if (metric.unit === 'ms' && metric.value > 1000) {
+    if (metric.unit === 'ms' && metric.value > SLOW_OPERATION_THRESHOLD_MS) {
       logger.warn('Slow operation detected', {
         metric: metric.name,
         duration: metric.value,
@@ -179,7 +183,7 @@ class PerformanceMonitor {
       },
     });
 
-    if (duration > 3000) {
+    if (duration > SLOW_API_THRESHOLD_MS) {
       logger.warn('Slow API call', { endpoint, duration, status });
     }
   }

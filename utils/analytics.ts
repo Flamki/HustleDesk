@@ -147,6 +147,11 @@ class Analytics {
 
   /**
    * Pre-defined event tracking helpers
+   * 
+   * Note: Event names use snake_case convention (e.g., 'user_signup').
+   * This matches Google Analytics 4 recommended event naming.
+   * If your analytics provider prefers different naming (camelCase, Title Case),
+   * you can customize the event names in the implementation of your onEvent handler.
    */
   
   // Authentication events

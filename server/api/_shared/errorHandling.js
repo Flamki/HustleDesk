@@ -26,14 +26,15 @@ export const errorResponse = (res, status, message, error = null, context = {}) 
     ...context,
   }, error);
 
-  // Return sanitized error response (don't leak stack traces in production)
+  // Return sanitized error response
+  // Don't leak stack traces unless explicitly enabled
   const response = {
     error: message,
     errorId,
   };
 
-  // Include details only in development
-  if (process.env.NODE_ENV !== 'production' && error) {
+  // Include details only when explicitly enabled (not just NODE_ENV=development)
+  if (process.env.EXPOSE_STACK_TRACES === 'true' && error) {
     response.details = error.message;
     if (error.stack) {
       response.stack = error.stack.split('\n');

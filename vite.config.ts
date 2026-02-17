@@ -53,11 +53,6 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           output: {
             manualChunks(id) {
-              // Only apply manual chunks for client build, not SSR
-              if (typeof process !== 'undefined' && process.env.VITE_SSR) {
-                return undefined;
-              }
-              
               // Vendor chunk for large dependencies
               if (id.includes('node_modules/react/') || 
                   id.includes('node_modules/react-dom/') || 
