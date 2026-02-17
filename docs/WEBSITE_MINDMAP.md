@@ -3,9 +3,9 @@
 ## 1. Auth and Access
 - Goal: Secure account lifecycle and route protection.
 - Routes:
-  - `/#/signup`
-  - `/#/login`
-  - `/#/auth/check-email`
+  - `/signup`
+  - `/login`
+  - `/auth/check-email`
 - Core logic:
   - `context/AuthContext.tsx`
   - `services/supabaseService.ts`
@@ -18,9 +18,9 @@
 ## 2. Core Workspace
 - Goal: Job pipeline management for freelancers.
 - Routes:
-  - `/#/app/dashboard`
-  - `/#/app/jobs`
-  - `/#/app/jobs/new`
+  - `/app/dashboard`
+  - `/app/jobs`
+  - `/app/jobs/new`
 - Core logic:
   - `pages/DashboardPage.tsx`
   - `pages/JobsPage.tsx`
@@ -34,9 +34,9 @@
 ## 3. Time Tracking
 - Goal: Billable time tracking and client-share flow.
 - Routes:
-  - `/#/app/time`
-  - `/#/share/time/:token`
-  - `/#/share/time-entry/:token`
+  - `/app/time`
+  - `/share/time/:token`
+  - `/share/time-entry/:token`
 - Core logic:
   - `pages/TimeTrackerPage.tsx`
   - `services/timeTrackerService.ts`
@@ -49,8 +49,8 @@
 ## 4. Proposals and Templates
 - Goal: Faster job application output.
 - Routes:
-  - `/#/app/proposals/generate/:jobId`
-  - `/#/app/templates`
+  - `/app/proposals/generate/:jobId`
+  - `/app/templates`
 - Core logic:
   - `pages/ProposalGeneratorPage.tsx`
   - `pages/TemplatesPage.tsx`
@@ -62,8 +62,8 @@
 ## 5. Insights and Intelligence
 - Goal: Data-backed decision support.
 - Routes:
-  - `/#/app/analytics`
-  - `/#/app/clients`
+  - `/app/analytics`
+  - `/app/clients`
 - Core logic:
   - `pages/AnalyticsPage.tsx`
   - `pages/ClientsPage.tsx`
@@ -76,9 +76,9 @@
 ## 6. Marketing
 - Goal: Lead generation and website funnel.
 - Routes:
-  - `/#/app/marketing`
-  - `/#/app/marketing/website`
-  - `/#/w/:slug`
+  - `/app/marketing`
+  - `/app/marketing/website`
+  - `/w/:slug`
 - Core logic:
   - `pages/EmailMarketingPage.tsx`
   - `pages/MarketingWebsitePage.tsx`
@@ -93,7 +93,7 @@
 ## 7. Billing
 - Goal: Subscription lifecycle.
 - Routes:
-  - `/#/app/settings?tab=billing`
+  - `/app/settings?tab=billing`
 - Core logic:
   - `api/payments/create-checkout-session.js`
   - `api/payments/create-portal-session.js`
@@ -107,9 +107,9 @@
 ## 8. Settings and Account Ops
 - Goal: User preferences and safety controls.
 - Routes:
-  - `/#/app/settings`
-  - `/#/app/updates`
-  - `/#/app/help`
+  - `/app/settings`
+  - `/app/updates`
+  - `/app/help`
 - Core logic:
   - `pages/SettingsPage.tsx`
   - `api/notifications/settings.js`

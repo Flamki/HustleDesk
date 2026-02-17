@@ -1,6 +1,9 @@
 # HustleDesk
 
 HustleDesk is a freelancer operations platform built with React + Vite + Supabase + Vercel serverless APIs.
+It uses a hybrid rendering model:
+- Public marketing pages are statically generated (SEO-ready).
+- Private product pages under `/app/*` are client-rendered.
 
 It combines:
 - CRM-style job pipeline and dashboard
@@ -115,6 +118,7 @@ This project is Vercel-ready via `vercel.json`.
 3. Deploy
 
 Key production behaviors:
+- Static pre-rendered marketing pages for SEO
 - Static asset long-term cache (`/assets/*`, immutable)
 - Serverless APIs under `/api/*`
 - Edge caching for public site reads

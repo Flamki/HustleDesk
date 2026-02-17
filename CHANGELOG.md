@@ -14,6 +14,11 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Upstash-backed global rate limiting on expensive endpoints.
 
 ### Changed
+- Migrated frontend rendering to hybrid architecture:
+  - SEO pages statically generated
+  - app routes kept under `/app/*` as SPA
+- Updated router/url conventions from hash routes to path routes.
+- Updated deployment/docs references for SSG, sitemap, and robots support.
 - Build and bundle performance optimizations for faster startup.
 - Public site API caching behavior.
 - Added release helper scripts for patch/minor/major version pushes.

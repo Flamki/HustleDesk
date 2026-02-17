@@ -18,8 +18,8 @@
 ## 2. Supabase Auth Configuration
 - [ ] Site URL is your production app URL
 - [ ] Redirect URLs include:
-- [ ] `https://<your-app-domain>/#/login`
-- [ ] `https://<your-app-domain>/#/app/dashboard`
+- [ ] `https://<your-app-domain>/login`
+- [ ] `https://<your-app-domain>/app/dashboard`
 - [ ] Google provider is enabled with valid Client ID + Client Secret
 - [ ] Google callback URL configured:
 - [ ] `https://<project-ref>.supabase.co/auth/v1/callback`

@@ -1,7 +1,7 @@
 # Architecture
 
 ## Overview
-HustleDesk is a Vite SPA with serverless APIs and Supabase as system of record.
+HustleDesk is a hybrid Vite app (SSG + SPA) with serverless APIs and Supabase as system of record.
 
 Core layers:
 - Frontend SPA (`pages/`, `components/`, `services/`)
@@ -10,12 +10,12 @@ Core layers:
 - External providers (Stripe, Resend, Upstash Redis)
 
 ## Runtime Model
-- Client routes are hash-based (`/#/...`) to keep static hosting simple.
+- Public marketing routes are statically generated (SSG) and app routes are client-rendered under `/app/*`.
 - Frontend calls same-origin APIs at `/api/*`.
 - API functions use Supabase anon token (user-context) or service role key (system-context), depending on endpoint behavior.
 
 ## Frontend
-- Entry: `index.tsx`
+- Entry: `src/main.tsx`
 - Router and route lazy-loading: `App.tsx`
 - Auth/session context: `context/AuthContext.tsx`
 - Website builder UIs:
@@ -26,7 +26,7 @@ Core layers:
 
 Performance strategies:
 - Route-level React lazy chunks
-- Manual vendor chunking in `vite.config.ts`
+- Static pre-rendering for SEO routes with `vite-react-ssg`
 - Hover/idle prefetch for heavy builder modules
 - Lazy image decoding hints for template-heavy pages
 

@@ -5,7 +5,7 @@
 
 Project includes:
 - `vercel.json`
-- Vite production build
+- Vite SSG production build (`vite-react-ssg`)
 - API functions in `api/**/*.js`
 
 ## 1. Prerequisites
@@ -48,7 +48,9 @@ Apply all migrations from:
 
 Auth config:
 - Site URL = deployed app URL
-- Redirect URLs include hash routes used by login/auth flow
+- Redirect URLs include:
+  - `/login`
+  - `/app/dashboard`
 
 ## 4. Deploy Steps
 1. Import repository in Vercel
@@ -65,6 +67,7 @@ Run:
 - login/signup + OAuth flow
 - key dashboard and jobs pages
 - public site load and signup flow
+- verify `sitemap.xml` and `robots.txt` in production
 - Stripe checkout + webhook in test mode
 
 ## 6. Caching and Cost Notes
