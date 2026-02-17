@@ -218,6 +218,14 @@ begin
 end;
 $$;
 
+-- Create ENUM for rate limit tiers (needed before adding column)
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'rate_limit_tier_enum') then
+    create type public.rate_limit_tier_enum as enum ('free', 'standard', 'premium', 'enterprise');
+  end if;
+end $$;
+
 -- Add rate limiting metadata to users table
 alter table public.users
   add column if not exists last_activity_at timestamptz,

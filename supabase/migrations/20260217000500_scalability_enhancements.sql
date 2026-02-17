@@ -36,22 +36,15 @@ as $$
 begin
   return query
   select
-    t.table_name::text,
-    (
-      select count(*)::bigint
-      from information_schema.tables ist
-      where ist.table_schema = 'public'
-      and ist.table_name = t.table_name
-      limit 1
-    ) as row_count,
-    pg_size_pretty(pg_total_relation_size('public.' || t.table_name)) as total_size,
-    pg_size_pretty(pg_relation_size('public.' || t.table_name)) as table_size,
-    pg_size_pretty(pg_total_relation_size('public.' || t.table_name) - pg_relation_size('public.' || t.table_name)) as indexes_size,
-    (pg_relation_size('public.' || t.table_name) > 10737418240) as needs_partitioning -- 10GB
-  from information_schema.tables t
-  where t.table_schema = 'public'
-  and t.table_type = 'BASE TABLE'
-  order by pg_total_relation_size('public.' || t.table_name) desc;
+    t.tablename::text as table_name,
+    coalesce(t.n_live_tup, 0) as row_count,
+    pg_size_pretty(pg_total_relation_size('public.' || t.tablename)) as total_size,
+    pg_size_pretty(pg_relation_size('public.' || t.tablename)) as table_size,
+    pg_size_pretty(pg_total_relation_size('public.' || t.tablename) - pg_relation_size('public.' || t.tablename)) as indexes_size,
+    (pg_relation_size('public.' || t.tablename) > 10737418240) as needs_partitioning -- 10GB
+  from pg_stat_user_tables t
+  where t.schemaname = 'public'
+  order by pg_total_relation_size('public.' || t.tablename) desc;
 end;
 $$;
 

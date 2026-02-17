@@ -100,6 +100,12 @@ alter table public.users
   add constraint users_ai_credits_positive
   check (ai_credits_used >= 0 and ai_credits_limit >= 0);
 
+-- Add rate limit tier validation
+alter table public.users
+  drop constraint if exists users_rate_limit_tier_valid,
+  add constraint users_rate_limit_tier_valid
+  check (rate_limit_tier in ('free', 'standard', 'premium', 'enterprise'));
+
 alter table public.freelancer_profiles
   drop constraint if exists freelancer_profiles_positive_values,
   add constraint freelancer_profiles_positive_values
