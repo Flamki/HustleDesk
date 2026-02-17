@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { BriefcaseBusiness, Link2 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { createSite, listSites, updateSite } from '../services/marketingWebsiteService';
 import type { PortfolioBuilderState } from '../components/builder/builderTypes';
 import type { LinkBioBuilderState } from '../components/linkbioBuilder/LinkBioBuilder';
@@ -32,11 +33,17 @@ const slugify = (value: string) =>
     .slice(0, 48);
 
 export const MarketingWebsitePage: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
-  const [mode, setMode] = useState<'chooser' | 'portfolio' | 'linkbio'>('chooser');
   const [buildersPrefetched, setBuildersPrefetched] = useState(false);
+  const mode = useMemo<'chooser' | 'portfolio' | 'linkbio'>(() => {
+    if (location.pathname === '/app/marketing/website/portfolio') return 'portfolio';
+    if (location.pathname === '/app/marketing/website/link-in-bio') return 'linkbio';
+    return 'chooser';
+  }, [location.pathname]);
 
   const prefetchBuilders = () => {
     if (buildersPrefetched) return;
@@ -173,7 +180,7 @@ export const MarketingWebsitePage: React.FC = () => {
                 }
               : null
           }
-          onBack={() => setMode('chooser')}
+          onBack={() => navigate('/app/marketing/website')}
           onDeploy={deployPortfolio}
         />
       </Suspense>
@@ -194,7 +201,7 @@ export const MarketingWebsitePage: React.FC = () => {
                 }
               : null
           }
-          onBack={() => setMode('chooser')}
+          onBack={() => navigate('/app/marketing/website')}
           onDeploy={deployLinkBio}
         />
       </Suspense>
@@ -218,7 +225,7 @@ export const MarketingWebsitePage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <button
-          onClick={() => setMode('linkbio')}
+          onClick={() => navigate('/app/marketing/website/link-in-bio')}
           onMouseEnter={prefetchBuilders}
           onFocus={prefetchBuilders}
           className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-left hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors"
@@ -241,7 +248,7 @@ export const MarketingWebsitePage: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setMode('portfolio')}
+          onClick={() => navigate('/app/marketing/website/portfolio')}
           onMouseEnter={prefetchBuilders}
           onFocus={prefetchBuilders}
           className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-left hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors"

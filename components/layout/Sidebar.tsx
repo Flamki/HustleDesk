@@ -178,9 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
   };
 
   const WebsiteGroup = () => {
-    const isBuilder = location.pathname === '/app/marketing/website';
-    const isAnalytics = location.pathname === '/app/marketing/website/analytics';
-    const isWebsiteRoute = isBuilder || isAnalytics;
+    const isWebsiteRoute = location.pathname.startsWith('/app/marketing/website');
     const toggleWebsiteMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       if (websiteOpen) {
@@ -256,8 +254,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
 
   const WebsiteMenu = () => {
     if (!websiteOpen || !websiteMenuPos) return null;
-    const isBuilder = location.pathname === '/app/marketing/website';
-    const isAnalytics = location.pathname === '/app/marketing/website/analytics';
+    const isPortfolio = location.pathname === '/app/marketing/website/portfolio';
+    const isLinkInBio = location.pathname === '/app/marketing/website/link-in-bio';
 
     return (
       <div
@@ -268,32 +266,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
         onMouseDown={(e) => e.stopPropagation()}
       >
         <Link
-          to="/app/marketing/website"
+          to="/app/marketing/website/portfolio"
           onClick={() => {
             setWebsiteOpen(false);
             onClose?.();
           }}
           className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
-            isBuilder
+            isPortfolio
               ? 'bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
           }`}
         >
-          Builder
+          Build Portfolio
         </Link>
         <Link
-          to="/app/marketing/website/analytics"
+          to="/app/marketing/website/link-in-bio"
           onClick={() => {
             setWebsiteOpen(false);
             onClose?.();
           }}
           className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
-            isAnalytics
+            isLinkInBio
               ? 'bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
           }`}
         >
-          Analytics
+          Build Link in Bio
         </Link>
       </div>
     );

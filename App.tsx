@@ -85,10 +85,6 @@ const MarketingWebsitePage = React.lazy(async () => {
   const m = await import('./pages/MarketingWebsitePage');
   return { default: m.MarketingWebsitePage };
 });
-const WebsiteAnalyticsPage = React.lazy(async () => {
-  const m = await import('./pages/WebsiteAnalyticsPage');
-  return { default: m.WebsiteAnalyticsPage };
-});
 const PublicSitePage = React.lazy(async () => {
   const m = await import('./pages/PublicSitePage');
   return { default: m.PublicSitePage };
@@ -159,7 +155,8 @@ export const routes: RouteRecord[] = [
           { path: 'app/templates', element: <TemplatesPage /> },
           { path: 'app/marketing', element: <EmailMarketingPage /> },
           { path: 'app/marketing/website', element: <MarketingWebsitePage /> },
-          { path: 'app/marketing/website/analytics', element: <WebsiteAnalyticsPage /> },
+          { path: 'app/marketing/website/portfolio', element: <MarketingWebsitePage /> },
+          { path: 'app/marketing/website/link-in-bio', element: <MarketingWebsitePage /> },
           { path: 'app/updates', element: <UpdatesPage /> },
           { path: 'app/settings', element: <SettingsPage /> },
           { path: 'app/help', element: <HelpPage /> },
