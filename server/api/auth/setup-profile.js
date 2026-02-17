@@ -1,14 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import { secureJson, validateInput } from '../_shared/security.js';
 
 const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const json = (res, status, body) => {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(body));
-};
+const json = secureJson;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
@@ -18,7 +15,9 @@ export default async function handler(req, res) {
 
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) return json(res, 401, { error: 'Unauthorized' });
+  if (!token || !validateInput(token, 2000)) {
+    return json(res, 401, { error: 'Unauthorized' });
+  }
 
   const authClient = createClient(url, anonKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
