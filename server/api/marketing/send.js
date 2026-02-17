@@ -1,51 +1,25 @@
-import { createClient } from '@supabase/supabase-js';
-import { checkRateLimitGlobal, getClientIp } from '../_shared/rate-limit.js';
-
-const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+import {
+  authenticate,
+  sendSuccess,
+  sendBadRequest,
+  sendMethodNotAllowed,
+  sendServerError,
+  sendRateLimitError,
+  parseJsonBody,
+  validateStringLength,
+  validateEmail,
+  sanitizeString,
+  logger,
+  executeQuery,
+  checkRateLimitGlobal,
+  getClientIp,
+  isFeatureEnabled,
+} from '../_shared/index.js';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const DEFAULT_FROM_EMAIL = process.env.MARKETING_FROM_EMAIL || '';
 const DEFAULT_FROM_NAME = process.env.MARKETING_FROM_NAME || '';
 const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
-
-const json = (res, status, body) => {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(body));
-};
-
-const parseBody = (req) => {
-  if (req.body && typeof req.body === 'object') return req.body;
-  if (typeof req.body === 'string') {
-    try {
-      return JSON.parse(req.body || '{}');
-    } catch {
-      return {};
-    }
-  }
-  return {};
-};
-
-const authedClient = async (req) => {
-  if (!url || !anonKey) return { supabase: null, user: null, error: 'Supabase environment not configured' };
-
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) return { supabase: null, user: null, error: 'Unauthorized' };
-
-  const supabase = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) return { supabase: null, user: null, error: 'Unauthorized' };
-  return { supabase, user, error: null };
-};
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
