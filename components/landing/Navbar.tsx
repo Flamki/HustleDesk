@@ -99,10 +99,10 @@ export const Navbar: React.FC = () => {
                 </Link>
                 <Link
                     to="/signup"
-                    className="pl-4 pr-1 py-1.5 bg-white text-slate-900 rounded-full text-sm font-bold hover:bg-indigo-50 transition-all flex items-center gap-2"
+                    className="pl-4 pr-1 py-1.5 bg-indigo-600 text-white rounded-full text-sm font-bold hover:bg-indigo-500 transition-all flex items-center gap-2"
                 >
                     Start Free
-                    <div className="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white">
                         <ArrowRight size={12} />
                     </div>
                 </Link>
@@ -134,7 +134,7 @@ export const Navbar: React.FC = () => {
                     ))}
                     <hr className="border-slate-800" />
                     <Link to="/login" className="text-xl font-medium text-white">Log in</Link>
-                    <Link to="/signup" className="text-xl font-bold text-indigo-400">Get Started</Link>
+                    <Link to="/signup" className="text-xl font-bold text-white bg-indigo-600 rounded-xl py-2.5 px-5">Start Free</Link>
                 </div>
             </div>
         )}

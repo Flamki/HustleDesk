@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PenTool, LayoutDashboard, BarChart3, Bell, Sparkles, Zap, ArrowRight, Layers } from 'lucide-react';
+import { PenTool, LayoutDashboard, BarChart3, Bell, Sparkles, Zap } from 'lucide-react';
 
 export const Features: React.FC = () => {
   return (
@@ -10,10 +10,10 @@ export const Features: React.FC = () => {
         <div className="max-w-3xl mx-auto px-6 text-center mb-20">
             <h2 className="text-indigo-600 dark:text-indigo-400 font-bold tracking-wider uppercase text-sm mb-3">Features</h2>
             <h3 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">
-                Everything you need to <br/> win more work.
+                Everything you need to <br/> win more freelance clients.
             </h3>
             <p className="text-lg text-slate-600 dark:text-slate-400">
-                We've stripped away the complexity of agency CRMs and built a streamlined operating system for solo founders.
+                We've stripped away the complexity of agency CRMs and built a streamlined operating system for freelancers.
             </p>
         </div>
 
@@ -32,7 +32,7 @@ export const Features: React.FC = () => {
                             </div>
                             <h4 className="text-2xl font-bold text-slate-900 dark:text-white">AI Proposal Writer</h4>
                             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                Stop wasting hours on cover letters. Paste the job description, and our AI analyzes the client's needs to generate a persuasive, custom pitch in seconds.
+                                Write winning proposals in seconds.
                             </p>
                             <div className="flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400">
                                 <Sparkles size={16} /> Optimized for Upwork & LinkedIn
@@ -108,7 +108,7 @@ export const Features: React.FC = () => {
                     </div>
                     <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Smart Follow-ups</h4>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Never ghost a lead. We remind you exactly when to bump the email.
+                        Never forget to follow up again.
                     </p>
                 </div>
 

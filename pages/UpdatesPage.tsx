@@ -135,7 +135,7 @@ export const UpdatesPage: React.FC = () => {
                     </div>
                     <h1 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">Product Updates</h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-xl">
-                        New features, fixes, and improvements. We ship weekly to help you win more work.
+                        New features, fixes, and improvements. We ship weekly to help you win more clients.
                     </p>
                 </div>
                 <div className="flex gap-3">

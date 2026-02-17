@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 const FAQS = [
   {
     q: "Does HustleDesk apply to jobs for me?",
-    a: "No. HustleDesk helps you manage your applications and generates proposals, but we believe YOU should hit the send button to avoid getting banned by platforms like Upwork. We provide the system, you execute the action."
+    a: "No. HustleDesk helps you manage your applications and generates proposals, but you stay in control and hit send yourself to avoid getting banned by platforms like Upwork. We provide the system, you execute the action."
   },
   {
     q: "Is it really free?",

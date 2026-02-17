@@ -12,7 +12,7 @@ export const TimeTracking: React.FC = () => (
       'Time entries with durations and earnings',
       'Shareable report links for clients',
       'Summary analytics for productivity and revenue',
-      'Optimized workflows for recurring work',
+      'Optimized workflows for recurring client projects',
     ]}
   />
 );

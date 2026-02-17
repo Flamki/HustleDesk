@@ -87,7 +87,7 @@ export const SignupPage: React.FC = () => {
                         <Star size={14} fill="currentColor" />
                         <Star size={14} fill="currentColor" />
                      </div>
-                     <span className="text-xs font-medium text-slate-400 mt-1">Trusted by 2,000+ Founders</span>
+                     <span className="text-xs font-medium text-slate-400 mt-1">Trusted by 2,000+ Freelancers</span>
                 </div>
             </div>
         </div>

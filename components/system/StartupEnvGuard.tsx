@@ -6,6 +6,8 @@ type Props = {
 };
 
 export const StartupEnvGuard: React.FC<Props> = ({ errors, warnings }) => {
+  const isProd = import.meta.env.PROD;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 sm:p-10">
       <div className="max-w-3xl mx-auto rounded-2xl border border-red-500/40 bg-slate-900/80 p-6 sm:p-8">
@@ -35,10 +37,11 @@ export const StartupEnvGuard: React.FC<Props> = ({ errors, warnings }) => {
         )}
 
         <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950/80 p-4 text-sm text-slate-300">
-          Check `.env.local` against `.env.example`, then run `npm run dev` again.
+          {isProd
+            ? 'Set missing VITE_* variables in Vercel Project Settings -> Environment Variables, then redeploy.'
+            : 'Check `.env.local` against `.env.example`, then run `npm run dev` again.'}
         </div>
       </div>
     </div>
   );
 };
-

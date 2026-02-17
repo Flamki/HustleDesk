@@ -17,7 +17,7 @@ const CATEGORIES = [
         description: 'New to HustleDesk? Start here.',
         color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20',
         articles: [
-            { id: 'gs-1', title: 'How HustleDesk works', content: 'HustleDesk is your freelance operating system. It helps you track jobs from various platforms (Upwork, Fiverr, etc.) in one pipeline and generate AI-powered proposals to win more work.' },
+            { id: 'gs-1', title: 'How HustleDesk works', content: 'HustleDesk is your freelance operating system. It helps you track jobs from various platforms (Upwork, Fiverr, etc.) in one pipeline and generate AI-powered proposals to win more clients.' },
             { id: 'gs-2', title: 'Setting up your freelancer profile', content: 'Your profile is the brain of the AI. Go to Settings > Profile to add your skills, experience, and past projects. The more details you add, the better your proposals will be.' },
             { id: 'gs-3', title: 'Adding your first job', content: 'Click "Add Job" in the sidebar. Copy the job title and description from the freelance platform. We recommend pasting the full description so our AI can analyze requirements accurately.' },
             { id: 'gs-4', title: 'Generating your first proposal', content: 'Once a job is added, click "Generate Proposal". Select your tone and length preferences, then let the AI draft a cover letter for you.' },
@@ -33,7 +33,7 @@ const CATEGORIES = [
             { id: 'ai-1', title: 'How proposal credits work', content: 'Free plans get 5 credits per month. Pro plans get unlimited credits. One credit is consumed every time you click "Generate Proposal" or "Regenerate".' },
             { id: 'ai-2', title: 'Tips to improve proposal quality', content: '1. Ensure your Profile is complete.\n2. Add "Notes" to the job if you have specific ideas.\n3. Choose the right "Tone" (Friendly vs Professional) based on the client\'s job post style.' },
             { id: 'ai-3', title: 'How to edit generated proposals', content: 'The AI output is a draft. You can edit the text directly in the proposal box before copying it. We encourage adding a personal touch!' },
-            { id: 'ai-4', title: 'Why shorter proposals work better', content: 'Clients are busy. Our "Concise" mode generates proposals that get straight to the point, often resulting in higher reply rates than long cover letters.' },
+            { id: 'ai-4', title: 'Why shorter proposals win better', content: 'Clients are busy. Our "Concise" mode generates proposals that get straight to the point, often resulting in higher reply rates than long cover letters.' },
         ] 
     },
     { 
@@ -328,7 +328,7 @@ export const HelpPage: React.FC = () => {
                         </div>
                         <h2 className="text-2xl sm:text-3xl font-bold">Still need help?</h2>
                         <p className="text-indigo-200 max-w-lg mx-auto">
-                            Can't find the answer you're looking for? Our support team is here to help you get back to work.
+                            Can't find the answer you're looking for? Our support team is here to help you get back to clients.
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-8 pt-4">
                             <div className="text-center">

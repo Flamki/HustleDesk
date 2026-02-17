@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star, PlayCircle, ShieldCheck } from 'lucide-react';
+import { ArrowRight, PlayCircle, ShieldCheck } from 'lucide-react';
 
 export const Hero: React.FC = () => {
   return (
@@ -28,45 +28,30 @@ export const Hero: React.FC = () => {
         
         {/* Headline */}
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.1] max-w-4xl animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-          The Operating System for <br className="hidden md:block" />
+          Never lose a <br className="hidden md:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-teal-500 dark:from-indigo-400 dark:to-teal-300">
-            One-Person Agencies.
+            freelance client again.
           </span>
         </h1>
         
         {/* Subhead */}
         <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-          Stop treating your career like a gig. HustleDesk gives you the CRM, AI proposals, and analytics you need to run a profitable business.
+          Track leads, get follow-up reminders, and send AI proposals that win work.
         </p>
         
         {/* CTA */}
         <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
           <Link
             to="/signup"
-            className="px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-xl shadow-indigo-500/20 flex items-center gap-2"
+            className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold text-lg hover:scale-105 hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/30 flex items-center gap-2"
           >
-            Start Building
+            Start Free
             <ArrowRight size={20} />
           </Link>
           <button className="px-8 py-4 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-full font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center gap-2">
             <PlayCircle size={20} />
             Watch Demo
           </button>
-        </div>
-
-        {/* Social Proof */}
-        <div className="mt-8 flex items-center gap-6 text-sm font-medium text-slate-500 dark:text-slate-500 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
-            <div className="flex -space-x-2">
-                {[1,2,3,4].map(i => (
-                    <img loading="lazy" decoding="async" key={i} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i*13}`} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-950" alt="User" />
-                ))}
-            </div>
-            <div className="flex flex-col items-start">
-                <div className="flex text-amber-400">
-                    {[1,2,3,4,5].map(i => <Star key={i} size={12} fill="currentColor" />)}
-                </div>
-                <span>Loved by 2,000+ founders</span>
-            </div>
         </div>
 
         {/* 3D Dashboard Mockup */}

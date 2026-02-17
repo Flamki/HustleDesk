@@ -100,7 +100,7 @@ const handleList = async (req, res) => {
   let query = supabase
     .from('jobs')
     .select(
-      'id,user_id,title,company,platform,budget_min,budget_max,currency,proposed_price,status,followup_date,applied_at,closed_at,created_at,notes,proposal',
+      'id,user_id,title,company,platform,job_description,budget_min,budget_max,currency,proposed_price,status,followup_date,applied_at,closed_at,created_at,notes,proposal',
       { count: 'estimated' }
     )
     .eq('user_id', user.id);

@@ -44,7 +44,7 @@ export const LoginPage: React.FC = () => {
                         "HustleDesk isn't just a tool; it's my COO."
                     </h2>
                     <p className="text-lg text-slate-400 leading-relaxed mb-8">
-                         I spend less time managing chaos and more time doing the work I love. The AI proposals alone save me 10 hours a week.
+                         I spend less time managing chaos and more time serving the clients I love. The AI proposals alone save me 10 hours a week.
                     </p>
                     <div className="flex items-center gap-4">
                         <img loading="lazy" decoding="async" 

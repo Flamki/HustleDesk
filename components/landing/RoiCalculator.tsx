@@ -26,8 +26,8 @@ export const RoiCalculator: React.FC = () => {
           
           <div className="space-y-8">
             <h2 className="text-4xl font-bold text-slate-900 dark:text-white">
-              What is manual work <br/>
-              <span className="text-indigo-600 dark:text-indigo-400">costing you?</span>
+              How much time are <br/>
+              <span className="text-indigo-600 dark:text-indigo-400">proposals costing you?</span>
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-400">
               Calculate the value of the time you spend writing proposals instead of doing billable work.

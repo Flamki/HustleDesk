@@ -22,7 +22,7 @@ export const Workflow: React.FC = () => {
                 From "Job Found" to "Paid".
             </h3>
             <p className="text-lg text-slate-400">
-                A streamlined process designed to help you focus on the work, not the admin.
+                A streamlined process designed to help you focus on clients, not admin.
             </p>
         </div>
 
@@ -39,7 +39,7 @@ export const Workflow: React.FC = () => {
                         <Search className="text-indigo-400" size={24} />
                     </div>
                     <div className="pt-2">
-                        <h4 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">Find a Job</h4>
+                        <h4 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">Find Opportunities</h4>
                         <p className="text-slate-400 leading-relaxed">
                             Browse your favorite platforms. When you see a good fit, copy the link or text.
                         </p>
@@ -52,7 +52,7 @@ export const Workflow: React.FC = () => {
                         <Save className="text-teal-400" size={24} />
                     </div>
                     <div className="pt-2">
-                        <h4 className="text-xl font-bold text-white mb-2 group-hover:text-teal-300 transition-colors">Save to Pipeline</h4>
+                        <h4 className="text-xl font-bold text-white mb-2 group-hover:text-teal-300 transition-colors">Save Lead to Pipeline</h4>
                         <p className="text-slate-400 leading-relaxed">
                             One click to capture details. We automatically extract budget, client info, and skills.
                         </p>
@@ -78,7 +78,7 @@ export const Workflow: React.FC = () => {
                         <Trophy className="text-amber-400" size={24} />
                     </div>
                     <div className="pt-2">
-                        <h4 className="text-xl font-bold text-white mb-2 group-hover:text-amber-300 transition-colors">Track & Win</h4>
+                        <h4 className="text-xl font-bold text-white mb-2 group-hover:text-amber-300 transition-colors">Follow-up & Win Clients</h4>
                         <p className="text-slate-400 leading-relaxed">
                             Get reminded to follow up. Move deals through your pipeline until the money hits your bank.
                         </p>

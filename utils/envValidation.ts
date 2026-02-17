@@ -28,7 +28,11 @@ export const validateEnvironment = (): EnvValidationResult => {
   const hasStripePrice = Boolean((import.meta.env.VITE_STRIPE_PRICE_ID_PRO_MONTHLY || '').trim());
 
   if (!supabaseUrl) {
-    errors.push('Missing VITE_SUPABASE_URL.');
+    errors.push(
+      import.meta.env.PROD
+        ? 'Missing VITE_SUPABASE_URL. Set it in Vercel Project Settings -> Environment Variables, then redeploy.'
+        : 'Missing VITE_SUPABASE_URL.'
+    );
   } else if (!isLikelySupabaseUrl(supabaseUrl)) {
     errors.push('VITE_SUPABASE_URL must be a valid Supabase URL (https://<project-ref>.supabase.co).');
   }

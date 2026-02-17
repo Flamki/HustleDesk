@@ -8,7 +8,7 @@ export const Pricing: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Invest in your career.
+            Start free. Upgrade when your pipeline grows.
           </h2>
           <p className="text-lg text-slate-400">
             Start for free. Upgrade when you start winning more clients.
@@ -35,11 +35,11 @@ export const Pricing: React.FC = () => {
                         <Check className="text-indigo-400 mt-1" size={18} />
                         <span>5 AI Generations/month</span>
                     </div>
-                    {/* Visual cues for missing features compared to Pro */}
-                    <div className="flex items-start gap-3 text-slate-500">
-                        <X className="mt-1" size={18} />
-                        <span>No Follow-up Reminders</span>
+                    <div className="flex items-start gap-3">
+                        <Check className="text-indigo-400 mt-1" size={18} />
+                        <span>5 Follow-up reminders/month</span>
                     </div>
+                    {/* Visual cues for missing features compared to Pro */}
                     <div className="flex items-start gap-3 text-slate-500">
                         <X className="mt-1" size={18} />
                         <span>No Analytics</span>
@@ -59,6 +59,7 @@ export const Pricing: React.FC = () => {
                 <div className="mb-6">
                     <span className="text-4xl font-bold">$9</span>
                     <span className="text-indigo-200"> / month</span>
+                    <p className="text-sm text-indigo-100 mt-2">Win just 1 extra client and it pays for itself.</p>
                 </div>
                 <p className="text-indigo-100 mb-8">For serious freelancers who want to scale their income.</p>
                 <div className="space-y-4 mb-8 flex-1 text-white">
@@ -80,7 +81,7 @@ export const Pricing: React.FC = () => {
                     </div>
                 </div>
                 <Link to="/signup" className="w-full py-4 rounded-xl bg-white text-indigo-600 hover:bg-indigo-50 transition-colors font-bold text-center">
-                    Start Pro Trial
+                    Upgrade to Pro
                 </Link>
             </div>
         </div>

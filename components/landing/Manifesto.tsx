@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, Check, ArrowRight } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 
 export const Manifesto: React.FC = () => {
   return (
@@ -9,7 +9,7 @@ export const Manifesto: React.FC = () => {
         
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-            Evolution of a Solo Founder
+            The Freelancer Upgrade
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
             Most freelancers are stuck in Level 1. HustleDesk is the cheat code to get to Level 2.

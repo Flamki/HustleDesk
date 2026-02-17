@@ -6,7 +6,7 @@ export const FreelancerCrm: React.FC = () => (
     title="Freelancer CRM"
     description="Track leads, manage job pipeline, and convert opportunities with HustleDesk Freelancer CRM."
     path="/freelancer-crm"
-    heading="Freelancer CRM That Closes More Work"
+    heading="Freelancer CRM That Closes More Clients"
     intro="Organize leads, follow-ups, and active deals so nothing slips through."
     bullets={[
       'Lead and opportunity tracking',

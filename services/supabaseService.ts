@@ -973,17 +973,127 @@ export const saveProposal = async (jobId: string, proposal: string): Promise<{ e
 };
 
 export const getProfile = async (): Promise<{ data: FreelancerProfile | null; error: Error | null }> => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
-  return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+    return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) return { data: null, error: new Error('Unauthorized') };
+
+  type DbFreelancerProfile = {
+    user_id: string;
+    skills: string[] | null;
+    experience_level: 'Entry' | 'Intermediate' | 'Expert' | null;
+    years_experience: number | null;
+    bio: string | null;
+    portfolio_url: string | null;
+    linkedin_url: string | null;
+    hourly_rate: number | null;
+    past_projects: any[] | null;
+    communication_style: string | null;
+    completed_onboarding: boolean | null;
+    preferences: FreelancerProfile['preferences'] | null;
+    notification_settings: FreelancerProfile['notificationSettings'] | null;
+  };
+
+  try {
+    const { data, error } = await supabase
+      .from('freelancer_profiles')
+      .select(
+        'user_id,skills,experience_level,years_experience,bio,portfolio_url,linkedin_url,hourly_rate,past_projects,communication_style,completed_onboarding,preferences,notification_settings'
+      )
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      if (/relation .*freelancer_profiles.* does not exist/i.test(error.message || '')) {
+        const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+        return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
+      }
+      return { data: null, error };
+    }
+
+    if (!data) {
+      const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+      return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
+    }
+
+    const row = data as DbFreelancerProfile;
+    const profile: FreelancerProfile = {
+      id: row.user_id,
+      userId: row.user_id,
+      skills: Array.isArray(row.skills) ? row.skills : [],
+      experienceLevel: row.experience_level || 'Entry',
+      yearsExperience: Number(row.years_experience || 0),
+      bio: row.bio || '',
+      portfolioUrl: row.portfolio_url || undefined,
+      linkedinUrl: row.linkedin_url || undefined,
+      hourlyRate: Number(row.hourly_rate || 0),
+      pastProjects: Array.isArray(row.past_projects) ? row.past_projects : [],
+      communicationStyle: row.communication_style || 'Professional',
+      completedOnboarding: Boolean(row.completed_onboarding),
+      preferences: row.preferences || undefined,
+      notificationSettings: row.notification_settings || undefined,
+    };
+
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    return { data: profile, error: null };
+  } catch {
+    const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+    return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
+  }
 };
 
 export const updateProfile = async (
   profile: FreelancerProfile
 ): Promise<{ data: FreelancerProfile; error: Error | null }> => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
   localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-  return { data: profile, error: null };
+
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return { data: profile, error: null };
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) return { data: profile, error: new Error('Unauthorized') };
+
+  try {
+    const payload = {
+      user_id: user.id,
+      skills: profile.skills || [],
+      experience_level: profile.experienceLevel || 'Entry',
+      years_experience: Number(profile.yearsExperience || 0),
+      bio: profile.bio || '',
+      portfolio_url: profile.portfolioUrl || null,
+      linkedin_url: profile.linkedinUrl || null,
+      hourly_rate: Number(profile.hourlyRate || 0),
+      past_projects: profile.pastProjects || [],
+      communication_style: profile.communicationStyle || 'Professional',
+      completed_onboarding: Boolean(profile.completedOnboarding),
+      preferences: profile.preferences || {},
+      notification_settings: profile.notificationSettings || {},
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('freelancer_profiles').upsert(payload, { onConflict: 'user_id' });
+    if (error) {
+      if (/relation .*freelancer_profiles.* does not exist/i.test(error.message || '')) {
+        return { data: profile, error: null };
+      }
+      return { data: profile, error };
+    }
+    return { data: profile, error: null };
+  } catch {
+    return { data: profile, error: null };
+  }
 };
 
 export const getAnalyticsInsights = async (

@@ -9,26 +9,33 @@ export const UnsubscribePage: React.FC = () => {
   const [message, setMessage] = useState<string>('');
 
   useEffect(() => {
-    const run = async () => {
-      if (!token) {
-        setStatus('error');
-        setMessage('Missing token.');
-        return;
-      }
-      setStatus('loading');
-      try {
-        const res = await fetch(`/api/public/unsubscribe?token=${encodeURIComponent(token)}`);
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(body.error || 'Unsubscribe failed');
-        setStatus('success');
-        setMessage('You have been unsubscribed.');
-      } catch (e) {
-        setStatus('error');
-        setMessage(e instanceof Error ? e.message : 'Unsubscribe failed');
-      }
-    };
-    void run();
+    if (!token) {
+      setStatus('error');
+      setMessage('Missing token.');
+    } else {
+      setStatus('idle');
+      setMessage('Click confirm to unsubscribe.');
+    }
   }, [token]);
+
+  const handleUnsubscribe = async () => {
+    if (!token) return;
+    setStatus('loading');
+    try {
+      const res = await fetch('/api/public/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Unsubscribe failed');
+      setStatus('success');
+      setMessage('You have been unsubscribed.');
+    } catch (e) {
+      setStatus('error');
+      setMessage(e instanceof Error ? e.message : 'Unsubscribe failed');
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent p-6">
@@ -47,11 +54,20 @@ export const UnsubscribePage: React.FC = () => {
             <XCircle className="text-red-600" size={18} />
           )}
           <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            {status === 'loading' ? 'Updating…' : message}
+            {status === 'loading' ? 'Updating...' : message}
           </div>
         </div>
+
+        {status !== 'success' && token ? (
+          <button
+            onClick={() => void handleUnsubscribe()}
+            disabled={status === 'loading'}
+            className="mt-4 w-full rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold hover:bg-slate-800 disabled:opacity-60"
+          >
+            {status === 'loading' ? 'Updating...' : 'Confirm Unsubscribe'}
+          </button>
+        ) : null}
       </div>
     </div>
   );
 };
-

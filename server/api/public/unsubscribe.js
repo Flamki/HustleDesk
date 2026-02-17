@@ -9,6 +9,18 @@ const json = (res, status, body) => {
   res.end(JSON.stringify(body));
 };
 
+const parseBody = (req) => {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body || '{}');
+    } catch {
+      return {};
+    }
+  }
+  return {};
+};
+
 const getQueryParams = (req) => {
   if (req.query) return req.query;
   try {
@@ -20,8 +32,11 @@ const getQueryParams = (req) => {
 };
 
 export default async function handler(req, res) {
+  if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
+
   const params = getQueryParams(req);
-  const token = String(params.token || '').trim();
+  const body = parseBody(req);
+  const token = String(body.token || params.token || '').trim();
   if (!token) return json(res, 400, { error: 'token is required' });
   if (!supabaseUrl || !serviceRoleKey) return json(res, 500, { error: 'Server not configured' });
 
@@ -47,4 +62,3 @@ export default async function handler(req, res) {
   if (error) return json(res, 500, { error: error.message });
   return json(res, 200, { success: true, contact: data });
 }
-

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimitGlobal, getClientIp } from '../_shared/rate-limit.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -45,6 +46,28 @@ export default async function handler(req, res) {
   if (!slug) return json(res, 400, { error: 'slug is required' });
   if (!isValidEmail(email)) return json(res, 400, { error: 'Valid email is required' });
 
+  const ip = getClientIp(req);
+  const ipLimit = await checkRateLimitGlobal({
+    key: `site-signup:ip:${slug}:${ip}`,
+    limit: 20,
+    windowMs: 60 * 1000,
+  });
+  res.setHeader('X-RateLimit-Store', ipLimit.store || 'memory');
+  if (!ipLimit.allowed) {
+    res.setHeader('Retry-After', String(ipLimit.retryAfterSeconds));
+    return json(res, 429, { error: 'Too many signup attempts', retry_after_seconds: ipLimit.retryAfterSeconds });
+  }
+
+  const emailLimit = await checkRateLimitGlobal({
+    key: `site-signup:email:${slug}:${email}`,
+    limit: 6,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!emailLimit.allowed) {
+    res.setHeader('Retry-After', String(emailLimit.retryAfterSeconds));
+    return json(res, 429, { error: 'Too many signup attempts', retry_after_seconds: emailLimit.retryAfterSeconds });
+  }
+
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
 
   const { data: site, error: siteError } = await admin
@@ -57,7 +80,7 @@ export default async function handler(req, res) {
   if (!site || !site.published_at) return json(res, 404, { error: 'Site not found' });
   if (!site.show_email_signup) return json(res, 400, { error: 'Email signup is disabled for this site' });
 
-  const ip = req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : null;
+  const ipHeader = req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : null;
   const ua = req.headers['user-agent'] ? String(req.headers['user-agent']).slice(0, 300) : null;
 
   // Upsert contact into marketing_contacts with an auto-tag for this site.
@@ -78,7 +101,7 @@ export default async function handler(req, res) {
       email,
       name,
       consent,
-      ip,
+      ip: ipHeader || ip,
       user_agent: ua,
     });
     return json(res, 200, { ok: true });
@@ -108,7 +131,7 @@ export default async function handler(req, res) {
     email,
     name,
     consent,
-    ip,
+    ip: ipHeader || ip,
     user_agent: ua,
   });
 
