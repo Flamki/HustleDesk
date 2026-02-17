@@ -47,7 +47,7 @@ describe('Authentication Flow Integration Tests', () => {
       const invalidPasswords = [
         'short',          // Too short
         'nouppercase1',   // No uppercase
-        'NOLOWERCASE1',   // No lowercase (actually has no lowercase)
+        'NOLOWERCASE1',   // No lowercase
         'NoNumbers',      // No numbers
         'Short1',         // Too short
       ];
