@@ -1,131 +1,270 @@
-import { createClient } from '@supabase/supabase-js';
+import {
+  authenticate,
+  sendSuccess,
+  sendCreated,
+  sendBadRequest,
+  sendMethodNotAllowed,
+  sendServerError,
+  parseQueryParams,
+  validateEnum,
+  validateStringLength,
+  validateNumber,
+  sanitizeString,
+  sanitizeSearchQuery,
+  logger,
+  executePaginatedQuery,
+  executeQuery,
+  RATE_LIMIT_CONFIGS,
+  applyRateLimit,
+} from '../_shared/index.js';
 
-const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const VALID_PLATFORMS = ['upwork', 'fiverr', 'linkedin', 'other'];
+const VALID_STATUSES = ['saved', 'applied', 'replied', 'won', 'lost'];
 
-const VALID_PLATFORMS = new Set(['upwork', 'fiverr', 'linkedin', 'other']);
-const VALID_STATUSES = new Set(['saved', 'applied', 'replied', 'won', 'lost']);
+/**
+ * Validate job creation payload
+ */
+const validateJobPayload = (body) => {
+  const errors = [];
 
-const json = (res, status, body) => {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(body));
-};
-
-const getQueryParams = (req) => {
-  if (req.query) return req.query;
-  try {
-    const u = new URL(req.url, 'http://localhost');
-    return Object.fromEntries(u.searchParams.entries());
-  } catch {
-    return {};
+  // Validate title
+  const title = sanitizeString(body.title, 500);
+  const titleValidation = validateStringLength(title, { min: 1, max: 500, name: 'Title' });
+  if (!titleValidation.valid) {
+    errors.push(titleValidation.error);
   }
-};
 
-const authedClient = async (req) => {
-  if (!url || !anonKey) return { supabase: null, user: null, error: 'Supabase environment not configured' };
-
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) return { supabase: null, user: null, error: 'Unauthorized' };
-
-  const supabase = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) return { supabase: null, user: null, error: 'Unauthorized' };
-  return { supabase, user, error: null };
-};
-
-const handleCreate = async (req, res) => {
-  const { supabase, user, error } = await authedClient(req);
-  if (error) return json(res, error === 'Unauthorized' ? 401 : 500, { error });
-
-  const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {};
-  const title = (body.title || '').trim();
+  // Validate platform
   const platform = String(body.platform || '').toLowerCase();
-  const description = (body.description || '').trim();
+  const platformValidation = validateEnum(platform, VALID_PLATFORMS, 'Platform');
+  if (!platformValidation.valid) {
+    errors.push(platformValidation.error);
+  }
 
-  if (!title || !platform || !description) return json(res, 400, { error: 'Missing required fields' });
-  if (title.length > 500) return json(res, 400, { error: 'Title exceeds 500 characters' });
-  if (!VALID_PLATFORMS.has(platform)) return json(res, 400, { error: 'Invalid platform' });
-  if (description.length < 50) return json(res, 400, { error: 'Description must be at least 50 characters' });
+  // Validate description
+  const description = sanitizeString(body.description, 10000);
+  const descValidation = validateStringLength(description, { min: 50, max: 10000, name: 'Description' });
+  if (!descValidation.valid) {
+    errors.push(descValidation.error);
+  }
 
+  // Validate budget range
   const budgetMin = body.budgetMin != null ? Number(body.budgetMin) : null;
   const budgetMax = body.budgetMax != null ? Number(body.budgetMax) : null;
-  if (budgetMin != null && budgetMax != null && budgetMax < budgetMin) {
-    return json(res, 400, { error: 'Invalid budget range' });
+
+  if (budgetMin !== null) {
+    const minValidation = validateNumber(budgetMin, { min: 0, max: 1000000000 });
+    if (!minValidation.valid) {
+      errors.push('Budget min: ' + minValidation.error);
+    }
   }
 
+  if (budgetMax !== null) {
+    const maxValidation = validateNumber(budgetMax, { min: 0, max: 1000000000 });
+    if (!maxValidation.valid) {
+      errors.push('Budget max: ' + maxValidation.error);
+    }
+  }
+
+  if (budgetMin !== null && budgetMax !== null && budgetMax < budgetMin) {
+    errors.push('Budget max must be greater than budget min');
+  }
+
+  // Validate proposed price
+  const proposedPrice = body.proposedPrice != null ? Number(body.proposedPrice) : null;
+  if (proposedPrice !== null) {
+    const priceValidation = validateNumber(proposedPrice, { min: 0, max: 1000000000 });
+    if (!priceValidation.valid) {
+      errors.push('Proposed price: ' + priceValidation.error);
+    }
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    data: {
+      title,
+      platform,
+      description,
+      company: sanitizeString(body.company || '', 200),
+      budgetMin,
+      budgetMax,
+      proposedPrice,
+      currency: sanitizeString(body.currency || 'INR', 10) || 'INR',
+    },
+  };
+};
+
+/**
+ * Handle job creation
+ */
+const handleCreate = async (req, res) => {
+  // Apply rate limiting
+  const rateLimitAllowed = await applyRateLimit(req, res, RATE_LIMIT_CONFIGS.MODERATE, 'jobs:create');
+  if (!rateLimitAllowed) return;
+
+  // Authenticate
+  const auth = await authenticate(req, res);
+  if (!auth) return;
+
+  const { user, supabase } = auth;
+
+  // Parse and validate body
+  const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {};
+  const validation = validateJobPayload(body);
+
+  if (!validation.valid) {
+    logger.warn('Job creation validation failed', {
+      userId: user.id,
+      errors: validation.errors,
+    });
+    return sendBadRequest(res, validation.errors.join(', '));
+  }
+
+  const { data: validData } = validation;
+
+  // Insert job
   const payload = {
     user_id: user.id,
-    title,
-    platform,
-    company: body.company || null,
-    job_description: description,
-    budget_min: budgetMin,
-    budget_max: budgetMax,
-    proposed_price: body.proposedPrice != null ? Number(body.proposedPrice) : null,
-    currency: body.currency || 'INR',
+    title: validData.title,
+    platform: validData.platform,
+    company: validData.company || null,
+    job_description: validData.description,
+    budget_min: validData.budgetMin,
+    budget_max: validData.budgetMax,
+    proposed_price: validData.proposedPrice,
+    currency: validData.currency,
     status: 'saved',
   };
 
-  const { data: inserted, error: insertError } = await supabase.from('jobs').insert(payload).select('id').single();
-  if (insertError) return json(res, 500, { error: insertError.message });
+  const result = await executeQuery(
+    supabase.from('jobs').insert(payload).select('id').single(),
+    {
+      operation: 'create_job',
+      userId: user.id,
+    }
+  );
 
-  return json(res, 201, { success: true, job_id: inserted.id, message: 'Job created' });
+  if (!result.success) {
+    logger.error('Job creation failed', {
+      userId: user.id,
+      error: result.error,
+    });
+    return sendServerError(res, 'Failed to create job');
+  }
+
+  logger.info('Job created successfully', {
+    userId: user.id,
+    jobId: result.data.id,
+  });
+
+  return sendCreated(res, {
+    job_id: result.data.id,
+    message: 'Job created successfully',
+  });
 };
 
+/**
+ * Handle job listing with filters and pagination
+ */
 const handleList = async (req, res) => {
-  const { supabase, user, error } = await authedClient(req);
-  if (error) return json(res, error === 'Unauthorized' ? 401 : 500, { error });
+  // Apply rate limiting (more lenient for reads)
+  const rateLimitAllowed = await applyRateLimit(req, res, RATE_LIMIT_CONFIGS.LENIENT, 'jobs:list');
+  if (!rateLimitAllowed) return;
 
-  const params = getQueryParams(req);
+  // Authenticate
+  const auth = await authenticate(req, res);
+  if (!auth) return;
+
+  const { user, supabase } = auth;
+
+  // Parse query parameters
+  const params = parseQueryParams(req);
   const status = params.status ? String(params.status).toLowerCase() : null;
   const platform = params.platform ? String(params.platform).toLowerCase() : null;
   const search = params.search ? String(params.search).trim() : '';
-  const limit = Math.max(1, Math.min(100, Number(params.limit || 50)));
-  const offset = Math.max(0, Number(params.offset || 0));
 
-  if (status && !VALID_STATUSES.has(status)) return json(res, 400, { error: 'Invalid status' });
-  if (platform && !VALID_PLATFORMS.has(platform)) return json(res, 400, { error: 'Invalid platform' });
+  // Validate filters
+  if (status) {
+    const statusValidation = validateEnum(status, VALID_STATUSES, 'Status');
+    if (!statusValidation.valid) {
+      return sendBadRequest(res, statusValidation.error);
+    }
+  }
 
-  // Avoid returning huge `job_description` blobs for list view.
-  // Count is included in the same request (still computed server-side, but avoids a second round-trip).
+  if (platform) {
+    const platformValidation = validateEnum(platform, VALID_PLATFORMS, 'Platform');
+    if (!platformValidation.valid) {
+      return sendBadRequest(res, platformValidation.error);
+    }
+  }
+
+  // Build base query
   let query = supabase
     .from('jobs')
     .select(
-      'id,user_id,title,company,platform,job_description,budget_min,budget_max,currency,proposed_price,status,followup_date,applied_at,closed_at,created_at,notes,proposal',
+      'id,user_id,title,company,platform,budget_min,budget_max,currency,proposed_price,status,followup_date,applied_at,closed_at,created_at,notes',
       { count: 'estimated' }
     )
     .eq('user_id', user.id);
 
+  // Apply filters
   if (status) {
     query = query.eq('status', status);
   }
+
   if (platform) {
     query = query.eq('platform', platform);
   }
+
+  // Apply search filter (sanitized)
   if (search) {
-    const safe = search.slice(0, 120).replace(/[(),]/g, ' ').trim();
-    if (safe) {
-      // Search across title + description, but do not return description in the list payload.
-      query = query.or(`title.ilike.%${safe}%,job_description.ilike.%${safe}%`);
+    const safeSearch = sanitizeSearchQuery(search, 120);
+    if (safeSearch) {
+      query = query.or(`title.ilike.%${safeSearch}%,job_description.ilike.%${safeSearch}%`);
     }
   }
 
-  const { data, error: listError, count } = await query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
-  if (listError) return json(res, 500, { error: listError.message });
-  return json(res, 200, { jobs: data || [], total: count || 0, limit, offset });
+  // Order by creation date
+  query = query.order('created_at', { ascending: false });
+
+  // Execute paginated query
+  const result = await executePaginatedQuery(query, params, {
+    operation: 'list_jobs',
+    userId: user.id,
+    filters: { status, platform, search: !!search },
+  });
+
+  if (!result.success) {
+    logger.error('Job listing failed', {
+      userId: user.id,
+      error: result.error,
+    });
+    return sendServerError(res, 'Failed to fetch jobs');
+  }
+
+  logger.debug('Jobs listed successfully', {
+    userId: user.id,
+    count: result.data.length,
+    total: result.pagination.total,
+  });
+
+  return sendSuccess(res, {
+    jobs: result.data,
+    pagination: result.pagination,
+  });
 };
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') return handleCreate(req, res);
-  if (req.method === 'GET') return handleList(req, res);
-  return json(res, 405, { error: 'Method not allowed' });
+  try {
+    if (req.method === 'POST') return await handleCreate(req, res);
+    if (req.method === 'GET') return await handleList(req, res);
+    return sendMethodNotAllowed(res, ['GET', 'POST']);
+  } catch (error) {
+    logger.logError(error, req);
+    return sendServerError(res, 'Internal server error');
+  }
 }

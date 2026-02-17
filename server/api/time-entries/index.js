@@ -1,62 +1,37 @@
-import { createClient } from '@supabase/supabase-js';
-
-const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
-const json = (res, status, body) => {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(body));
-};
+import {
+  authenticate,
+  sendSuccess,
+  sendCreated,
+  sendBadRequest,
+  sendMethodNotAllowed,
+  sendServerError,
+  parseQueryParams,
+  validateStringLength,
+  validateNumber,
+  validateISODate,
+  sanitizeString,
+  logger,
+  executePaginatedQuery,
+  executeQuery,
+  RATE_LIMIT_CONFIGS,
+  applyRateLimit,
+} from '../_shared/index.js';
 
 const toNum = (value, fallback = 0) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
 };
 
-const toIso = (value) => {
-  const date = new Date(String(value || ''));
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
-};
-
-const getQueryParams = (req) => {
-  if (req.query) return req.query;
-  try {
-    const u = new URL(req.url, 'http://localhost');
-    return Object.fromEntries(u.searchParams.entries());
-  } catch {
-    return {};
-  }
-};
-
-const authedClient = async (req) => {
-  if (!url || !anonKey) return { supabase: null, user: null, error: 'Supabase environment not configured' };
-
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) return { supabase: null, user: null, error: 'Unauthorized' };
-
-  const supabase = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) return { supabase: null, user: null, error: 'Unauthorized' };
-  return { supabase, user, error: null };
-};
-
 const normalizePayload = (body) => {
-  const client = String(body.client || '').trim();
-  const project = String(body.project || '').trim();
-  const description = String(body.description || '').trim();
-  const startTime = toIso(body.startTime);
-  const endTime = toIso(body.endTime);
+  const client = sanitizeString(body.client, 200);
+  const project = sanitizeString(body.project, 200);
+  const description = sanitizeString(body.description, 2000);
+  
+  const startTimeValidation = validateISODate(body.startTime);
+  const endTimeValidation = validateISODate(body.endTime);
+  
   const hourlyRate = toNum(body.hourlyRate, 0);
-  const currency = String(body.currency || 'USD').trim().slice(0, 10) || 'USD';
+  const currency = sanitizeString(body.currency || 'USD', 10) || 'USD';
   const durationSeconds = Math.max(0, Math.floor(toNum(body.durationSeconds, 0)));
   const earnings = Math.max(0, toNum(body.earnings, 0));
   const jobId = body.jobId ? String(body.jobId) : null;
@@ -65,8 +40,8 @@ const normalizePayload = (body) => {
     client,
     project,
     description,
-    startTime,
-    endTime,
+    startTime: startTimeValidation.valid ? startTimeValidation.date : null,
+    endTime: endTimeValidation.valid ? endTimeValidation.date : null,
     hourlyRate,
     currency,
     durationSeconds,
@@ -76,26 +51,97 @@ const normalizePayload = (body) => {
 };
 
 const validatePayload = (payload) => {
-  if (!payload.client) return 'Client is required';
-  if (!payload.project) return 'Project is required';
-  if (!payload.startTime || !payload.endTime) return 'Valid start and end time are required';
-  if (new Date(payload.endTime).getTime() < new Date(payload.startTime).getTime()) return 'End time must be after start time';
-  if (payload.durationSeconds <= 0) return 'Duration must be greater than zero';
-  return null;
+  const errors = [];
+
+  // Validate required fields
+  if (!payload.client) {
+    errors.push('Client is required');
+  } else {
+    const validation = validateStringLength(payload.client, { min: 1, max: 200, name: 'Client' });
+    if (!validation.valid) errors.push(validation.error);
+  }
+
+  if (!payload.project) {
+    errors.push('Project is required');
+  } else {
+    const validation = validateStringLength(payload.project, { min: 1, max: 200, name: 'Project' });
+    if (!validation.valid) errors.push(validation.error);
+  }
+
+  // Validate times
+  if (!payload.startTime || !payload.endTime) {
+    errors.push('Valid start and end time are required');
+  } else if (new Date(payload.endTime).getTime() < new Date(payload.startTime).getTime()) {
+    errors.push('End time must be after start time');
+  }
+
+  // Validate duration
+  const durationValidation = validateNumber(payload.durationSeconds, { min: 1, max: 86400 * 365 }); // max 1 year in seconds
+  if (!durationValidation.valid) {
+    errors.push('Duration: ' + durationValidation.error);
+  }
+
+  // Validate hourly rate
+  if (payload.hourlyRate !== null) {
+    const rateValidation = validateNumber(payload.hourlyRate, { min: 0, max: 100000 });
+    if (!rateValidation.valid) {
+      errors.push('Hourly rate: ' + rateValidation.error);
+    }
+  }
+
+  // Validate earnings
+  if (payload.earnings !== null) {
+    const earningsValidation = validateNumber(payload.earnings, { min: 0, max: 10000000 });
+    if (!earningsValidation.valid) {
+      errors.push('Earnings: ' + earningsValidation.error);
+    }
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return { valid: true };
 };
 
 const handleList = async (req, res) => {
-  const { supabase, user, error } = await authedClient(req);
-  if (error) return json(res, error === 'Unauthorized' ? 401 : 500, { error });
+  // Apply rate limiting
+  const rateLimitAllowed = await applyRateLimit(req, res, RATE_LIMIT_CONFIGS.LENIENT, 'time-entries:list');
+  if (!rateLimitAllowed) return;
 
-  const params = getQueryParams(req);
-  const from = params.from ? toIso(params.from) : null;
-  const to = params.to ? toIso(params.to) : null;
-  const limit = Math.max(1, Math.min(200, toNum(params.limit, 100)));
-  const offset = Math.max(0, toNum(params.offset, 0));
+  // Authenticate
+  const auth = await authenticate(req, res);
+  if (!auth) return;
 
-  // Count is included in the same request to avoid a second network round-trip.
-  let query = supabase.from('time_entries').select('*', { count: 'estimated' }).eq('user_id', user.id);
+  const { user, supabase } = auth;
+
+  const params = parseQueryParams(req);
+  
+  // Validate date filters
+  let from = null;
+  let to = null;
+  
+  if (params.from) {
+    const fromValidation = validateISODate(params.from);
+    if (!fromValidation.valid) {
+      return sendBadRequest(res, 'Invalid from date');
+    }
+    from = fromValidation.date;
+  }
+  
+  if (params.to) {
+    const toValidation = validateISODate(params.to);
+    if (!toValidation.valid) {
+      return sendBadRequest(res, 'Invalid to date');
+    }
+    to = toValidation.date;
+  }
+
+  // Build query
+  let query = supabase
+    .from('time_entries')
+    .select('*', { count: 'estimated' })
+    .eq('user_id', user.id);
 
   if (from) {
     query = query.gte('start_time', from);
@@ -104,19 +150,50 @@ const handleList = async (req, res) => {
     query = query.lte('start_time', to);
   }
 
-  const { data, error: listError, count } = await query.order('start_time', { ascending: false }).range(offset, offset + limit - 1);
-  if (listError) return json(res, 500, { error: listError.message });
-  return json(res, 200, { entries: data || [], total: count || 0, limit, offset });
+  query = query.order('start_time', { ascending: false });
+
+  // Execute paginated query
+  const result = await executePaginatedQuery(query, params, {
+    operation: 'list_time_entries',
+    userId: user.id,
+  });
+
+  if (!result.success) {
+    logger.error('Time entries listing failed', {
+      userId: user.id,
+      error: result.error,
+    });
+    return sendServerError(res, 'Failed to fetch time entries');
+  }
+
+  return sendSuccess(res, {
+    entries: result.data,
+    pagination: result.pagination,
+  });
 };
 
 const handleCreate = async (req, res) => {
-  const { supabase, user, error } = await authedClient(req);
-  if (error) return json(res, error === 'Unauthorized' ? 401 : 500, { error });
+  // Apply rate limiting
+  const rateLimitAllowed = await applyRateLimit(req, res, RATE_LIMIT_CONFIGS.MODERATE, 'time-entries:create');
+  if (!rateLimitAllowed) return;
+
+  // Authenticate
+  const auth = await authenticate(req, res);
+  if (!auth) return;
+
+  const { user, supabase } = auth;
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {};
   const payload = normalizePayload(body);
-  const validationError = validatePayload(payload);
-  if (validationError) return json(res, 400, { error: validationError });
+  const validation = validatePayload(payload);
+  
+  if (!validation.valid) {
+    logger.warn('Time entry creation validation failed', {
+      userId: user.id,
+      errors: validation.errors,
+    });
+    return sendBadRequest(res, validation.errors.join(', '));
+  }
 
   const insertPayload = {
     user_id: user.id,
@@ -132,28 +209,60 @@ const handleCreate = async (req, res) => {
     earnings: payload.earnings,
   };
 
-  const { data, error: insertError } = await supabase
-    .from('time_entries')
-    .insert(insertPayload)
-    .select('*')
-    .single();
+  const result = await executeQuery(
+    supabase.from('time_entries').insert(insertPayload).select('*').single(),
+    {
+      operation: 'create_time_entry',
+      userId: user.id,
+    }
+  );
 
-  if (insertError) return json(res, 500, { error: insertError.message });
-  return json(res, 201, { success: true, entry: data });
+  if (!result.success) {
+    logger.error('Time entry creation failed', {
+      userId: user.id,
+      error: result.error,
+    });
+    return sendServerError(res, 'Failed to create time entry');
+  }
+
+  logger.info('Time entry created', {
+    userId: user.id,
+    entryId: result.data.id,
+  });
+
+  return sendCreated(res, { entry: result.data });
 };
 
 const handleUpdate = async (req, res) => {
-  const { supabase, user, error } = await authedClient(req);
-  if (error) return json(res, error === 'Unauthorized' ? 401 : 500, { error });
+  // Apply rate limiting
+  const rateLimitAllowed = await applyRateLimit(req, res, RATE_LIMIT_CONFIGS.MODERATE, 'time-entries:update');
+  if (!rateLimitAllowed) return;
 
-  const params = getQueryParams(req);
-  const id = String(params.id || '').trim();
-  if (!id) return json(res, 400, { error: 'id is required' });
+  // Authenticate
+  const auth = await authenticate(req, res);
+  if (!auth) return;
+
+  const { user, supabase } = auth;
+
+  const params = parseQueryParams(req);
+  const id = sanitizeString(params.id || '', 100);
+  
+  if (!id) {
+    return sendBadRequest(res, 'id is required');
+  }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {};
   const payload = normalizePayload(body);
-  const validationError = validatePayload(payload);
-  if (validationError) return json(res, 400, { error: validationError });
+  const validation = validatePayload(payload);
+  
+  if (!validation.valid) {
+    logger.warn('Time entry update validation failed', {
+      userId: user.id,
+      entryId: id,
+      errors: validation.errors,
+    });
+    return sendBadRequest(res, validation.errors.join(', '));
+  }
 
   const updatePayload = {
     job_id: payload.jobId,
@@ -168,40 +277,99 @@ const handleUpdate = async (req, res) => {
     earnings: payload.earnings,
   };
 
-  const { data, error: updateError } = await supabase
-    .from('time_entries')
-    .update(updatePayload)
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .select('*')
-    .single();
+  const result = await executeQuery(
+    supabase
+      .from('time_entries')
+      .update(updatePayload)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select('*')
+      .single(),
+    {
+      operation: 'update_time_entry',
+      userId: user.id,
+      entryId: id,
+    }
+  );
 
-  if (updateError) return json(res, 500, { error: updateError.message });
-  return json(res, 200, { success: true, entry: data });
+  if (!result.success) {
+    logger.error('Time entry update failed', {
+      userId: user.id,
+      entryId: id,
+      error: result.error,
+    });
+    return sendServerError(res, 'Failed to update time entry');
+  }
+
+  if (!result.data) {
+    return sendBadRequest(res, 'Time entry not found or access denied');
+  }
+
+  logger.info('Time entry updated', {
+    userId: user.id,
+    entryId: id,
+  });
+
+  return sendSuccess(res, { entry: result.data });
 };
 
 const handleDelete = async (req, res) => {
-  const { supabase, user, error } = await authedClient(req);
-  if (error) return json(res, error === 'Unauthorized' ? 401 : 500, { error });
+  // Apply rate limiting
+  const rateLimitAllowed = await applyRateLimit(req, res, RATE_LIMIT_CONFIGS.MODERATE, 'time-entries:delete');
+  if (!rateLimitAllowed) return;
 
-  const params = getQueryParams(req);
-  const id = String(params.id || '').trim();
-  if (!id) return json(res, 400, { error: 'id is required' });
+  // Authenticate
+  const auth = await authenticate(req, res);
+  if (!auth) return;
 
-  const { error: deleteError } = await supabase
-    .from('time_entries')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', user.id);
+  const { user, supabase } = auth;
 
-  if (deleteError) return json(res, 500, { error: deleteError.message });
-  return json(res, 200, { success: true });
+  const params = parseQueryParams(req);
+  const id = sanitizeString(params.id || '', 100);
+  
+  if (!id) {
+    return sendBadRequest(res, 'id is required');
+  }
+
+  const result = await executeQuery(
+    supabase
+      .from('time_entries')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id),
+    {
+      operation: 'delete_time_entry',
+      userId: user.id,
+      entryId: id,
+    }
+  );
+
+  if (!result.success) {
+    logger.error('Time entry deletion failed', {
+      userId: user.id,
+      entryId: id,
+      error: result.error,
+    });
+    return sendServerError(res, 'Failed to delete time entry');
+  }
+
+  logger.info('Time entry deleted', {
+    userId: user.id,
+    entryId: id,
+  });
+
+  return sendSuccess(res, { message: 'Time entry deleted successfully' });
 };
 
 export default async function handler(req, res) {
-  if (req.method === 'GET') return handleList(req, res);
-  if (req.method === 'POST') return handleCreate(req, res);
-  if (req.method === 'PATCH') return handleUpdate(req, res);
-  if (req.method === 'DELETE') return handleDelete(req, res);
-  return json(res, 405, { error: 'Method not allowed' });
+  try {
+    if (req.method === 'GET') return await handleList(req, res);
+    if (req.method === 'POST') return await handleCreate(req, res);
+    if (req.method === 'PATCH') return await handleUpdate(req, res);
+    if (req.method === 'DELETE') return await handleDelete(req, res);
+    return sendMethodNotAllowed(res, ['GET', 'POST', 'PATCH', 'DELETE']);
+  } catch (error) {
+    logger.logError(error, req);
+    return sendServerError(res, 'Internal server error');
+  }
 }
