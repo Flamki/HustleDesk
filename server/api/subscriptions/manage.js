@@ -1,5 +1,8 @@
 import { getAuthedUser, getStripe, getSupabaseAdmin, json, parseBody, getRequestOrigin } from '../payments/_shared.js';
 
+const VALID_TIERS = new Set(['starter', 'pro', 'enterprise', 'free']);
+const VALID_INTERVALS = new Set(['monthly', 'yearly']);
+
 const PRICE_IDS = {
   starter_monthly: process.env.STRIPE_PRICE_ID_STARTER_MONTHLY || '',
   starter_yearly: process.env.STRIPE_PRICE_ID_STARTER_YEARLY || '',
@@ -10,6 +13,10 @@ const PRICE_IDS = {
 };
 
 const getPriceId = (tier, interval) => {
+  // Validate inputs before constructing key
+  if (!VALID_TIERS.has(tier)) return null;
+  if (!VALID_INTERVALS.has(interval)) return null;
+  
   const key = `${tier}_${interval}`;
   return PRICE_IDS[key] || null;
 };
