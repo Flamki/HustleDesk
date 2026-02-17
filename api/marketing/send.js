@@ -59,7 +59,7 @@ const renderTemplate = (input, vars) => {
 
 const buildUnsubscribeUrl = (token) => {
   const base = PUBLIC_APP_URL || 'http://localhost:5173';
-  return `${base}/#/unsubscribe?token=${encodeURIComponent(token)}`;
+  return `${base}/unsubscribe?token=${encodeURIComponent(token)}`;
 };
 
 const resendSend = async ({ from, to, subject, html, text, replyTo, headers }) => {

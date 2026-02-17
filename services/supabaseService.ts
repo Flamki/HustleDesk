@@ -395,7 +395,7 @@ export const signUp = async (email: string, password: string): Promise<AuthRespo
       supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${getAuthBaseUrl()}/#/login` },
+        options: { emailRedirectTo: `${getAuthBaseUrl()}/login` },
       }),
       AUTH_CALL_TIMEOUT_MS,
       'Signup request timed out. Please try again.'
@@ -480,7 +480,7 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${getAuthBaseUrl()}/#/app/dashboard` },
+    options: { redirectTo: `${getAuthBaseUrl()}/app/dashboard` },
   });
 
   return { user: null, error: error ?? null };
@@ -534,7 +534,7 @@ export const resendConfirmationEmail = async (email: string): Promise<{ error: E
   const { error } = await supabase.auth.resend({
     type: 'signup',
     email,
-    options: { emailRedirectTo: `${getAuthBaseUrl()}/#/login` },
+    options: { emailRedirectTo: `${getAuthBaseUrl()}/login` },
   });
 
   return { error: error ?? null };

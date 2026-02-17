@@ -1,16 +1,26 @@
-
 import React, { Suspense } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage } from './pages/LandingPage';
+import { Navigate, Outlet } from 'react-router-dom';
+import type { RouteRecord } from 'vite-react-ssg';
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
+import { ProfileProvider } from './context/ProfileContext';
+import { StartupEnvGuard } from './components/system/StartupEnvGuard';
+import { validateEnvironment } from './utils/envValidation';
+import { RouteLoader } from './components/system/RouteLoader';
+import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { SignupPage } from './pages/SignupPage';
 import { LoginPage } from './pages/LoginPage';
 import { CheckEmailPage } from './pages/CheckEmailPage';
-import { ProtectedRoute } from './components/layout/ProtectedRoute';
-import { AuthProvider } from './context/AuthContext';
-import { ProfileProvider } from './context/ProfileContext';
-import { RouteLoader } from './components/system/RouteLoader';
+import { Home } from './pages/public/Home';
+import { Features } from './pages/public/Features';
+import { Pricing } from './pages/public/Pricing';
+import { FreelancerCrm } from './pages/public/FreelancerCrm';
+import { ProposalGenerator } from './pages/public/ProposalGenerator';
+import { TimeTracking } from './pages/public/TimeTracking';
+import { ClientPortal } from './pages/public/ClientPortal';
+import { PortfolioBuilderPublic } from './pages/public/PortfolioBuilderPublic';
+import { LinkInBioPublic } from './pages/public/LinkInBioPublic';
 
-// Route-level code splitting keeps initial load fast and makes refresh feel instant.
 const DashboardPage = React.lazy(async () => {
   const m = await import('./pages/DashboardPage');
   return { default: m.DashboardPage };
@@ -88,55 +98,77 @@ const UnsubscribePage = React.lazy(async () => {
   return { default: m.UnsubscribePage };
 });
 
-function App() {
-  return (
-    <Router>
-      <AuthProvider>
-        <ProfileProvider>
-            <Suspense fallback={<RouteLoader label="Loading…" />}>
-              <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/auth/check-email" element={<CheckEmailPage />} />
-              <Route path="/unsubscribe" element={<UnsubscribePage />} />
-              <Route path="/share/time/:token" element={<SharedTimeReportPage />} />
-              <Route path="/share/time-entry/:token" element={<SharedTimeEntryPage />} />
-              <Route path="/w/:slug" element={<PublicSitePage />} />
-              
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute />}>
-                  <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
-                  <Route path="/app/dashboard" element={<DashboardPage />} />
-                  <Route path="/app/jobs" element={<JobsPage />} />
-                  <Route path="/app/jobs/new" element={<AddJobPage />} />
-                  <Route path="/app/time" element={<TimeTrackerPage />} />
-                  <Route path="/app/proposals/generate/:jobId" element={<ProposalGeneratorPage />} />
-                  <Route path="/app/profile" element={<ProfilePage />} />
-                  
-                  {/* Analytics & Insights */}
-                  <Route path="/app/analytics" element={<AnalyticsPage />} />
-                  <Route path="/app/clients" element={<ClientsPage />} />
-                  
-                  {/* System */}
-                  <Route path="/app/templates" element={<TemplatesPage />} />
-                  <Route path="/app/marketing" element={<EmailMarketingPage />} />
-                  <Route path="/app/marketing/website" element={<MarketingWebsitePage />} />
-                  <Route path="/app/marketing/website/analytics" element={<WebsiteAnalyticsPage />} />
-                  <Route path="/app/updates" element={<UpdatesPage />} />
-                  <Route path="/app/settings" element={<SettingsPage />} />
-                  <Route path="/app/help" element={<HelpPage />} />
-              </Route>
-
-              {/* Fallback route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-        </ProfileProvider>
-      </AuthProvider>
-    </Router>
-  );
+const env = validateEnvironment();
+if (env.warnings.length > 0) {
+  console.warn('Environment warnings:', env.warnings);
 }
 
-export default App;
+const RootLayout: React.FC = () => {
+  if (!env.ok) {
+    return <StartupEnvGuard errors={env.errors} warnings={env.warnings} />;
+  }
+
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <ProfileProvider>
+          <Suspense fallback={<RouteLoader label="Loading..." />}>
+            <Outlet />
+          </Suspense>
+        </ProfileProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+};
+
+export const routes: RouteRecord[] = [
+  {
+    path: '/',
+    element: <RootLayout />,
+    children: [
+      { index: true, element: <Home /> },
+      { path: 'features', element: <Features /> },
+      { path: 'pricing', element: <Pricing /> },
+      { path: 'freelancer-crm', element: <FreelancerCrm /> },
+      { path: 'proposal-generator', element: <ProposalGenerator /> },
+      { path: 'time-tracking', element: <TimeTracking /> },
+      { path: 'client-portal', element: <ClientPortal /> },
+      { path: 'portfolio-builder', element: <PortfolioBuilderPublic /> },
+      { path: 'link-in-bio', element: <LinkInBioPublic /> },
+
+      { path: 'signup', element: <SignupPage /> },
+      { path: 'login', element: <LoginPage /> },
+      { path: 'auth/check-email', element: <CheckEmailPage /> },
+      { path: 'unsubscribe', element: <UnsubscribePage /> },
+      { path: 'share/time/:token', element: <SharedTimeReportPage /> },
+      { path: 'share/time-entry/:token', element: <SharedTimeEntryPage /> },
+      { path: 'w/:slug', element: <PublicSitePage /> },
+
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: 'app', element: <Navigate to="/app/dashboard" replace /> },
+          { path: 'app/dashboard', element: <DashboardPage /> },
+          { path: 'app/jobs', element: <JobsPage /> },
+          { path: 'app/jobs/new', element: <AddJobPage /> },
+          { path: 'app/time', element: <TimeTrackerPage /> },
+          { path: 'app/proposals/generate/:jobId', element: <ProposalGeneratorPage /> },
+          { path: 'app/profile', element: <ProfilePage /> },
+          { path: 'app/analytics', element: <AnalyticsPage /> },
+          { path: 'app/clients', element: <ClientsPage /> },
+          { path: 'app/templates', element: <TemplatesPage /> },
+          { path: 'app/marketing', element: <EmailMarketingPage /> },
+          { path: 'app/marketing/website', element: <MarketingWebsitePage /> },
+          { path: 'app/marketing/website/analytics', element: <WebsiteAnalyticsPage /> },
+          { path: 'app/updates', element: <UpdatesPage /> },
+          { path: 'app/settings', element: <SettingsPage /> },
+          { path: 'app/help', element: <HelpPage /> },
+        ],
+      },
+
+      { path: '*', element: <Navigate to="/" replace /> },
+    ],
+  },
+];
+
+export default routes;

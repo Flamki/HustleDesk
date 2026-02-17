@@ -116,7 +116,7 @@ export const PortfolioBuilder: React.FC<Props> = ({ existingSite, onBack, onDepl
   const [step, setStep] = useState<PortfolioBuilderStep>('template');
   const [state, setState] = useState<PortfolioBuilderState>(() => loadInitial(existingSite));
   const [saving, setSaving] = useState(false);
-  const [publicUrl, setPublicUrl] = useState<string | null>(existingSite?.slug ? `${window.location.origin}/#/w/${existingSite.slug}` : null);
+  const [publicUrl, setPublicUrl] = useState<string | null>(existingSite?.slug ? `${window.location.origin}/w/${existingSite.slug}` : null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 

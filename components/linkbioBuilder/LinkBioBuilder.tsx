@@ -123,7 +123,7 @@ export const LinkBioBuilder: React.FC<Props> = ({ existingSite, onBack, onDeploy
   const [previewModal, setPreviewModal] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [saving, setSaving] = useState(false);
-  const [publicUrl, setPublicUrl] = useState<string | null>(existingSite?.slug ? `${window.location.origin}/#/w/${existingSite.slug}` : null);
+  const [publicUrl, setPublicUrl] = useState<string | null>(existingSite?.slug ? `${window.location.origin}/w/${existingSite.slug}` : null);
   const [error, setError] = useState<string | null>(null);
 
   const idx = steps.indexOf(step);

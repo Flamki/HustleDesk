@@ -109,13 +109,13 @@ export const MarketingWebsitePage: React.FC = () => {
 
     if (result.error) {
       return {
-        url: result.site?.slug ? `${window.location.origin}/#/w/${result.site.slug}` : null,
+        url: result.site?.slug ? `${window.location.origin}/w/${result.site.slug}` : null,
         error: result.error.message,
       };
     }
 
     await refreshSites();
-    return { url: result.site?.slug ? `${window.location.origin}/#/w/${result.site.slug}` : null, error: null };
+    return { url: result.site?.slug ? `${window.location.origin}/w/${result.site.slug}` : null, error: null };
   };
 
   const deployLinkBio = async (state: LinkBioBuilderState): Promise<{ url: string | null; error: string | null }> => {
@@ -143,12 +143,12 @@ export const MarketingWebsitePage: React.FC = () => {
 
     if (result.error) {
       return {
-        url: result.site?.slug ? `${window.location.origin}/#/w/${result.site.slug}` : null,
+        url: result.site?.slug ? `${window.location.origin}/w/${result.site.slug}` : null,
         error: result.error.message,
       };
     }
     await refreshSites();
-    return { url: result.site?.slug ? `${window.location.origin}/#/w/${result.site.slug}` : null, error: null };
+    return { url: result.site?.slug ? `${window.location.origin}/w/${result.site.slug}` : null, error: null };
   };
 
   if (loading && sites.length === 0) {

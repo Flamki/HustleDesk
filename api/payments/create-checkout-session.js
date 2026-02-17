@@ -44,8 +44,8 @@ export default async function handler(req, res) {
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: PRO_PRICE_ID, quantity: 1 }],
-      success_url: `${origin}/#/app/settings?tab=billing&checkout=success`,
-      cancel_url: `${origin}/#/app/settings?tab=billing&checkout=cancel`,
+      success_url: `${origin}/app/settings?tab=billing&checkout=success`,
+      cancel_url: `${origin}/app/settings?tab=billing&checkout=cancel`,
       metadata: { user_id: user.id },
       allow_promotion_codes: true,
     });
@@ -57,4 +57,3 @@ export default async function handler(req, res) {
     });
   }
 }
-

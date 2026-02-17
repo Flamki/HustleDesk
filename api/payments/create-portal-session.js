@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     const origin = getRequestOrigin(req);
     const session = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${origin}/#/app/settings?tab=billing`,
+      return_url: `${origin}/app/settings?tab=billing`,
     });
 
     return json(res, 200, { url: session.url });
@@ -39,4 +39,3 @@ export default async function handler(req, res) {
     });
   }
 }
-

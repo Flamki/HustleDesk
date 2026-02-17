@@ -447,7 +447,7 @@ export const TimeTrackerPage: React.FC = () => {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
 
-  const shareUrlFor = (token: string) => `${window.location.origin}/#/share/time-entry/${token}`;
+  const shareUrlFor = (token: string) => `${window.location.origin}/share/time-entry/${token}`;
 
   const expiryIsoForDays = (days: number) => {
     if (!days || days <= 0) return null;

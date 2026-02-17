@@ -15,8 +15,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const hasOAuthParamsInHash = (): boolean => {
   if (typeof window === 'undefined') return false;
   const h = (window.location.hash || '').toLowerCase();
-  // With HashRouter the OAuth callback often looks like:
-  // http://localhost:5173/#/app/dashboard#access_token=...
+  // OAuth callbacks can append tokens in the URL hash.
+  // Example: http://localhost:5173/app/dashboard#access_token=...
   return (
     h.includes('access_token=') ||
     h.includes('refresh_token=') ||
@@ -29,7 +29,7 @@ const hasOAuthParamsInHash = (): boolean => {
 const stripOAuthParamsFromHash = (): void => {
   if (typeof window === 'undefined') return;
   const hash = window.location.hash || '';
-  // Keep the route part `#/...` and drop the trailing OAuth fragment `#access_token=...`
+  // Drop trailing OAuth fragments while preserving the route path.
   const secondHashIndex = hash.indexOf('#', 1);
   if (secondHashIndex === -1) return;
   const tail = hash.slice(secondHashIndex + 1).toLowerCase();
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         if (needsUrlHydration) {
           await authService.hydrateSessionFromUrl();
-          // Prevent repeated "OAuth callback" detection on refresh in HashRouter apps.
+          // Prevent repeated OAuth callback detection on refresh.
           stripOAuthParamsFromHash();
         }
 
