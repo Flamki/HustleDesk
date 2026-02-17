@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-
-const json = (res, status, body) => {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(body));
-};
+import {
+  sendSuccess,
+  sendServerError,
+  sendUnauthorized,
+  sendMethodNotAllowed,
+  logger,
+  getEnvironmentInfo,
+} from '../_shared/index.js';
 
 const getHeader = (req, name) => {
   const value = req.headers?.[name];
@@ -12,85 +14,118 @@ const getHeader = (req, name) => {
   return value || '';
 };
 
+/**
+ * Health check endpoint with comprehensive environment and connectivity validation
+ * Protected by optional HEALTHCHECK_TOKEN for security
+ */
 export default async function handler(req, res) {
-  if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' });
+  if (req.method !== 'GET') {
+    return sendMethodNotAllowed(res, ['GET']);
+  }
 
+  // Optional token-based authentication for health checks
   const expectedToken = process.env.HEALTHCHECK_TOKEN || '';
   if (expectedToken) {
     const providedToken =
       getHeader(req, 'x-health-token') || getHeader(req, 'authorization').replace(/^Bearer\s+/i, '');
     if (providedToken !== expectedToken) {
-      return json(res, 401, { error: 'Unauthorized' });
+      logger.warn('Health check unauthorized attempt', {
+        hasToken: !!providedToken,
+      });
+      return sendUnauthorized(res, 'Invalid health check token');
     }
   }
 
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-  const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-  const missing = [];
-  if (!url) missing.push('SUPABASE_URL');
-  if (!anonKey) missing.push('SUPABASE_ANON_KEY');
-  if (!serviceRoleKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
-
-  if (missing.length > 0) {
-    return json(res, 500, {
-      ok: false,
-      missing,
-      message: 'Missing required Supabase environment variables.',
+  // Validate environment
+  const envInfo = getEnvironmentInfo();
+  if (!envInfo.valid) {
+    logger.error('Health check failed - environment invalid', {
+      errors: envInfo.errors,
+    });
+    return sendServerError(res, 'Environment configuration invalid', {
+      errors: envInfo.errors,
+      features: envInfo.features,
     });
   }
 
-  const serviceClient = createClient(url, serviceRoleKey);
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+  const serviceClient = createClient(url, serviceRoleKey, {
+    auth: { persistSession: false },
+  });
 
   const checks = {
+    environment: true,
     users_table_access: false,
     auth_admin_access: false,
   };
 
+  // Check database access
   try {
     const { error } = await serviceClient
       .from('users')
       .select('id', { head: true, count: 'exact' })
       .limit(1);
+    
     checks.users_table_access = !error;
+    
     if (error) {
-      return json(res, 500, {
-        ok: false,
+      logger.error('Health check - users table access failed', {
+        error: error.message,
+        code: error.code,
+      });
+      return sendServerError(res, 'Database connectivity failed', {
         checks,
-        message: `users table check failed: ${error.message}`,
+        detail: error.message,
       });
     }
   } catch (err) {
-    return json(res, 500, {
-      ok: false,
+    logger.error('Health check - users table exception', {
+      error: err instanceof Error ? err.message : 'unknown error',
+    });
+    return sendServerError(res, 'Database connectivity exception', {
       checks,
-      message: `users table check failed: ${err instanceof Error ? err.message : 'unknown error'}`,
+      detail: err instanceof Error ? err.message : 'unknown error',
     });
   }
 
+  // Check auth admin access
   try {
-    const { error } = await serviceClient.auth.admin.listUsers({ page: 1, perPage: 1 });
+    const { error } = await serviceClient.auth.admin.listUsers({ 
+      page: 1, 
+      perPage: 1,
+    });
+    
     checks.auth_admin_access = !error;
+    
     if (error) {
-      return json(res, 500, {
-        ok: false,
+      logger.error('Health check - auth admin access failed', {
+        error: error.message,
+      });
+      return sendServerError(res, 'Auth admin connectivity failed', {
         checks,
-        message: `auth admin check failed: ${error.message}`,
+        detail: error.message,
       });
     }
   } catch (err) {
-    return json(res, 500, {
-      ok: false,
+    logger.error('Health check - auth admin exception', {
+      error: err instanceof Error ? err.message : 'unknown error',
+    });
+    return sendServerError(res, 'Auth admin connectivity exception', {
       checks,
-      message: `auth admin check failed: ${err instanceof Error ? err.message : 'unknown error'}`,
+      detail: err instanceof Error ? err.message : 'unknown error',
     });
   }
 
-  return json(res, 200, {
+  logger.info('Health check passed', { checks });
+
+  return sendSuccess(res, {
     ok: true,
+    status: 'healthy',
     checks,
-    message: 'Supabase environment and admin access are configured correctly.',
+    features: envInfo.features,
     timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
   });
 }

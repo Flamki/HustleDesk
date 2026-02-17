@@ -1,20 +1,27 @@
-import { createClient } from '@supabase/supabase-js';
+import {
+  authenticate,
+  sendSuccess,
+  sendBadRequest,
+  sendMethodNotAllowed,
+  sendServerError,
+  parseQueryParams,
+  validateEnum,
+  logger,
+  executeQuery,
+  RATE_LIMIT_CONFIGS,
+  applyRateLimit,
+} from '../_shared/index.js';
 
-const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
-const json = (res, status, body) => {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(body));
-};
+const VALID_RANGES = ['7d', '30d', '90d'];
 
 const getRangeStartIso = (range) => {
   const now = new Date();
-  const r = range === '30d' || range === '90d' ? range : '7d';
-  if (r === '30d') now.setUTCDate(now.getUTCDate() - 30);
-  else if (r === '90d') now.setUTCDate(now.getUTCDate() - 90);
+  const validRange = VALID_RANGES.includes(range) ? range : '7d';
+  
+  if (validRange === '30d') now.setUTCDate(now.getUTCDate() - 30);
+  else if (validRange === '90d') now.setUTCDate(now.getUTCDate() - 90);
   else now.setUTCDate(now.getUTCDate() - 7);
+  
   now.setUTCHours(0, 0, 0, 0);
   return now.toISOString();
 };
@@ -58,86 +65,146 @@ const buildActivity = (jobs) => {
   return activity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
 };
 
+/**
+ * Dashboard stats endpoint - aggregates key metrics for the user
+ */
 export default async function handler(req, res) {
-  if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' });
-  if (!url || !anonKey) return json(res, 500, { error: 'Supabase environment not configured' });
-
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) return json(res, 401, { error: 'Unauthorized' });
-
-  const supabase = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) return json(res, 401, { error: 'Unauthorized' });
-
-  let range = '7d';
-  if (req.query?.range) range = String(req.query.range);
-  else if (req.url?.includes('?')) {
-    try {
-      const parsed = new URL(req.url, 'http://localhost');
-      range = parsed.searchParams.get('range') || '7d';
-    } catch {
-      range = '7d';
+  try {
+    if (req.method !== 'GET') {
+      return sendMethodNotAllowed(res, ['GET']);
     }
-  }
 
-  const weekStart = getRangeStartIso(range);
-  const monthStart = startOfMonthIso();
-  const today = todayDate();
+    // Apply rate limiting (lenient for dashboard)
+    const rateLimitAllowed = await applyRateLimit(req, res, RATE_LIMIT_CONFIGS.LENIENT, 'dashboard:stats');
+    if (!rateLimitAllowed) return;
 
-  const [{ count: applicationsThisWeek }, { count: awaitingReply }, { count: activeConversations }, wonData, followupsDue, jobsForActivity] =
-    await Promise.all([
-      supabase
-        .from('jobs')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .neq('status', 'saved')
-        .gte('created_at', weekStart),
-      supabase
-        .from('jobs')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'applied'),
-      supabase
-        .from('jobs')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'replied'),
-      supabase
-        .from('jobs')
-        .select('id,proposed_price', { count: 'exact' })
-        .eq('user_id', user.id)
-        .eq('status', 'won')
-        .gte('created_at', monthStart),
-      supabase
-        .from('jobs')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('followup_date', today)
-        .order('created_at', { ascending: false }),
-      supabase.from('jobs').select('title,platform,status,created_at,applied_at,closed_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
+    // Authenticate
+    const auth = await authenticate(req, res);
+    if (!auth) return;
+
+    const { user, supabase } = auth;
+
+    // Parse and validate range parameter
+    const params = parseQueryParams(req);
+    const range = String(params.range || '7d');
+    
+    const rangeValidation = validateEnum(range, VALID_RANGES, 'Range');
+    if (!rangeValidation.valid) {
+      return sendBadRequest(res, rangeValidation.error);
+    }
+
+    const weekStart = getRangeStartIso(range);
+    const monthStart = startOfMonthIso();
+    const today = todayDate();
+
+    // Execute all queries in parallel for performance
+    const [
+      applicationsResult,
+      awaitingReplyResult,
+      activeConversationsResult,
+      wonDataResult,
+      followupsDueResult,
+      activityJobsResult,
+    ] = await Promise.all([
+      executeQuery(
+        supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .neq('status', 'saved')
+          .gte('created_at', weekStart),
+        { operation: 'dashboard_applications', userId: user.id }
+      ),
+      executeQuery(
+        supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'applied'),
+        { operation: 'dashboard_awaiting_reply', userId: user.id }
+      ),
+      executeQuery(
+        supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'replied'),
+        { operation: 'dashboard_active_conversations', userId: user.id }
+      ),
+      executeQuery(
+        supabase
+          .from('jobs')
+          .select('id,proposed_price', { count: 'exact' })
+          .eq('user_id', user.id)
+          .eq('status', 'won')
+          .gte('created_at', monthStart),
+        { operation: 'dashboard_won_jobs', userId: user.id }
+      ),
+      executeQuery(
+        supabase
+          .from('jobs')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('followup_date', today)
+          .order('created_at', { ascending: false }),
+        { operation: 'dashboard_followups', userId: user.id }
+      ),
+      executeQuery(
+        supabase
+          .from('jobs')
+          .select('title,platform,status,created_at,applied_at,closed_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
+        { operation: 'dashboard_activity', userId: user.id }
+      ),
     ]);
 
-  if (wonData.error || followupsDue.error || jobsForActivity.error) {
-    return json(res, 500, { error: wonData.error?.message || followupsDue.error?.message || jobsForActivity.error?.message });
+    // Check for errors in any query
+    if (
+      !applicationsResult.success ||
+      !awaitingReplyResult.success ||
+      !activeConversationsResult.success ||
+      !wonDataResult.success ||
+      !followupsDueResult.success ||
+      !activityJobsResult.success
+    ) {
+      logger.error('Dashboard query failed', {
+        userId: user.id,
+        applicationsError: applicationsResult.error,
+        awaitingReplyError: awaitingReplyResult.error,
+        activeConversationsError: activeConversationsResult.error,
+        wonDataError: wonDataResult.error,
+        followupsError: followupsDueResult.error,
+        activityError: activityJobsResult.error,
+      });
+      return sendServerError(res, 'Failed to fetch dashboard data');
+    }
+
+    const totalRevenue = (wonDataResult.data || []).reduce(
+      (sum, row) => sum + Number(row.proposed_price || 0),
+      0
+    );
+    
+    const recentActivity = buildActivity(activityJobsResult.data || []);
+
+    logger.info('Dashboard stats fetched', {
+      userId: user.id,
+      range,
+    });
+
+    return sendSuccess(res, {
+      applications_this_week: applicationsResult.count || 0,
+      awaiting_reply: awaitingReplyResult.count || 0,
+      active_conversations: activeConversationsResult.count || 0,
+      projects_won: wonDataResult.count || 0,
+      total_revenue: totalRevenue,
+      followups_due: followupsDueResult.data || [],
+      recent_activity: recentActivity,
+      range,
+    });
+  } catch (error) {
+    logger.logError(error, req);
+    return sendServerError(res, 'Internal server error');
   }
-
-  const totalRevenue = (wonData.data || []).reduce((sum, row) => sum + Number(row.proposed_price || 0), 0);
-  const recentActivity = buildActivity(jobsForActivity.data || []);
-
-  return json(res, 200, {
-    applications_this_week: applicationsThisWeek || 0,
-    awaiting_reply: awaitingReply || 0,
-    active_conversations: activeConversations || 0,
-    projects_won: wonData.count || 0,
-    total_revenue: totalRevenue,
-    followups_due: followupsDue.data || [],
-    recent_activity: recentActivity,
-  });
 }
