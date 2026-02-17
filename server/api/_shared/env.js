@@ -109,7 +109,7 @@ const validateEnvVar = (name, value, config) => {
       break;
     
     case 'number':
-      if (isNaN(Number(value))) {
+      if (!Number.isFinite(Number(value))) {
         return { valid: false, error: `${name} must be a number` };
       }
       break;

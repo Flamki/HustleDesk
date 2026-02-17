@@ -81,16 +81,20 @@ export const buildPaginatedQuery = (baseQuery, params) => {
 
 /**
  * Execute paginated query
+ * Note: baseQuery should not have .select() already called on it
  */
 export const executePaginatedQuery = async (baseQuery, params, context = {}) => {
-  const { query, pagination } = buildPaginatedQuery(baseQuery, params);
+  const { limit, offset } = validatePagination(params, {
+    limit: DEFAULT_PAGE_LIMIT,
+    maxLimit: MAX_PAGE_LIMIT,
+  });
   
-  // Include count for pagination
-  const queryWithCount = query.select('*', { count: 'estimated' });
+  // Apply range and count to the query
+  const query = baseQuery.range(offset, offset + limit - 1);
   
-  const result = await executeQuery(queryWithCount, {
+  const result = await executeQuery(query, {
     ...context,
-    pagination,
+    pagination: { limit, offset },
   });
   
   if (!result.success) {
@@ -101,9 +105,10 @@ export const executePaginatedQuery = async (baseQuery, params, context = {}) => 
     success: true,
     data: result.data || [],
     pagination: {
-      ...pagination,
+      limit,
+      offset,
       total: result.count || 0,
-      hasMore: (result.count || 0) > pagination.offset + pagination.limit,
+      hasMore: (result.count || 0) > offset + limit,
     },
     error: null,
   };

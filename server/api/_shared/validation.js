@@ -276,10 +276,11 @@ export const validateIdentifier = (identifier, maxLength = 64) => {
 
 /**
  * Sanitize search query to prevent injection
+ * Removes parentheses, semicolons, commas, and trims whitespace
  */
 export const sanitizeSearchQuery = (query, maxLength = 200) => {
   const sanitized = sanitizeString(query, maxLength)
-    // Remove special SQL characters
+    // Remove characters that could be used in SQL injection attempts
     .replace(/[();,]/g, ' ')
     .trim();
   

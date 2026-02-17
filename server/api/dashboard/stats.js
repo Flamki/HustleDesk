@@ -161,9 +161,19 @@ export default async function handler(req, res) {
     ]);
 
     // Check for errors in any query
-    if (!wonDataResult.success || !followupsDueResult.success || !activityJobsResult.success) {
+    if (
+      !applicationsResult.success ||
+      !awaitingReplyResult.success ||
+      !activeConversationsResult.success ||
+      !wonDataResult.success ||
+      !followupsDueResult.success ||
+      !activityJobsResult.success
+    ) {
       logger.error('Dashboard query failed', {
         userId: user.id,
+        applicationsError: applicationsResult.error,
+        awaitingReplyError: awaitingReplyResult.error,
+        activeConversationsError: activeConversationsResult.error,
         wonDataError: wonDataResult.error,
         followupsError: followupsDueResult.error,
         activityError: activityJobsResult.error,

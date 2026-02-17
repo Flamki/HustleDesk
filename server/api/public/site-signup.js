@@ -27,6 +27,10 @@ const isValidEmail = (email) => {
  * Public site signup endpoint - handles email capture from marketing sites
  * CRITICAL: This is a public endpoint with extra security measures
  */
+
+// Constants
+const MAX_CONTACT_TAGS = 50; // Maximum number of tags per contact
+
 export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') {
@@ -199,7 +203,7 @@ export default async function handler(req, res) {
     // Upsert contact with site tag
     const siteTag = `site:${slug}`;
     const existingTags = Array.isArray(existingResult.data?.tags) ? existingResult.data.tags : [];
-    const tags = Array.from(new Set([...existingTags, siteTag])).slice(0, 50);
+    const tags = Array.from(new Set([...existingTags, siteTag])).slice(0, MAX_CONTACT_TAGS);
 
     const firstName = name ? name.split(' ')[0].slice(0, 100) : null;
     const lastName = name ? name.split(' ').slice(1).join(' ').slice(0, 100) : null;

@@ -93,8 +93,10 @@ export const sendError = (res, statusCode, errorMessage, details = {}) => {
     },
   };
   
-  // Remove stack traces in production
-  if (process.env.NODE_ENV !== 'production' && details.stack) {
+  // Remove stack traces in production and staging
+  if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
+    // Never expose stack traces in production or staging
+  } else if (details.stack) {
     errorResponse.error.stack = details.stack;
   }
   

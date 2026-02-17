@@ -283,9 +283,11 @@ export default async function handler(req, res) {
       
       // Return 200 to acknowledge receipt even if processing failed
       // This prevents Stripe from retrying immediately
+      // Note: We return 'received: true' but indicate processing failed separately
       return sendSuccess(res, { 
         received: true,
-        error: 'Processing failed, will retry',
+        processing_status: 'failed',
+        will_retry: true,
       });
     }
   } catch (err) {
