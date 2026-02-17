@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -47,22 +47,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [websiteOpen, setWebsiteOpen] = useState(false);
   const [websiteMenuPos, setWebsiteMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const websiteButtonRef = useRef<HTMLButtonElement | null>(null);
+  const websiteMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!websiteOpen) return;
 
     const closeMenu = () => setWebsiteOpen(false);
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (websiteMenuRef.current?.contains(target)) return;
+      if (websiteButtonRef.current?.contains(target)) return;
+      closeMenu();
+    };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setWebsiteOpen(false);
     };
 
-    document.addEventListener('mousedown', closeMenu);
+    document.addEventListener('mousedown', onMouseDown);
     window.addEventListener('resize', closeMenu);
     window.addEventListener('scroll', closeMenu, true);
     document.addEventListener('keydown', onKeyDown);
 
     return () => {
-      document.removeEventListener('mousedown', closeMenu);
+      document.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('resize', closeMenu);
       window.removeEventListener('scroll', closeMenu, true);
       document.removeEventListener('keydown', onKeyDown);
@@ -191,6 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
       return (
         <div className="relative">
           <button
+            ref={websiteButtonRef}
             type="button"
             onClick={toggleWebsiteMenu}
             className={`w-full relative flex items-center justify-center rounded-xl text-sm font-medium transition-all duration-200 group p-2.5 ${
@@ -216,6 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
     return (
       <div className="space-y-1 relative">
         <button
+          ref={websiteButtonRef}
           type="button"
           onClick={toggleWebsiteMenu}
           className={`w-full relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 group px-3 py-2.5 ${
@@ -250,6 +261,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
 
     return (
       <div
+        ref={websiteMenuRef}
         className="fixed w-52 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900 p-1 z-[180] transition-all duration-150"
         style={{ top: websiteMenuPos.top, left: websiteMenuPos.left }}
         role="menu"
