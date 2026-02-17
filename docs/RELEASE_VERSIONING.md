@@ -1,0 +1,49 @@
+# Release and Versioning Guide
+
+## Versioning Model
+This project uses Semantic Versioning:
+- `MAJOR`: breaking changes
+- `MINOR`: backward-compatible features
+- `PATCH`: backward-compatible fixes
+
+Examples:
+- `0.1.0` initial feature release
+- `0.1.1` bugfix release
+- `0.2.0` new features
+
+## Release Workflow
+
+1. Ensure clean baseline
+```bash
+npm run ci
+```
+
+2. Update `CHANGELOG.md`
+- Move relevant items from `Unreleased` into new version section.
+- Add release date.
+
+3. Bump version in `package.json`
+```bash
+npm version patch   # or minor / major
+```
+
+4. Push commit and tag
+```bash
+git push origin main --follow-tags
+```
+
+5. Create GitHub Release
+- Use version tag (example: `v0.1.1`)
+- Paste matching changelog notes
+
+## Branch and PR Conventions
+- `main` remains deployable.
+- Open PRs for feature/fix branches.
+- CI must pass before merge.
+
+## Suggested Commit Prefixes
+- `feat:` new features
+- `fix:` bug fixes
+- `perf:` performance improvements
+- `docs:` documentation changes
+- `chore:` maintenance, tooling

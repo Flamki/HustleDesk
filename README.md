@@ -79,7 +79,9 @@ See `.env.example` for the complete template.
 - `npm run dev` start web + local API runner
 - `npm run dev:web` start Vite only
 - `npm run dev:api` start API runner only
+- `npm run typecheck` TypeScript validation
 - `npm run build` production build
+- `npm run ci` typecheck + build
 - `npm run preview` serve built app locally
 - `npm run loadtest:jobs`
 - `npm run loadtest:dashboard`
@@ -94,8 +96,11 @@ See `.env.example` for the complete template.
 - Architecture: `docs/ARCHITECTURE.md`
 - API Reference: `docs/API_REFERENCE.md`
 - Deployment: `docs/DEPLOYMENT.md`
+- Vercel linking/env import: `docs/VERCEL_SETUP.md`
 - Operations Runbook: `docs/OPERATIONS_RUNBOOK.md`
 - Security: `docs/SECURITY.md`
+- Release/versioning: `docs/RELEASE_VERSIONING.md`
+- Changelog: `CHANGELOG.md`
 - Load testing: `docs/LOAD_TESTING.md`
 - Production checklist: `DEPLOYMENT_CHECKLIST.md`
 
