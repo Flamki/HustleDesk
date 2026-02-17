@@ -45,6 +45,23 @@ export default defineConfig(({ mode }) => {
         target: 'es2020',
         sourcemap: false,
         cssCodeSplit: true,
+        minify: 'esbuild',
+        // Chunk splitting strategy for better caching
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              // Vendor chunk for large dependencies
+              vendor: ['react', 'react-dom', 'react-router-dom'],
+              // Supabase client
+              supabase: ['@supabase/supabase-js'],
+              // Icons
+              icons: ['lucide-react', 'react-icons'],
+            },
+          },
+        },
+        // Asset optimization
+        assetsInlineLimit: 4096, // 4kb - inline small assets
+        chunkSizeWarningLimit: 1000, // Warn for chunks over 1MB
       },
       resolve: {
         alias: {
