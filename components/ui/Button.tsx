@@ -31,6 +31,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       inline-flex items-center justify-center gap-2 rounded-[10px] font-semibold 
       transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2
       disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
+      active:scale-95 transform
       ${fullWidth ? 'w-full' : ''}
     `;
 
