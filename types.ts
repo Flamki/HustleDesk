@@ -12,7 +12,7 @@ export interface PasswordRequirement {
   met: boolean;
 }
 
-export type SubscriptionPlan = 'free' | 'starter' | 'pro' | 'enterprise';
+export type SubscriptionPlan = 'free' | 'pro';
 
 export interface User {
   id: string;

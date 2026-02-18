@@ -32,25 +32,11 @@ Verify tables created:
 
 1. **Products** → **Add Product**
 
-2. **Create "Starter" Product:**
-   - Name: HustleDesk Starter
-   - Description: For growing freelancers
-   - **Add Monthly Price**: $29.00/month, Recurring
-   - **Add Yearly Price**: $290.00/year, Recurring
-   - Copy both Price IDs
-
-3. **Create "Pro" Product:**
+2. **Create "Pro" Product:**
    - Name: HustleDesk Pro
-   - Description: For established freelancers
-   - **Add Monthly Price**: $79.00/month, Recurring
-   - **Add Yearly Price**: $790.00/year, Recurring
-   - Copy both Price IDs
-
-4. **Create "Enterprise" Product:**
-   - Name: HustleDesk Enterprise
-   - Description: For teams and agencies
-   - **Add Monthly Price**: $299.00/month, Recurring
-   - **Add Yearly Price**: $2990.00/year, Recurring
+   - Description: Complete freelancer toolkit
+   - **Add Monthly Price**: $9.00/month, Recurring
+   - **Add Yearly Price**: $90.00/year, Recurring
    - Copy both Price IDs
 
 ## Step 3: Configure Webhooks
@@ -83,24 +69,16 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
 # Price IDs
-STRIPE_PRICE_ID_STARTER_MONTHLY=price_...
-STRIPE_PRICE_ID_STARTER_YEARLY=price_...
 STRIPE_PRICE_ID_PRO_MONTHLY=price_...
 STRIPE_PRICE_ID_PRO_YEARLY=price_...
-STRIPE_PRICE_ID_ENTERPRISE_MONTHLY=price_...
-STRIPE_PRICE_ID_ENTERPRISE_YEARLY=price_...
 ```
 
 ### Frontend (.env.local):
 
 ```bash
 # Optional - for displaying pricing on frontend
-VITE_STRIPE_PRICE_ID_STARTER_MONTHLY=price_...
-VITE_STRIPE_PRICE_ID_STARTER_YEARLY=price_...
 VITE_STRIPE_PRICE_ID_PRO_MONTHLY=price_...
 VITE_STRIPE_PRICE_ID_PRO_YEARLY=price_...
-VITE_STRIPE_PRICE_ID_ENTERPRISE_MONTHLY=price_...
-VITE_STRIPE_PRICE_ID_ENTERPRISE_YEARLY=price_...
 ```
 
 ### Deployment (Vercel):

@@ -7,12 +7,8 @@ const isActiveStatus = (status) => ['active', 'trialing'].includes(status);
 const isPastDueStatus = (status) => ['past_due', 'unpaid'].includes(status);
 
 const TIER_PRICE_MAP = {
-  [process.env.STRIPE_PRICE_ID_STARTER_MONTHLY]: 'starter',
-  [process.env.STRIPE_PRICE_ID_STARTER_YEARLY]: 'starter',
   [process.env.STRIPE_PRICE_ID_PRO_MONTHLY]: 'pro',
   [process.env.STRIPE_PRICE_ID_PRO_YEARLY]: 'pro',
-  [process.env.STRIPE_PRICE_ID_ENTERPRISE_MONTHLY]: 'enterprise',
-  [process.env.STRIPE_PRICE_ID_ENTERPRISE_YEARLY]: 'enterprise',
 };
 
 const getTierFromSubscription = (subscription) => {
@@ -27,9 +23,7 @@ const getIntervalFromSubscription = (subscription) => {
 
 const AI_CREDITS_BY_TIER = {
   free: 5,
-  starter: 100,
   pro: 1000,
-  enterprise: 10000,
 };
 
 const readRequestStream = async (req) => {

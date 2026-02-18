@@ -4,9 +4,9 @@ Complete guide to HustleDesk's pricing, subscription, and billing implementation
 
 ## Overview
 
-HustleDesk uses a tiered subscription model powered by Stripe. The system includes:
+HustleDesk uses a simple tiered subscription model powered by Stripe. The system includes:
 
-- **4 Pricing Tiers**: Free, Starter, Pro, Enterprise
+- **2 Pricing Tiers**: Free and Pro ($9/month)
 - **Feature Gating**: Automatic enforcement of plan limits
 - **Usage Tracking**: Real-time monitoring of resource usage
 - **Upgrade/Downgrade**: Seamless plan transitions with proration
@@ -29,59 +29,24 @@ HustleDesk uses a tiered subscription model powered by Stripe. The system includ
   - Time tracking
   - Basic CRM
 
-### Starter Plan
-- **Price**: $29/month or $290/year (save $58)
-- **Limits**:
-  - 50 jobs
-  - 25 clients
-  - 500 time entries/month
-  - 20 proposals/month
-  - 100 AI credits/month
-  - 5 email campaigns/month
-  - 500 email contacts
-  - 1 marketing website
-  - 1 portfolio site
-  - 1 link-in-bio site
+### Pro Plan
+- **Price**: $9/month or $90/year (save $18)
+- **Limits**: Unlimited everything
 - **Features**:
   - All Free features
+  - Unlimited jobs, clients, time entries, proposals
+  - 1,000 AI credits/month
+  - Unlimited email campaigns and contacts
+  - Unlimited marketing websites, portfolios, link-in-bio sites
   - AI proposal generation
   - Client portal
   - Invoicing
   - Analytics dashboard
-
-### Pro Plan (Most Popular)
-- **Price**: $79/month or $790/year (save $158)
-- **Limits**:
-  - Unlimited jobs
-  - Unlimited clients
-  - Unlimited time entries
-  - Unlimited proposals
-  - 1,000 AI credits/month
-  - 50 email campaigns/month
-  - 5,000 email contacts
-  - 3 marketing websites
-  - 3 portfolio sites
-  - 3 link-in-bio sites
-- **Features**:
-  - All Starter features
   - Advanced reports
   - API access
   - Webhooks
   - Custom domains
   - Priority support
-  - 5 team members
-  - 20 client users
-
-### Enterprise Plan
-- **Price**: $299/month or $2,990/year (save $598)
-- **Limits**: Unlimited everything
-- **Features**:
-  - All Pro features
-  - SSO login
-  - Whitelabel
-  - Unlimited team members
-  - Unlimited client users
-  - 10,000 AI credits/month
 
 ## Implementation
 
@@ -258,28 +223,20 @@ if (jobsLimit.isReached) {
 # Backend
 STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_ID_STARTER_MONTHLY=price_...
-STRIPE_PRICE_ID_STARTER_YEARLY=price_...
 STRIPE_PRICE_ID_PRO_MONTHLY=price_...
 STRIPE_PRICE_ID_PRO_YEARLY=price_...
-STRIPE_PRICE_ID_ENTERPRISE_MONTHLY=price_...
-STRIPE_PRICE_ID_ENTERPRISE_YEARLY=price_...
 
 # Frontend (optional)
-VITE_STRIPE_PRICE_ID_STARTER_MONTHLY=price_...
-VITE_STRIPE_PRICE_ID_STARTER_YEARLY=price_...
 VITE_STRIPE_PRICE_ID_PRO_MONTHLY=price_...
 VITE_STRIPE_PRICE_ID_PRO_YEARLY=price_...
-VITE_STRIPE_PRICE_ID_ENTERPRISE_MONTHLY=price_...
-VITE_STRIPE_PRICE_ID_ENTERPRISE_YEARLY=price_...
 ```
 
 #### Setting Up Stripe Products
 
 1. **Create Products in Stripe Dashboard**
    - Go to Products → Add Product
-   - Create: Starter, Pro, Enterprise
-   - For each product, create two prices: monthly and yearly
+   - Create: Pro plan
+   - For the product, create two prices: monthly ($9) and yearly ($90)
 
 2. **Configure Webhook**
    - Go to Developers → Webhooks
