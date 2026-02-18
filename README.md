@@ -99,6 +99,14 @@ See `.env.example` for the complete template.
 - Production build: `npm run build`
 
 ## Documentation
+
+### Strategic Planning
+- **📋 Planning Index:** `docs/PLANNING_INDEX.md` (start here for strategic overview)
+- **🎯 Executive Summary:** `docs/EXECUTIVE_SUMMARY.md` (high-level strategy & metrics)
+- **📊 Strategic Analysis:** `docs/STRATEGIC_ANALYSIS.md` (comprehensive planning document)
+- **🗺️ Roadmap Tracker:** `docs/ROADMAP_TRACKER.md` (task progress & sprint planning)
+
+### Technical Documentation
 - Architecture: `docs/ARCHITECTURE.md`
 - API Reference: `docs/API_REFERENCE.md`
 - Deployment: `docs/DEPLOYMENT.md`
