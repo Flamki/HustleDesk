@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { errorTracker } from '../../utils/errorTracking';
 
 type Props = {
   children: React.ReactNode;
@@ -7,6 +8,7 @@ type Props = {
 type State = {
   hasError: boolean;
   message: string;
+  errorId?: string;
 };
 
 export class AppErrorBoundary extends Component<Props, State> {
@@ -18,9 +20,25 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: unknown) {
-    // Keep log minimal, but don't hide crashes.
-    // eslint-disable-next-line no-console
-    console.error('App route crashed:', error);
+    // Generate error ID for tracking
+    const errorId = `ui-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    
+    // Track error with error tracking service
+    if (error instanceof Error) {
+      errorTracker.captureException(error, {
+        severity: 'fatal',
+        tags: { 
+          component: 'AppErrorBoundary',
+          type: 'react_component_crash',
+        },
+        extra: {
+          errorId,
+          componentStack: (error as Error & { componentStack?: string }).componentStack,
+        },
+      });
+    }
+    
+    this.setState({ errorId });
   }
 
   private reset = () => {
@@ -37,6 +55,11 @@ export class AppErrorBoundary extends Component<Props, State> {
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
             {this.state.message || 'An unexpected error occurred.'}
           </p>
+          {this.state.errorId && (
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              Error ID: {this.state.errorId}
+            </p>
+          )}
           <div className="mt-5 flex gap-3">
             <button
               onClick={this.reset}

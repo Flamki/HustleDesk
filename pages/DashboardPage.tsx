@@ -166,6 +166,7 @@ export const DashboardPage: React.FC = () => {
           sub={`${applicationsChange >= 0 ? '+' : ''}${applicationsChange} vs last week`}
           tone="indigo"
           icon={<ArrowUpRight size={18} />}
+          index={0}
         />
         <StatCard
           title="Awaiting Reply"
@@ -173,6 +174,7 @@ export const DashboardPage: React.FC = () => {
           sub={`${avgWait} days avg`}
           tone="amber"
           icon={<Clock3 size={18} />}
+          index={1}
         />
         <StatCard
           title="Active Conversations"
@@ -181,6 +183,7 @@ export const DashboardPage: React.FC = () => {
           tone="blue"
           icon={<MessageSquare size={18} />}
           link="/app/jobs?status=replied"
+          index={2}
         />
         <StatCard
           title="Projects Won"
@@ -188,6 +191,7 @@ export const DashboardPage: React.FC = () => {
           sub={`Revenue: ${(stats?.total_revenue || 0).toLocaleString()}`}
           tone="green"
           icon={<Trophy size={18} />}
+          index={3}
         />
       </div>
 
@@ -260,17 +264,21 @@ const StatCard: React.FC<{
   tone: keyof typeof toneClasses;
   icon: React.ReactNode;
   link?: string;
-}> = ({ title, value, sub, tone, icon, link }) => {
+  index?: number;
+}> = ({ title, value, sub, tone, icon, link, index = 0 }) => {
   const c = toneClasses[tone];
   const content = (
-    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <div 
+      className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-1 animate-slide-in-up"
+      style={{ animationDelay: `${index * 100}ms` }}
+    >
       <div className="flex items-center justify-between">
-        <div className={`w-9 h-9 rounded-xl ${c.chip} flex items-center justify-center`}>{icon}</div>
+        <div className={`w-9 h-9 rounded-xl ${c.chip} flex items-center justify-center transition-transform duration-200 hover:scale-110`}>{icon}</div>
       </div>
       <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-4">{title}</p>
-      <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{value}</p>
+      <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1 transition-all duration-300">{value}</p>
       <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{sub}</p>
     </div>
   );
-  return link ? <Link to={link}>{content}</Link> : content;
+  return link ? <Link to={link} className="block">{content}</Link> : content;
 };

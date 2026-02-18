@@ -30,6 +30,7 @@ import {
   revokeTimeEntryShareLink,
 } from '../services/timeEntryShareService';
 import { copyTextToClipboard } from '../utils/clipboard';
+import { ConfirmDialog, useToast } from '../components/ui';
 
 type Period = 'today' | 'week' | 'month';
 type TimerStatus = 'idle' | 'running' | 'paused';
@@ -122,6 +123,7 @@ const timeInputValue = (date: Date) => {
 };
 
 export const TimeTrackerPage: React.FC = () => {
+  const { showToast } = useToast();
   const [period, setPeriod] = useState<Period>('week');
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -147,6 +149,11 @@ export const TimeTrackerPage: React.FC = () => {
   const [shareUrl, setShareUrl] = useState<string>('');
   const [shareLinks, setShareLinks] = useState<TimeEntryShareLink[]>([]);
   const [selectedShareLinkId, setSelectedShareLinkId] = useState<string>('');
+  
+  const [entryToDelete, setEntryToDelete] = useState<TimeEntry | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [linkToRevoke, setLinkToRevoke] = useState<TimeEntryShareLink | null>(null);
+  const [isRevoking, setIsRevoking] = useState(false);
 
   const [manualDate, setManualDate] = useState(() => dateInputValue(new Date()));
   const [manualStart, setManualStart] = useState(() => timeInputValue(new Date(Date.now() - 3600 * 1000)));
@@ -437,14 +444,27 @@ export const TimeTrackerPage: React.FC = () => {
     setNotice({ kind: 'success', text: 'Manual entry saved.' });
   };
 
-  const removeEntry = async (id: string) => {
-    if (!window.confirm('Delete this time entry?')) return;
-    const { error: deleteError } = await deleteTimeEntry(id);
+  const removeEntry = async () => {
+    if (!entryToDelete) return;
+    setIsDeleting(true);
+    const { error: deleteError } = await deleteTimeEntry(entryToDelete.id);
+    setIsDeleting(false);
+    setEntryToDelete(null);
+    
     if (deleteError) {
-      setError(deleteError.message);
+      showToast({
+        variant: 'error',
+        title: 'Failed to delete entry',
+        message: deleteError.message,
+      });
       return;
     }
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    
+    setEntries((prev) => prev.filter((e) => e.id !== entryToDelete.id));
+    showToast({
+      variant: 'success',
+      message: 'Time entry deleted successfully',
+    });
   };
 
   const shareUrlFor = (token: string) => `${window.location.origin}/share/time-entry/${token}`;
@@ -551,21 +571,32 @@ export const TimeTrackerPage: React.FC = () => {
     setShareBusy(false);
   };
 
-  const revokeShare = async (id: string) => {
-    if (!window.confirm('Revoke this link? Anyone with it will lose access.')) return;
-    const { data, error } = await revokeTimeEntryShareLink(id);
+  const revokeShare = async () => {
+    if (!linkToRevoke) return;
+    setIsRevoking(true);
+    const { data, error } = await revokeTimeEntryShareLink(linkToRevoke.id);
+    setIsRevoking(false);
+    setLinkToRevoke(null);
+    
     if (error || !data) {
-      setShareNotice({ kind: 'error', text: error?.message || 'Failed to revoke link.' });
+      showToast({
+        variant: 'error',
+        title: 'Failed to revoke link',
+        message: error?.message || 'Failed to revoke link.',
+      });
       return;
     }
 
-    setShareLinks((prev) => prev.map((l) => (l.id === id ? data : l)));
-    if (selectedShareLinkId === id) {
+    setShareLinks((prev) => prev.map((l) => (l.id === linkToRevoke.id ? data : l)));
+    if (selectedShareLinkId === linkToRevoke.id) {
       setShareUrl('');
       setSelectedShareLinkId('');
       setShareCopied(false);
     }
-    setShareNotice({ kind: 'info', text: 'Link revoked.' });
+    showToast({
+      variant: 'info',
+      message: 'Share link revoked successfully',
+    });
   };
 
   return (
@@ -773,8 +804,9 @@ export const TimeTrackerPage: React.FC = () => {
                                 <ExternalLink size={16} /> Open
                               </a>
                               <button
-                                onClick={() => void revokeShare(link.id)}
+                                onClick={() => setLinkToRevoke(link)}
                                 className="px-3 py-2 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-900/10 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-700 dark:text-red-200 text-sm font-bold"
+                                aria-label="Revoke share link"
                               >
                                 Revoke
                               </button>
@@ -1208,9 +1240,10 @@ export const TimeTrackerPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => {
-                            void removeEntry(entry.id);
+                            setEntryToDelete(entry);
                           }}
                           className="inline-flex p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          aria-label="Delete entry"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -1247,6 +1280,30 @@ export const TimeTrackerPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={!!entryToDelete}
+        onClose={() => setEntryToDelete(null)}
+        onConfirm={removeEntry}
+        title="Delete Time Entry"
+        message="Are you sure you want to delete this time entry? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={isDeleting}
+      />
+
+      <ConfirmDialog
+        isOpen={!!linkToRevoke}
+        onClose={() => setLinkToRevoke(null)}
+        onConfirm={revokeShare}
+        title="Revoke Share Link"
+        message="Are you sure you want to revoke this link? Anyone with it will lose access."
+        confirmLabel="Revoke"
+        cancelLabel="Cancel"
+        variant="warning"
+        loading={isRevoking}
+      />
     </div>
   );
 };

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { AnalyticsResponse } from '../types';
 import { getAnalyticsInsights } from '../services/supabaseService';
+import { Alert, LoadingSpinner, EmptyState } from '../components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'ytd';
 
@@ -90,10 +91,28 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 text-sm text-red-600 dark:text-red-300">
+        <Alert variant="error" dismissible onDismiss={() => setError(null)}>
           {error}
-        </div>
+        </Alert>
       )}
+
+      {loading && !data ? (
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" text="Loading analytics..." />
+        </div>
+      ) : !data || (trend.length === 0 && funnel.length === 0 && platformPerformance.length === 0) ? (
+        <EmptyState
+          icon={BarChart3}
+          title="No analytics data yet"
+          description="Start tracking jobs and time entries to see your performance insights and trends."
+          action={{
+            label: 'Add Your First Job',
+            onClick: () => window.location.href = '/app/jobs/new',
+            icon: Target,
+          }}
+        />
+      ) : (
+        <>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         <Metric title="Total Revenue" value={data ? `$${metrics.total_revenue.toFixed(2)}` : '-'} icon={<DollarSign size={18} />} />
@@ -268,6 +287,8 @@ export const AnalyticsPage: React.FC = () => {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };

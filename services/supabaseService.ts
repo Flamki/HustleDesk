@@ -380,14 +380,7 @@ export const hydrateSessionFromUrl = async (): Promise<void> => {
 
 export const signUp = async (email: string, password: string): Promise<AuthResponse> => {
   if (!supabase) {
-    await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS));
-    if (email === 'exists@example.com') {
-      return { user: null, error: new Error('User already registered') };
-    }
-    return {
-      user: buildFallbackUser(`user_${Math.random().toString(36).slice(2, 11)}`, email),
-      error: null,
-    };
+    return { user: null, error: new Error('Auth is not configured. Missing Supabase client environment variables.') };
   }
 
   try {
@@ -417,22 +410,7 @@ export const signUp = async (email: string, password: string): Promise<AuthRespo
 
 export const signIn = async (email: string, password: string): Promise<AuthResponse> => {
   if (!supabase) {
-    await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS));
-    if (email === 'error@example.com' || password === 'wrong') {
-      return { user: null, error: new Error('Invalid login credentials') };
-    }
-    return {
-      user: {
-        id: 'user_existing_123',
-        email,
-        plan: 'free',
-        aiCreditsUsed: 2,
-        aiCreditsLimit: 5,
-        skills: ['React', 'TypeScript'],
-        createdAt: new Date().toISOString(),
-      },
-      error: null,
-    };
+    return { user: null, error: new Error('Auth is not configured. Missing Supabase client environment variables.') };
   }
 
   try {
@@ -493,8 +471,7 @@ export const signOut = async (): Promise<void> => {
 
 export const getCurrentUser = async (): Promise<User | null> => {
   if (!supabase) {
-    const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-    return storedUser ? (JSON.parse(storedUser) as User) : null;
+    return null;
   }
 
   try {
