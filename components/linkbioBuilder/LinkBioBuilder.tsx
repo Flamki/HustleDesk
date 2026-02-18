@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { ChevronLeft, Monitor, Smartphone, X } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, Monitor, Smartphone, X, Trash2, GripVertical, Plus, Check, AlertCircle, Eye, EyeOff, ExternalLink } from 'lucide-react';
 import { LinkBioDesignPreview, LINK_BIO_THEME_PRESETS, type LinkBioThemeId, type LinkBioOverrides } from '../marketing/LinkBioDesignKit';
 
 type Step = 'template' | 'palette' | 'typography' | 'content' | 'socials' | 'review';
@@ -125,6 +125,8 @@ export const LinkBioBuilder: React.FC<Props> = ({ existingSite, onBack, onDeploy
   const [saving, setSaving] = useState(false);
   const [publicUrl, setPublicUrl] = useState<string | null>(existingSite?.slug ? `${window.location.origin}/w/${existingSite.slug}` : null);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(true);
+  const [draggedLinkId, setDraggedLinkId] = useState<string | null>(null);
 
   const idx = steps.indexOf(step);
   const next = () => setStep(steps[Math.min(idx + 1, steps.length - 1)]);
@@ -184,16 +186,82 @@ export const LinkBioBuilder: React.FC<Props> = ({ existingSite, onBack, onDeploy
     setSaving(true);
     setError(null);
     const result = await onDeploy(state);
-    if (result.error) setError(result.error);
+    if (result.error) {
+      setError(result.error);
+      setSaving(false);
+      return;
+    }
     setPublicUrl(result.url);
     setSaving(false);
+  };
+
+  const deleteLink = (id: string) => {
+    if (state.links.length <= 1) {
+      setError('You must have at least one link');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    setState((o) => ({ ...o, links: o.links.filter((l) => l.id !== id) }));
+  };
+
+  const moveLink = (fromIndex: number, toIndex: number) => {
+    const newLinks = [...state.links];
+    const [removed] = newLinks.splice(fromIndex, 1);
+    newLinks.splice(toIndex, 0, removed);
+    setState((o) => ({ ...o, links: newLinks }));
+  };
+
+  const handleDragStart = (e: React.DragEvent, id: string, index: number) => {
+    setDraggedLinkId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    const sourceIndex = Number(e.dataTransfer.getData('text/html'));
+    if (sourceIndex !== targetIndex) {
+      moveLink(sourceIndex, targetIndex);
+    }
+    setDraggedLinkId(null);
+  };
+
+  const validateUrl = (url: string): boolean => {
+    if (!url) return true; // Allow empty
+    if (url === '#') return true; // Allow anchor placeholder (will be updated by user)
+    try {
+      const parsed = new URL(url);
+      // Only allow safe protocols
+      const safeProtocols = ['http:', 'https:'];
+      return safeProtocols.includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  };
+
+  const getSocialLabel = (key: keyof Socials): string => {
+    const labels: Record<keyof Socials, string> = {
+      website: 'Website URL',
+      linkedin: 'LinkedIn URL',
+      facebook: 'Facebook URL',
+      instagram: 'Instagram URL',
+      tiktok: 'TikTok URL',
+      youtube: 'YouTube URL',
+      twitch: 'Twitch URL',
+    };
+    return labels[key];
   };
 
   return (
     <div className="fixed inset-0 z-[300] bg-slate-50 dark:bg-slate-950 flex flex-col">
       <div className="h-[72px] border-b border-slate-200 dark:border-slate-800 px-5 lg:px-8 bg-white dark:bg-slate-900 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm inline-flex items-center gap-2">
+          <button onClick={onBack} className="rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm inline-flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
             <ChevronLeft size={14} />
             Back
           </button>
@@ -202,20 +270,50 @@ export const LinkBioBuilder: React.FC<Props> = ({ existingSite, onBack, onDeploy
             <div className="text-xs text-slate-500 dark:text-slate-400">{existingSite ? 'Edit existing link page' : 'Create link page'}</div>
           </div>
         </div>
+        <button
+          onClick={() => setShowPreview(!showPreview)}
+          className="rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm inline-flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+        >
+          {showPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+          {showPreview ? 'Hide' : 'Show'} Preview
+        </button>
       </div>
 
       <div className="px-5 lg:px-8 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-          {steps.map((s, n) => (
-            <button key={s} onClick={() => setStep(s)} className={`rounded-lg px-3 py-2 text-sm ${step === s ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'border border-slate-300 dark:border-slate-700'}`}>
-              {n + 1}. {stepLabel[s]}
-            </button>
-          ))}
+          {steps.map((s, n) => {
+            const isComplete = steps.indexOf(s) < idx;
+            const isCurrent = step === s;
+            return (
+              <button
+                key={s}
+                onClick={() => setStep(s)}
+                className={`rounded-lg px-3 py-2 text-sm flex items-center gap-2 transition-colors ${
+                  isCurrent
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                    : isComplete
+                    ? 'border border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950'
+                    : 'border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                {isComplete && <Check size={14} />}
+                <span className="truncate">
+                  {n + 1}. {stepLabel[s]}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 lg:px-8 py-6 space-y-6">
-        {error ? <div className="rounded-lg border border-rose-300 bg-rose-50 text-rose-700 px-4 py-3 text-sm">{error}</div> : null}
+      <div className="flex-1 min-h-0 flex gap-6">
+        <div className={`overflow-y-auto px-5 lg:px-8 py-6 space-y-6 ${showPreview ? 'w-1/2' : 'w-full'}`}>
+          {error ? (
+            <div className="rounded-lg border border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200 px-4 py-3 text-sm flex items-center gap-2">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          ) : null}
 
         {step === 'template' ? (
           <div className="space-y-6 max-w-7xl">
@@ -277,39 +375,84 @@ export const LinkBioBuilder: React.FC<Props> = ({ existingSite, onBack, onDeploy
         ) : null}
 
         {step === 'palette' ? (
-          <div className="space-y-4">
-            <h2 className="text-3xl font-semibold">Choose Color Palette</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="space-y-6 max-w-4xl">
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Choose Color Palette</h2>
+              <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Select a preset palette or customize your own colors.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {palettePresets.map((p) => (
-                <button key={p.id} onClick={() => setState((o) => ({ ...o, palette: p }))} className={`rounded-xl border p-3 ${state.palette.id === p.id ? 'border-slate-900 ring-2 ring-slate-900/20' : 'border-slate-300'}`}>
-                  <div className="flex gap-2">{[p.primary, p.secondary, p.accent, p.background, p.text].map((c, i) => <span key={`${p.id}-${i}`} className="w-7 h-7 rounded border" style={{ background: c }} />)}</div>
-                  <div className="mt-2 text-sm font-semibold text-left">{p.name}</div>
+                <button
+                  key={p.id}
+                  onClick={() => setState((o) => ({ ...o, palette: p }))}
+                  className={`rounded-xl border p-4 transition-all hover:shadow-md ${
+                    state.palette.id === p.id
+                      ? 'border-slate-900 dark:border-white ring-2 ring-slate-900/20 dark:ring-white/20'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600'
+                  }`}
+                >
+                  <div className="flex gap-2 mb-3">
+                    {[p.primary, p.secondary, p.accent, p.background, p.text].map((c, i) => (
+                      <span key={`${p.id}-${i}`} className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm" style={{ background: c }} />
+                    ))}
+                  </div>
+                  <div className="text-sm font-semibold text-left text-slate-900 dark:text-white">{p.name}</div>
+                  {state.palette.id === p.id && <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Selected</div>}
                 </button>
               ))}
             </div>
-            <div className="rounded-xl border border-slate-300 p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-              {(['primary', 'secondary', 'accent', 'background', 'text', 'surface'] as const).map((k) => (
-                <label key={k} className="text-sm">
-                  <div className="mb-1 capitalize">{k}</div>
-                  <div className="flex gap-2">
-                    <input type="color" value={state.palette[k]} onChange={(e) => setState((o) => ({ ...o, palette: { ...o.palette, id: 'custom', name: 'Custom', [k]: e.target.value } }))} className="w-12 h-10" />
-                    <input value={state.palette[k]} onChange={(e) => setState((o) => ({ ...o, palette: { ...o.palette, id: 'custom', name: 'Custom', [k]: e.target.value } }))} className="flex-1 rounded border px-3 py-2" />
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Custom Colors</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(['primary', 'secondary', 'accent', 'background', 'text', 'surface'] as const).map((k) => (
+                  <div key={k}>
+                    <label className="text-sm font-medium capitalize text-slate-700 dark:text-slate-300 mb-2 block">{k}</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="color"
+                        value={state.palette[k]}
+                        onChange={(e) => setState((o) => ({ ...o, palette: { ...o.palette, id: 'custom', name: 'Custom', [k]: e.target.value } }))}
+                        className="w-14 h-10 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer"
+                      />
+                      <input
+                        value={state.palette[k]}
+                        onChange={(e) => setState((o) => ({ ...o, palette: { ...o.palette, id: 'custom', name: 'Custom', [k]: e.target.value } }))}
+                        className="flex-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                        placeholder="#000000"
+                      />
+                    </div>
                   </div>
-                </label>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         ) : null}
 
         {step === 'typography' ? (
-          <div className="space-y-4">
-            <h2 className="text-3xl font-semibold">Choose Typography</h2>
+          <div className="space-y-6 max-w-4xl">
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Choose Typography</h2>
+              <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Select a font combination that matches your brand style.</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {typePresets.map((t) => (
-                <button key={t.id} onClick={() => setState((o) => ({ ...o, typography: t }))} className={`rounded-xl border p-4 text-left ${state.typography.id === t.id ? 'border-slate-900 ring-2 ring-slate-900/20' : 'border-slate-300'}`}>
-                  <div className="font-semibold">{t.name}</div>
-                  <div className="mt-3 text-3xl" style={{ fontFamily: t.heading }}>The Quick Brown Fox</div>
-                  <div className="mt-2 text-sm" style={{ fontFamily: t.text }}>Sample body text and layout rhythm</div>
+                <button
+                  key={t.id}
+                  onClick={() => setState((o) => ({ ...o, typography: t }))}
+                  className={`rounded-xl border p-5 text-left transition-all hover:shadow-md ${
+                    state.typography.id === t.id
+                      ? 'border-slate-900 dark:border-white ring-2 ring-slate-900/20 dark:ring-white/20'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600'
+                  }`}
+                >
+                  <div className="font-semibold text-slate-900 dark:text-white mb-2">{t.name}</div>
+                  {state.typography.id === t.id && <div className="text-xs text-emerald-600 dark:text-emerald-400 mb-3">Selected</div>}
+                  <div className="mt-3 text-3xl font-bold text-slate-900 dark:text-white" style={{ fontFamily: t.heading }}>
+                    The Quick Brown Fox
+                  </div>
+                  <div className="mt-2 text-sm text-slate-600 dark:text-slate-400" style={{ fontFamily: t.text }}>
+                    Sample body text and layout rhythm for your link in bio.
+                  </div>
                 </button>
               ))}
             </div>
@@ -317,73 +460,279 @@ export const LinkBioBuilder: React.FC<Props> = ({ existingSite, onBack, onDeploy
         ) : null}
 
         {step === 'content' ? (
-          <div className="space-y-4">
-            <h2 className="text-3xl font-semibold">Edit Content</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Input label="Name" value={state.content.name} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, name: v } }))} />
-              <Input label="Handle" value={state.content.handle} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, handle: v } }))} />
-              <Input label="Location" value={state.content.location} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, location: v } }))} />
-              <Input label="CTA Label" value={state.content.ctaLabel} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, ctaLabel: v } }))} />
-              <Input label="Avatar URL" value={state.content.avatarUrl} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, avatarUrl: v } }))} />
-              <Input label="Hero Image URL" value={state.content.heroImageUrl} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, heroImageUrl: v } }))} />
-              <Input label="Background Image URL" value={state.content.backgroundImageUrl} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, backgroundImageUrl: v } }))} />
-              <Input label="Email Placeholder" value={state.content.emailPlaceholder} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, emailPlaceholder: v } }))} />
+          <div className="space-y-6 max-w-4xl">
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Edit Content</h2>
+              <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Customize the text and images for your link in bio page.</p>
             </div>
-            <label className="block">
-              <div className="text-sm font-medium mb-1">Tagline</div>
-              <textarea value={state.content.tagline} onChange={(e) => setState((o) => ({ ...o, content: { ...o.content, tagline: e.target.value } }))} className="w-full rounded border px-3 py-2" rows={4} />
-            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputWithLimit label="Name" value={state.content.name} maxLength={50} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, name: v } }))} />
+              <InputWithLimit label="Handle" value={state.content.handle} maxLength={30} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, handle: v } }))} placeholder="@username" />
+              <InputWithLimit label="Location" value={state.content.location} maxLength={50} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, location: v } }))} placeholder="Remote" />
+              <InputWithLimit label="CTA Label" value={state.content.ctaLabel} maxLength={20} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, ctaLabel: v } }))} />
+              <InputWithLimit label="Avatar URL" value={state.content.avatarUrl} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, avatarUrl: v } }))} placeholder="https://..." />
+              <InputWithLimit label="Hero Image URL" value={state.content.heroImageUrl} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, heroImageUrl: v } }))} placeholder="https://..." />
+              <InputWithLimit label="Background Image URL" value={state.content.backgroundImageUrl} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, backgroundImageUrl: v } }))} placeholder="https://..." />
+              <InputWithLimit label="Email Placeholder" value={state.content.emailPlaceholder} maxLength={30} onChange={(v) => setState((o) => ({ ...o, content: { ...o.content, emailPlaceholder: v } }))} />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tagline</label>
+                <span className="text-xs text-slate-500">{state.content.tagline.length}/150</span>
+              </div>
+              <textarea
+                value={state.content.tagline}
+                onChange={(e) => setState((o) => ({ ...o, content: { ...o.content, tagline: e.target.value.slice(0, 150) } }))}
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                rows={3}
+                placeholder="A short one-line intro about your work and audience."
+              />
+            </div>
           </div>
         ) : null}
 
         {step === 'socials' ? (
-          <div className="space-y-4">
-            <h2 className="text-3xl font-semibold">Links & Social</h2>
-            <div className="rounded-xl border border-slate-300 p-4 space-y-3">
-              {state.links.map((l) => (
-                <div key={l.id} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Input label="Link Label" value={l.label} onChange={(v) => setState((o) => ({ ...o, links: o.links.map((x) => (x.id === l.id ? { ...x, label: v } : x)) }))} />
-                  <Input label="Link URL" value={l.url} onChange={(v) => setState((o) => ({ ...o, links: o.links.map((x) => (x.id === l.id ? { ...x, url: v } : x)) }))} />
-                </div>
-              ))}
-              <div className="flex gap-2">
-                <button onClick={() => setState((o) => ({ ...o, links: [...o.links, { id: mkId(), label: 'New Link', url: 'https://' }] }))} className="rounded border px-3 py-2 text-sm">Add Link</button>
-                <button onClick={() => setState((o) => ({ ...o, links: o.links.length > 1 ? o.links.slice(0, -1) : o.links }))} className="rounded border px-3 py-2 text-sm">Remove Last</button>
+          <div className="space-y-6 max-w-4xl">
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Links & Social</h2>
+              <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Add custom links and social media profiles to your bio page.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Custom Links</h3>
+                <button
+                  onClick={() => setState((o) => ({ ...o, links: [...o.links, { id: mkId(), label: 'New Link', url: 'https://' }] }))}
+                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <Plus size={14} />
+                  Add Link
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {state.links.map((l, idx) => (
+                  <div
+                    key={l.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, l.id, idx)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    className={`rounded-xl border p-4 transition-all ${
+                      draggedLinkId === l.id
+                        ? 'border-slate-400 dark:border-slate-600 opacity-50'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <button
+                        className="mt-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                        aria-label="Drag to reorder"
+                      >
+                        <GripVertical size={18} />
+                      </button>
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Link Label</label>
+                          <input
+                            value={l.label}
+                            onChange={(e) => setState((o) => ({ ...o, links: o.links.map((x) => (x.id === l.id ? { ...x, label: e.target.value } : x)) }))}
+                            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                            maxLength={50}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                            Link URL
+                            {!validateUrl(l.url) && l.url !== '' && (
+                              <span className="ml-2 text-rose-500 text-xs">(Must start with http:// or https://)</span>
+                            )}
+                            {l.url === '#' && (
+                              <span className="ml-2 text-amber-500 text-xs">(Update placeholder before deploying)</span>
+                            )}
+                          </label>
+                          <input
+                            value={l.url}
+                            onChange={(e) => setState((o) => ({ ...o, links: o.links.map((x) => (x.id === l.id ? { ...x, url: e.target.value } : x)) }))}
+                            className={`w-full rounded-lg border ${
+                              !validateUrl(l.url) && l.url !== ''
+                                ? 'border-rose-300 dark:border-rose-700'
+                                : l.url === '#'
+                                ? 'border-amber-300 dark:border-amber-700'
+                                : 'border-slate-300 dark:border-slate-700'
+                            } bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500`}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteLink(l.id)}
+                        className="mt-2 text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 transition-colors"
+                        aria-label="Delete link"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="rounded-xl border border-slate-300 p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(Object.keys(state.socials) as Array<keyof Socials>).map((k) => (
-                <Input key={k} label={k} value={state.socials[k]} onChange={(v) => setState((o) => ({ ...o, socials: { ...o.socials, [k]: v } }))} />
-              ))}
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Social Media Links</h3>
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(Object.keys(state.socials) as Array<keyof Socials>).map((k) => (
+                  <div key={k}>
+                    <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300 capitalize">{getSocialLabel(k)}</label>
+                    <input
+                      value={state.socials[k]}
+                      onChange={(e) => setState((o) => ({ ...o, socials: { ...o.socials, [k]: e.target.value } }))}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder={`https://...`}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ) : null}
 
         {step === 'review' ? (
-          <div className="space-y-4">
-            <h2 className="text-3xl font-semibold">Preview & Deploy</h2>
-            <div className="flex gap-2">
-              <button onClick={() => setPreviewModal(true)} className="rounded border px-3 py-2 text-sm">Full Screen Preview</button>
-              {publicUrl ? <a href={publicUrl} target="_blank" rel="noreferrer" className="rounded border px-3 py-2 text-sm">Open Live URL</a> : null}
+          <div className="space-y-6 max-w-4xl">
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Preview & Deploy</h2>
+              <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Review your link in bio and deploy it when you're ready.</p>
             </div>
-            <div className="rounded-xl border border-slate-300 overflow-hidden max-h-[80vh] overflow-auto">
-              <div className="max-w-xl mx-auto">
-                <LinkBioDesignPreview theme={state.templateId} draft={previewDraft} overrides={previewOverrides} />
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setPreviewModal(true)}
+                className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <Monitor size={14} />
+                Full Screen Preview
+              </button>
+              {publicUrl ? (
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <ExternalLink size={14} />
+                  Open Live URL
+                </a>
+              ) : null}
+            </div>
+
+            {!showPreview && (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-900">
+                <div className="p-4 max-w-xl mx-auto">
+                  <LinkBioDesignPreview theme={state.templateId} draft={previewDraft} overrides={previewOverrides} />
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Deployment Summary</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600 dark:text-slate-400">Template:</span>
+                  <span className="font-medium text-slate-900 dark:text-white">
+                    {LINK_BIO_THEME_PRESETS.find((t) => t.id === state.templateId)?.name || state.templateId}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600 dark:text-slate-400">Color Palette:</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{state.palette.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600 dark:text-slate-400">Typography:</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{state.typography.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600 dark:text-slate-400">Custom Links:</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{state.links.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600 dark:text-slate-400">Social Links:</span>
+                  <span className="font-medium text-slate-900 dark:text-white">
+                    {Object.values(state.socials).filter((v) => v.trim()).length}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <button onClick={prev} className="rounded border px-4 py-2 text-sm">Back</button>
-              <button onClick={() => void deploy()} disabled={saving} className="rounded bg-slate-900 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60">{saving ? 'Deploying...' : 'Deploy Link in Bio'}</button>
+
+            <div className="flex items-center justify-between gap-4 pt-4">
+              <button
+                onClick={prev}
+                className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => void deploy()}
+                disabled={saving}
+                className="rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-2 text-sm font-semibold disabled:opacity-60 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white dark:border-slate-900 border-t-transparent rounded-full animate-spin" />
+                    Deploying...
+                  </>
+                ) : (
+                  'Deploy Link in Bio'
+                )}
+              </button>
             </div>
           </div>
         ) : null}
 
         {step !== 'review' ? (
-          <div className="flex items-center justify-between">
-            <button onClick={prev} disabled={idx === 0} className="rounded border px-4 py-2 text-sm disabled:opacity-50">Back</button>
-            <button onClick={next} className="rounded bg-slate-900 text-white px-4 py-2 text-sm font-semibold">Continue</button>
+          <div className="flex items-center justify-between pt-4">
+            <button onClick={prev} disabled={idx === 0} className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Back</button>
+            <button onClick={next} className="rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2 text-sm font-semibold hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors">Continue</button>
           </div>
         ) : null}
+        </div>
+
+        {showPreview && (
+          <div className="w-1/2 border-l border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 overflow-y-auto">
+            <div className="sticky top-0 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between z-10">
+              <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">Live Preview</div>
+              <div className="flex items-center gap-2">
+                <button
+                  className={`p-2 rounded-lg border transition-colors ${
+                    previewDevice === 'desktop'
+                      ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                      : 'border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800'
+                  }`}
+                  onClick={() => setPreviewDevice('desktop')}
+                >
+                  <Monitor size={14} />
+                </button>
+                <button
+                  className={`p-2 rounded-lg border transition-colors ${
+                    previewDevice === 'mobile'
+                      ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                      : 'border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800'
+                  }`}
+                  onClick={() => setPreviewDevice('mobile')}
+                >
+                  <Smartphone size={14} />
+                </button>
+              </div>
+            </div>
+            <div className="p-4 flex items-start justify-center min-h-full">
+              <div
+                className={`rounded-xl shadow-2xl overflow-hidden transition-all duration-300 ${
+                  previewDevice === 'desktop' ? 'w-full max-w-xl' : 'w-full max-w-sm'
+                }`}
+              >
+                <LinkBioDesignPreview theme={state.templateId} draft={previewDraft} overrides={previewOverrides} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {previewModal ? (
@@ -411,7 +760,28 @@ export const LinkBioBuilder: React.FC<Props> = ({ existingSite, onBack, onDeploy
 
 const Input: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
   <label className="block">
-    <div className="text-sm font-medium mb-1 capitalize">{label}</div>
-    <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" />
+    <div className="text-sm font-medium mb-1 capitalize text-slate-700 dark:text-slate-300">{label}</div>
+    <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
   </label>
+);
+
+const InputWithLimit: React.FC<{
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  maxLength?: number;
+  placeholder?: string;
+}> = ({ label, value, onChange, maxLength, placeholder }) => (
+  <div>
+    <div className="flex items-center justify-between mb-1">
+      <label className="text-sm font-medium capitalize text-slate-700 dark:text-slate-300">{label}</label>
+      {maxLength && <span className="text-xs text-slate-500">{value.length}/{maxLength}</span>}
+    </div>
+    <input
+      value={value}
+      onChange={(e) => onChange(maxLength ? e.target.value.slice(0, maxLength) : e.target.value)}
+      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+      placeholder={placeholder}
+    />
+  </div>
 );
