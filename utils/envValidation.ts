@@ -2,6 +2,7 @@ type EnvValidationResult = {
   ok: boolean;
   errors: string[];
   warnings: string[];
+  checks: Record<string, boolean>;
 };
 
 const isValidHttpUrl = (value: string): boolean => {
@@ -21,11 +22,18 @@ const isLikelySupabaseUrl = (value: string): boolean => {
 export const validateEnvironment = (): EnvValidationResult => {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const checks: Record<string, boolean> = {};
 
   const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
   const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
   const redirectOrigin = (import.meta.env.VITE_AUTH_REDIRECT_ORIGIN || '').trim();
   const hasStripePrice = Boolean((import.meta.env.VITE_STRIPE_PRICE_ID_PRO_MONTHLY || '').trim());
+
+  // Critical checks
+  checks.supabaseUrl = Boolean(supabaseUrl);
+  checks.supabaseAnonKey = Boolean(supabaseAnonKey);
+  checks.redirectOrigin = Boolean(redirectOrigin);
+  checks.stripePrice = hasStripePrice;
 
   if (!supabaseUrl) {
     errors.push(
@@ -65,9 +73,17 @@ export const validateEnvironment = (): EnvValidationResult => {
     );
   }
 
+  // Production-specific checks
+  if (import.meta.env.PROD) {
+    if (redirectOrigin && redirectOrigin.includes('localhost')) {
+      errors.push('VITE_AUTH_REDIRECT_ORIGIN should not use localhost in production');
+    }
+  }
+
   return {
     ok: errors.length === 0,
     errors,
     warnings,
+    checks,
   };
 };
