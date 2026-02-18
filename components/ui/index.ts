@@ -11,3 +11,4 @@ export { Modal, ConfirmDialog } from './Modal';
 export { ToastProvider, useToast } from './Toast';
 export { PlatformIcon } from './PlatformIcon';
 export { ResponsiveTable } from './ResponsiveTable';
+export { FeedbackMessage } from './FeedbackMessage';

@@ -41,8 +41,8 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const hoverClasses = hoverable
-    ? 'transition-all duration-200 hover:shadow-xl hover:shadow-slate-200/60 dark:hover:shadow-none hover:-translate-y-0.5 cursor-pointer'
-    : '';
+    ? 'transition-all duration-200 hover:shadow-xl hover:shadow-slate-200/60 dark:hover:shadow-none hover:-translate-y-1 cursor-pointer animate-fade-in'
+    : 'animate-fade-in';
 
   return (
     <div
