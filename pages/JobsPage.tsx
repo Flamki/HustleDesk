@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { PlatformIcon } from '../components/ui/PlatformIcon';
+import { EmptyState, LoadingSpinner, ConfirmDialog, useToast } from '../components/ui';
 import * as authService from '../services/supabaseService';
 
 const PAGE_SIZE = 20;
@@ -63,6 +64,7 @@ const getPlatformBadge = (platform: string) => {
 export const JobsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { showToast } = useToast();
   const [showIntro, setShowIntro] = useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('jobs_intro_dismissed') !== 'true';
@@ -127,6 +129,8 @@ export const JobsPage: React.FC = () => {
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const offset = (page - 1) * PAGE_SIZE;
@@ -235,15 +239,28 @@ export const JobsPage: React.FC = () => {
     return 'danger';
   };
 
-  const deleteJob = async (job: Job) => {
-    if (!window.confirm(`Delete "${job.title}"?`)) return;
-    const { error } = await authService.deleteJob(job.id);
+  const deleteJob = async () => {
+    if (!jobToDelete) return;
+    setIsDeleting(true);
+    const { error } = await authService.deleteJob(jobToDelete.id);
+    setIsDeleting(false);
+    setJobToDelete(null);
+    
     if (error) {
-      window.alert(error.message);
+      showToast({
+        variant: 'error',
+        title: 'Failed to delete job',
+        message: error.message,
+      });
       return;
     }
-    setJobs((prev) => prev.filter((j) => j.id !== job.id));
+    
+    setJobs((prev) => prev.filter((j) => j.id !== jobToDelete.id));
     setTotal((t) => Math.max(0, t - 1));
+    showToast({
+      variant: 'success',
+      message: `"${jobToDelete.title}" has been deleted`,
+    });
   };
 
   const pageNumbers = useMemo(() => {
@@ -426,23 +443,27 @@ export const JobsPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
-                    Loading jobs...
+                  <td colSpan={7} className="px-4 py-10">
+                    <LoadingSpinner size="lg" text="Loading jobs..." />
                   </td>
                 </tr>
               ) : jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-14 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                        <Briefcase size={28} />
-                      </div>
-                      <p className="text-slate-900 dark:text-white font-semibold">No jobs yet</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">Start by adding your first opportunity.</p>
-                      <Link to="/app/jobs/new" className="mt-1 text-indigo-600 dark:text-indigo-400 font-bold hover:underline">
-                        Add Your First Job
-                      </Link>
-                    </div>
+                  <td colSpan={7} className="px-4 py-2">
+                    <EmptyState
+                      icon={Briefcase}
+                      title="No jobs yet"
+                      description="Start tracking your freelance opportunities and applications."
+                      action={{
+                        label: 'Add Your First Job',
+                        onClick: () => navigate('/app/jobs/new'),
+                        icon: Plus,
+                      }}
+                      secondaryAction={{
+                        label: 'Try Sample Job',
+                        onClick: startWithSample,
+                      }}
+                    />
                   </td>
                 </tr>
               ) : (
@@ -504,10 +525,11 @@ export const JobsPage: React.FC = () => {
                           </button>
                           <button
                             onClick={() => {
-                              void deleteJob(job);
+                              setJobToDelete(job);
                             }}
-                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             title="Delete"
+                            aria-label="Delete job"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -571,14 +593,30 @@ export const JobsPage: React.FC = () => {
             setJobs((prev) => prev.map((j) => (j.id === updatedJob.id ? updatedJob : j)));
             setSelectedJob(updatedJob);
             setIsEditMode(false);
+            showToast({
+              variant: 'success',
+              message: 'Job updated successfully',
+            });
           }}
           onDelete={() => {
-            void deleteJob(selectedJob);
+            setJobToDelete(selectedJob);
             setSelectedJob(null);
           }}
           onGenerateProposal={(jobId) => navigate(`/app/proposals/generate/${jobId}`)}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={!!jobToDelete}
+        onClose={() => setJobToDelete(null)}
+        onConfirm={deleteJob}
+        title="Delete Job"
+        message={`Are you sure you want to delete "${jobToDelete?.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={isDeleting}
+      />
     </div>
   );
 };
