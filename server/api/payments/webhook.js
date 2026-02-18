@@ -3,7 +3,28 @@ import { getStripe, getSupabaseAdmin, json } from './_shared.js';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
-const isProStatus = (status) => ['active', 'trialing', 'past_due', 'unpaid'].includes(status);
+const isActiveStatus = (status) => ['active', 'trialing'].includes(status);
+const isPastDueStatus = (status) => ['past_due', 'unpaid'].includes(status);
+
+const TIER_PRICE_MAP = {
+  [process.env.STRIPE_PRICE_ID_PRO_MONTHLY]: 'pro',
+  [process.env.STRIPE_PRICE_ID_PRO_YEARLY]: 'pro',
+};
+
+const getTierFromSubscription = (subscription) => {
+  const priceId = subscription.items?.data?.[0]?.price?.id;
+  return TIER_PRICE_MAP[priceId] || 'pro'; // fallback to pro for backward compatibility
+};
+
+const getIntervalFromSubscription = (subscription) => {
+  const interval = subscription.items?.data?.[0]?.price?.recurring?.interval;
+  return interval === 'year' ? 'yearly' : 'monthly';
+};
+
+const AI_CREDITS_BY_TIER = {
+  free: 5,
+  pro: 1000,
+};
 
 const readRequestStream = async (req) => {
   const chunks = [];
@@ -29,21 +50,32 @@ const syncSubscriptionToUser = async (subscription) => {
     typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
   if (!customerId) return;
 
-  const plan = isProStatus(subscription.status) ? 'pro' : 'free';
-  const aiLimit = plan === 'pro' ? 1000000 : 5;
+  const tier = isActiveStatus(subscription.status) ? getTierFromSubscription(subscription) : 'free';
+  const aiLimit = AI_CREDITS_BY_TIER[tier] || 5;
+  const interval = getIntervalFromSubscription(subscription);
   const currentPeriodEnd = subscription.current_period_end
     ? new Date(subscription.current_period_end * 1000).toISOString()
     : null;
 
+  const updateData = {
+    plan: tier, // backward compatibility
+    plan_tier: tier,
+    billing_interval: interval,
+    ai_credits_limit: aiLimit,
+    stripe_subscription_id: subscription.id,
+    stripe_subscription_status: subscription.status,
+    stripe_current_period_end: currentPeriodEnd,
+  };
+
+  // Reset payment failure tracking on successful subscription
+  if (isActiveStatus(subscription.status)) {
+    updateData.payment_failed_at = null;
+    updateData.payment_retry_count = 0;
+  }
+
   await supabase
     .from('users')
-    .update({
-      plan,
-      ai_credits_limit: aiLimit,
-      stripe_subscription_id: subscription.id,
-      stripe_subscription_status: subscription.status,
-      stripe_current_period_end: currentPeriodEnd,
-    })
+    .update(updateData)
     .eq('stripe_customer_id', customerId);
 };
 
@@ -98,6 +130,52 @@ export default async function handler(req, res) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
         await syncSubscriptionToUser(subscription);
+        break;
+      }
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        const customerId =
+          typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+        
+        if (customerId) {
+          const supabase = getSupabaseAdmin();
+          
+          // Get current user to increment retry count
+          const { data: user } = await supabase
+            .from('users')
+            .select('payment_retry_count')
+            .eq('stripe_customer_id', customerId)
+            .maybeSingle();
+          
+          const retryCount = (user?.payment_retry_count || 0) + 1;
+          
+          await supabase
+            .from('users')
+            .update({
+              payment_failed_at: new Date().toISOString(),
+              payment_retry_count: retryCount,
+            })
+            .eq('stripe_customer_id', customerId);
+        }
+        break;
+      }
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object;
+        const customerId =
+          typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+        
+        if (customerId) {
+          const supabase = getSupabaseAdmin();
+          
+          // Reset payment failure tracking on successful payment
+          await supabase
+            .from('users')
+            .update({
+              payment_failed_at: null,
+              payment_retry_count: 0,
+            })
+            .eq('stripe_customer_id', customerId);
+        }
         break;
       }
       default:

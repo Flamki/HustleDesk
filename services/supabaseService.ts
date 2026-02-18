@@ -1261,3 +1261,69 @@ export const updateNotificationSettings = async (
     return { data: null, error: new Error('Failed to update notification settings') };
   }
 };
+
+export const manageSubscription = async (params: {
+  action: 'upgrade' | 'downgrade' | 'cancel' | 'reactivate';
+  tier?: string;
+  interval?: 'monthly' | 'yearly';
+}): Promise<{ success: boolean; url?: string; message?: string; error: Error | null }> => {
+  if (!supabase) return { success: false, error: new Error('Supabase not configured') };
+  const token = await getSupabaseToken();
+  if (!token) return { success: false, error: new Error('Unauthorized') };
+
+  try {
+    const response = await fetchWithTimeout('/api/subscriptions/manage', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(params),
+    }, 15000);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) return { success: false, error: new Error(body.error || 'Failed to manage subscription') };
+    return { success: true, url: body.url, message: body.message, error: null };
+  } catch {
+    return { success: false, error: new Error('Failed to manage subscription') };
+  }
+};
+
+export type UsageStats = {
+  plan_tier: string;
+  billing_interval: string | null;
+  jobs_count: number;
+  clients_count: number;
+  time_entries_month_count: number;
+  proposals_month_count: number;
+  email_campaigns_month_count: number;
+  email_contacts_count: number;
+  marketing_websites_count: number;
+  portfolio_sites_count: number;
+  linkinbio_sites_count: number;
+  ai_credits_used: number;
+  ai_credits_limit: number;
+  usage_period_start: string | null;
+  usage_period_end: string | null;
+  stripe_subscription_status: string | null;
+  stripe_current_period_end: string | null;
+};
+
+export const getUsageStats = async (): Promise<{ data: UsageStats | null; error: Error | null }> => {
+  if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+  const token = await getSupabaseToken();
+  if (!token) return { data: null, error: new Error('Unauthorized') };
+
+  try {
+    const response = await fetchWithTimeout('/api/usage/stats', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }, 12000);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) return { data: null, error: new Error(body.error || 'Failed to fetch usage stats') };
+    return { data: body.usage || null, error: null };
+  } catch {
+    return { data: null, error: new Error('Failed to fetch usage stats') };
+  }
+};

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { checkLimit } from '../_shared/featureGating.js';
 
 const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
@@ -46,6 +47,17 @@ const handleCreate = async (req, res) => {
   const { supabase, user, error } = await authedClient(req);
   if (error) return json(res, error === 'Unauthorized' ? 401 : 500, { error });
 
+  // Check if user can create more jobs based on plan limits
+  const limitCheck = await checkLimit(supabase, user.id, 'jobs');
+  if (!limitCheck.allowed) {
+    return json(res, 403, {
+      error: limitCheck.reason,
+      upgradeRequired: limitCheck.upgradeRequired,
+      currentUsage: limitCheck.currentUsage,
+      limit: limitCheck.limit,
+    });
+  }
+
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {};
   const title = (body.title || '').trim();
   const platform = String(body.platform || '').toLowerCase();
@@ -77,6 +89,12 @@ const handleCreate = async (req, res) => {
 
   const { data: inserted, error: insertError } = await supabase.from('jobs').insert(payload).select('id').single();
   if (insertError) return json(res, 500, { error: insertError.message });
+
+  // Increment jobs counter
+  await supabase
+    .from('users')
+    .update({ jobs_count: (limitCheck.currentUsage || 0) + 1 })
+    .eq('id', user.id);
 
   return json(res, 201, { success: true, job_id: inserted.id, message: 'Job created' });
 };
