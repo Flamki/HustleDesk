@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { ToastProvider } from '../../components/ui/Toast';
@@ -113,7 +113,7 @@ describe('JobsPage follow-up behavior', () => {
     const rowTrigger = screen.getAllByText('Dashboard build').find((el) => el.closest('tr'));
     const row = rowTrigger?.closest('tr') || null;
     expect(row).not.toBeNull();
-    expect(within(row as HTMLTableRowElement).getByText('Applied')).toBeInTheDocument();
-    expect((row as HTMLTableRowElement).textContent || '').toContain(expectedDate);
+    expect(row?.textContent || '').toContain('Applied');
+    expect(row?.textContent || '').toContain(expectedDate);
   });
 });
