@@ -8,6 +8,12 @@
       "maxDuration": 30
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/followup-reminders",
+      "schedule": "*/10 * * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",
