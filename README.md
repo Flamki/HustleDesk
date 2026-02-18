@@ -82,21 +82,110 @@ See `.env.example` for the complete template.
 - `npm run dev` start web + local API runner
 - `npm run dev:web` start Vite only
 - `npm run dev:api` start API runner only
+- `npm test` run tests in watch mode
+- `npm run test:ui` run tests with UI
+- `npm run test:run` run tests once
+- `npm run test:coverage` run tests with coverage report
+- `npm run lint` run ESLint
+- `npm run lint:fix` run ESLint with auto-fix
 - `npm run typecheck` TypeScript validation
 - `npm run build` production build
-- `npm run ci` typecheck + build
+- `npm run ci` run all checks (lint + typecheck + test + build)
 - `npm run release:patch` version bump + tag + push
 - `npm run release:minor` version bump + tag + push
 - `npm run release:major` version bump + tag + push
 - `npm run preview` serve built app locally
-- `npm run loadtest:jobs`
-- `npm run loadtest:dashboard`
-- `npm run loadtest:time`
-- `npm run loadtest:public-site`
+- `npm run loadtest:jobs` load test job endpoints
+- `npm run loadtest:dashboard` load test dashboard
+- `npm run loadtest:time` load test time tracking
+- `npm run loadtest:public-site` load test public site
+
+## Testing
+HustleDesk uses Vitest for unit and integration testing.
+
+### Running Tests
+```bash
+# Run all tests in watch mode
+npm test
+
+# Run tests once (CI mode)
+npm run test:run
+
+# Run tests with UI
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Writing Tests
+- Unit tests: `tests/components/`, `tests/api/`
+- Integration tests: `tests/integration/`
+- Test files should follow the naming convention: `*.test.ts` or `*.test.tsx`
 
 ## Validation
-- Type check: `npx tsc --noEmit`
+- Type check: `npm run typecheck` or `npx tsc --noEmit`
+- Lint: `npm run lint`
+- Test: `npm run test:run`
 - Production build: `npm run build`
+- Run all checks: `npm run ci`
+
+## Authentication & Security
+
+### Signup Flow
+1. User submits email + password via `/signup` form
+2. Frontend validates:
+   - Email format
+   - Password requirements (8+ chars, 1 uppercase, 1 number)
+3. Supabase Auth creates user account
+4. Verification email sent automatically
+5. User must verify email before login
+6. After verification, `/api/auth/setup-profile` creates user profile
+
+### Email Verification
+- **Automatic**: Supabase sends verification email on signup
+- **Manual Resend**: POST to `/api/auth/resend-verification` with `{ "email": "user@example.com" }`
+- **Rate Limit**: 3 requests per 15 minutes per IP
+
+### Testing Authentication Endpoints
+
+#### Resend Verification Email
+```bash
+curl -X POST http://localhost:5173/api/auth/resend-verification \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com"}'
+```
+
+Expected response:
+```json
+{
+  "success": true,
+  "message": "If this email is registered and unverified, a verification link has been sent."
+}
+```
+
+#### Profile Setup (after login)
+```bash
+curl -X POST http://localhost:5173/api/auth/setup-profile \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+Expected response:
+```json
+{
+  "success": true,
+  "message": "Profile is ready"
+}
+```
+
+### Security Features
+- **Rate Limiting**: Auth endpoints limited to prevent abuse (Upstash Redis + in-memory fallback)
+- **Input Validation**: Server-side validation prevents SQL/XSS injection
+- **Security Headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
+- **Account Enumeration Prevention**: Generic error messages for failed operations
+- **Password Hashing**: Handled by Supabase (bcrypt)
+- **Row Level Security**: Supabase RLS policies on all tables
 
 ## Documentation
 - Architecture: `docs/ARCHITECTURE.md`
