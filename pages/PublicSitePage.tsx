@@ -8,6 +8,13 @@ import { PortfolioDesignPreview } from '../components/marketing/PortfolioDesignK
 import { mapPublicSiteToPreview } from '../components/marketing/portfolioPreviewMapper';
 import { resolvePortfolioThemeId } from '../components/marketing/portfolioThemeMapping';
 
+const EditIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+    <path d="m15 5 4 4"></path>
+  </svg>
+);
+
 type PublicData = NonNullable<Awaited<ReturnType<typeof fetchPublicSite>>['data']>;
 
 const LINK_BIO_THEME_IDS: LinkBioThemeId[] = [
@@ -62,6 +69,26 @@ const TemplateStudio: React.FC<{ data: PublicData }> = ({ data }) => {
   const [consent, setConsent] = useState(true);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [showEditButton, setShowEditButton] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const checkAuth = () => {
+      try {
+        const raw = localStorage.getItem('user_session');
+        if (raw) {
+          const cached = JSON.parse(raw);
+          // Validate the parsed object has expected structure
+          if (cached && typeof cached === 'object' && typeof cached.id === 'string' && cached.id.length > 0) {
+            setShowEditButton(true);
+          }
+        }
+      } catch {
+        setShowEditButton(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +115,18 @@ const TemplateStudio: React.FC<{ data: PublicData }> = ({ data }) => {
     >
       <Background styleName={site.background_style} />
       <div className="absolute inset-0 opacity-20 [background-image:url('https://grainy-gradients.vercel.app/noise.svg')]" />
+
+      {showEditButton && (
+        <div className="fixed top-4 right-4 z-50">
+          <a
+            href="/app/marketing/website"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/90 hover:bg-white text-slate-900 font-semibold text-sm shadow-lg backdrop-blur-sm border border-white/20 transition-all hover:shadow-xl"
+          >
+            <EditIcon />
+            Edit Site
+          </a>
+        </div>
+      )}
 
       <div className="relative max-w-6xl mx-auto px-6 py-10">
         <header className="flex items-center justify-between gap-6">
@@ -281,6 +320,26 @@ const TemplateLinkBio: React.FC<{ data: PublicData }> = ({ data }) => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [showEditButton, setShowEditButton] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in by checking for cached user session
+    const checkAuth = () => {
+      try {
+        const raw = localStorage.getItem('user_session');
+        if (raw) {
+          const cached = JSON.parse(raw);
+          // Validate the parsed object has expected structure
+          if (cached && typeof cached === 'object' && typeof cached.id === 'string' && cached.id.length > 0) {
+            setShowEditButton(true);
+          }
+        }
+      } catch {
+        setShowEditButton(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   const onSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -299,7 +358,18 @@ const TemplateLinkBio: React.FC<{ data: PublicData }> = ({ data }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 sm:p-8">
+    <div className="min-h-screen bg-slate-950 p-4 sm:p-8 relative">
+      {showEditButton && (
+        <div className="fixed top-4 right-4 z-50">
+          <a
+            href="/app/marketing/website/link-in-bio"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/90 hover:bg-white text-slate-900 font-semibold text-sm shadow-lg backdrop-blur-sm border border-white/20 transition-all hover:shadow-xl"
+          >
+            <EditIcon />
+            Edit Site
+          </a>
+        </div>
+      )}
       <div className="max-w-2xl mx-auto">
         <LinkBioDesignPreview
           theme={theme}
@@ -371,8 +441,40 @@ const TemplatePortfolio: React.FC<{ data: PublicData }> = ({ data }) => {
   const themeId = resolvePortfolioThemeId(site.template);
   const mapped = mapPublicSiteToPreview(site as any, portfolio as any);
 
+  const [showEditButton, setShowEditButton] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in by checking for cached user session
+    const checkAuth = () => {
+      try {
+        const raw = localStorage.getItem('user_session');
+        if (raw) {
+          const cached = JSON.parse(raw);
+          // Validate the parsed object has expected structure
+          if (cached && typeof cached === 'object' && typeof cached.id === 'string' && cached.id.length > 0) {
+            setShowEditButton(true);
+          }
+        }
+      } catch {
+        setShowEditButton(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 relative">
+      {showEditButton && (
+        <div className="fixed top-4 right-4 z-50">
+          <a
+            href="/app/marketing/website/portfolio"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/90 hover:bg-white text-slate-900 font-semibold text-sm shadow-lg backdrop-blur-sm border border-white/20 transition-all hover:shadow-xl"
+          >
+            <EditIcon />
+            Edit Site
+          </a>
+        </div>
+      )}
       <PortfolioDesignPreview
         themeId={themeId}
         draft={mapped.draft}

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Clock, DollarSign, Sparkles, Users } from 'lucide-react';
+import { Briefcase, Clock, DollarSign, Sparkles, Users, UserPlus } from 'lucide-react';
 import { ClientsInsightsResponse } from '../types';
 import { getClientsInsights, updateClientSegmentationWeights } from '../services/supabaseService';
+import { EmptyState, LoadingSpinner, Alert, Button, useToast } from '../components/ui';
 
 const statusClasses: Record<string, string> = {
   Active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300',
@@ -15,6 +16,7 @@ export const ClientsPage: React.FC = () => {
   const [savingWeights, setSavingWeights] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weights, setWeights] = useState<ClientsInsightsResponse['segmentation_weights'] | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -58,9 +60,17 @@ export const ClientsPage: React.FC = () => {
     const { error: saveError } = await updateClientSegmentationWeights(weights);
     setSavingWeights(false);
     if (saveError) {
-      setError(saveError.message);
+      showToast({
+        variant: 'error',
+        message: saveError.message,
+        title: 'Failed to save weights',
+      });
       return;
     }
+    showToast({
+      variant: 'success',
+      message: 'Segmentation weights updated successfully',
+    });
     const { data: refreshed } = await getClientsInsights();
     if (refreshed) setData(refreshed);
   };
@@ -77,9 +87,9 @@ export const ClientsPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 text-sm text-red-600 dark:text-red-300">
+        <Alert variant="error" dismissible onDismiss={() => setError(null)}>
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -108,14 +118,23 @@ export const ClientsPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                      Loading clients...
+                    <td colSpan={6} className="px-4 py-10">
+                      <LoadingSpinner text="Loading clients..." />
                     </td>
                   </tr>
                 ) : !data || clients.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                      No client data found.
+                    <td colSpan={6} className="px-4 py-2">
+                      <EmptyState
+                        icon={Users}
+                        title="No clients yet"
+                        description="Start winning jobs to build your client portfolio and track relationships."
+                        action={{
+                          label: 'Add New Job',
+                          onClick: () => window.location.href = '/app/jobs/new',
+                          icon: UserPlus,
+                        }}
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -214,7 +233,8 @@ export const ClientsPage: React.FC = () => {
                     void saveWeights();
                   }}
                   disabled={savingWeights}
-                  className="w-full mt-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold disabled:opacity-60"
+                  className="w-full mt-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold disabled:opacity-60 transition-all"
+                  aria-label="Save segmentation weights"
                 >
                   {savingWeights ? 'Saving...' : 'Save Weights'}
                 </button>
@@ -248,7 +268,8 @@ const WeightInput: React.FC<{
       type="number"
       value={value}
       onChange={(e) => onChange(Number(e.target.value || 0))}
-      className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+      className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all"
+      aria-label={label}
     />
   </label>
 );

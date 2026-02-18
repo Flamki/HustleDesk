@@ -44,7 +44,7 @@
 @layer components {
   /* Wider app container for desktop so pages don't look squeezed. */
   .hd-app-container {
-    @apply w-full mx-auto;
+    @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
     max-width: 1480px;
   }
   @media (min-width: 1536px) {
@@ -75,6 +75,8 @@
     @apply bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-500;
     @apply shadow-lg shadow-emerald-500/20;
     @apply transition-all duration-200;
+    /* Mobile-first: Ensure minimum tap target size */
+    min-height: 44px;
   }
   .dark .hd-btn-primary {
     box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.18), 0 18px 60px rgba(0, 0, 0, 0.55);
@@ -87,6 +89,29 @@
     @apply border border-slate-200/70 dark:border-white/10;
     @apply hover:bg-white dark:hover:bg-slate-900/50;
     @apply transition-colors;
+    /* Mobile-first: Ensure minimum tap target size */
+    min-height: 44px;
+  }
+
+  /* Mobile-optimized table wrapper */
+  .hd-table-mobile {
+    @apply block overflow-x-auto -mx-4 sm:mx-0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile-friendly form inputs */
+  .hd-input {
+    @apply w-full rounded-[10px] border px-3 py-2.5 text-base sm:text-sm outline-none transition-all duration-200;
+    @apply bg-white/70 dark:bg-slate-950/30 backdrop-blur;
+    @apply border-slate-200/70 dark:border-white/10 text-slate-900 dark:text-white;
+    @apply focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 dark:focus:ring-emerald-900/25;
+    /* Mobile: 16px font prevents iOS zoom on focus */
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    .hd-input {
+      font-size: 0.875rem; /* sm:text-sm */
+    }
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -106,6 +131,90 @@
   }
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(148, 163, 184, 0.28);
+  }
+}
+
+@layer utilities {
+  /* Smooth transitions for interactive elements */
+  .transition-smooth {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .transition-bounce {
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* Focus visible styles for keyboard navigation */
+  .focus-ring {
+    @apply focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950 outline-none transition-shadow;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg;
+  }
+
+  /* Animated gradient background */
+  .gradient-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* Success checkmark animation */
+  @keyframes checkmark {
+    0% {
+      stroke-dashoffset: 50;
+    }
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .animate-checkmark {
+    stroke-dasharray: 50;
+    animation: checkmark 0.5s ease-in-out;
+  }
+
+  /* Fade in from bottom */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.4s ease-out;
+  }
+
+  /* Scale in */
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
   }
 }
 
