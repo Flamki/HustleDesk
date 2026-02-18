@@ -106,6 +106,16 @@ function detectConflictType(
     }
   }
 
+  // Check for type/interface changes (check before import/export to handle "export interface")
+  if (
+    baseVersion.includes('interface ') ||
+    baseVersion.includes('type ') ||
+    featureVersion.includes('interface ') ||
+    featureVersion.includes('type ')
+  ) {
+    return 'type';
+  }
+
   // Check for import/export changes
   if (
     baseVersion.includes('import ') ||
@@ -114,16 +124,6 @@ function detectConflictType(
     featureVersion.includes('export ')
   ) {
     return 'import';
-  }
-
-  // Check for type/interface changes
-  if (
-    baseVersion.includes('interface ') ||
-    baseVersion.includes('type ') ||
-    featureVersion.includes('interface ') ||
-    featureVersion.includes('type ')
-  ) {
-    return 'type';
   }
 
   // Check for configuration changes

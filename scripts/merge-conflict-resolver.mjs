@@ -92,15 +92,7 @@ function detectConflictType(filePath, baseVersion, featureVersion) {
     }
   }
 
-  if (
-    baseVersion.includes('import ') ||
-    baseVersion.includes('export ') ||
-    featureVersion.includes('import ') ||
-    featureVersion.includes('export ')
-  ) {
-    return 'import';
-  }
-
+  // Check for type/interface changes (check before import/export to handle "export interface")
   if (
     baseVersion.includes('interface ') ||
     baseVersion.includes('type ') ||
@@ -108,6 +100,15 @@ function detectConflictType(filePath, baseVersion, featureVersion) {
     featureVersion.includes('type ')
   ) {
     return 'type';
+  }
+
+  if (
+    baseVersion.includes('import ') ||
+    baseVersion.includes('export ') ||
+    featureVersion.includes('import ') ||
+    featureVersion.includes('export ')
+  ) {
+    return 'import';
   }
 
   if (
