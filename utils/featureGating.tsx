@@ -3,6 +3,7 @@
  * Provides hooks and utilities for checking feature access based on plan tier
  */
 
+import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   PlanTier, 
