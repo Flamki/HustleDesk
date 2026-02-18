@@ -95,7 +95,7 @@ describe('Authentication Flow Integration Tests', () => {
         'SELECT * FROM users',
       ];
 
-      const isValidToken = (token: any) => {
+      const isValidToken = (token: unknown) => {
         if (!token || typeof token !== 'string') return false;
         if (token.length === 0 || token.length > 500) return false;
         if (/<script|javascript:|onerror=|onload=/gi.test(token)) return false;

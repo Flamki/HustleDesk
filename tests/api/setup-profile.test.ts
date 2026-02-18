@@ -17,7 +17,7 @@ describe('Auth API - setup-profile endpoint', () => {
       method: 'POST',
       headers: {},
     };
-    const res = {
+    const _res = {
       statusCode: 0,
       setHeader: vi.fn(),
       end: vi.fn(),
@@ -32,7 +32,7 @@ describe('Auth API - setup-profile endpoint', () => {
       method: 'GET',
       headers: { authorization: 'Bearer test-token' },
     };
-    const res = {
+    const _res = {
       statusCode: 0,
       setHeader: vi.fn(),
       end: vi.fn(),
