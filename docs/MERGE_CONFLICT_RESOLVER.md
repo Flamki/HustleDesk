@@ -136,18 +136,20 @@ Explanation: Chose feature version 19.2.4 over base version 18.2.0 (newer)
 import React from 'react';
 import { useState } from 'react';
 =======
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'react-router-dom';
 >>>>>>> feature-add-router
 
 # Resolution
 import React from 'react';
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'react-router-dom';
 import { useState } from 'react';
 Strategy: import-combine
 Explanation: Combined imports from both branches (deduplicated and sorted)
 ```
+
+Note: The resolver combines imports at the line level. For more sophisticated import merging (e.g., combining multiple imports from the same module), consider using a dedicated import organizer tool after resolution.
 
 ### Type Conflict
 ```bash
