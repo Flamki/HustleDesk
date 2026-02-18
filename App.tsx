@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import type { RouteRecord } from 'vite-react-ssg';
+import { Analytics } from '@vercel/analytics/react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/ProfileContext';
@@ -113,6 +114,7 @@ const RootLayout: React.FC = () => {
             <Suspense fallback={<RouteLoader label="Loading..." />}>
               <Outlet />
             </Suspense>
+            <Analytics />
           </ProfileProvider>
         </AuthProvider>
       </ToastProvider>
