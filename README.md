@@ -95,6 +95,7 @@ See `.env.example` for the complete template.
 - `npm run release:minor` version bump + tag + push
 - `npm run release:major` version bump + tag + push
 - `npm run preview` serve built app locally
+- `npm run merge-conflict-resolver` resolve Git merge conflicts intelligently
 - `npm run loadtest:jobs` load test job endpoints
 - `npm run loadtest:dashboard` load test dashboard
 - `npm run loadtest:time` load test time tracking
@@ -204,6 +205,7 @@ Expected response:
 - Operations Runbook: `docs/OPERATIONS_RUNBOOK.md`
 - Security: `docs/SECURITY.md`
 - Release/versioning: `docs/RELEASE_VERSIONING.md`
+- Merge Conflict Resolver: `docs/MERGE_CONFLICT_RESOLVER.md`
 - Changelog: `CHANGELOG.md`
 - Load testing: `docs/LOAD_TESTING.md`
 - Production checklist: `DEPLOYMENT_CHECKLIST.md`

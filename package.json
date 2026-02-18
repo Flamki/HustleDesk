@@ -20,6 +20,7 @@
     "release:minor": "npm version minor && git push origin main --follow-tags",
     "release:major": "npm version major && git push origin main --follow-tags",
     "preview": "vite-react-ssg preview",
+    "merge-conflict-resolver": "node scripts/merge-conflict-resolver.mjs",
     "loadtest:jobs": "k6 run scripts/loadtest/jobs.js",
     "loadtest:dashboard": "k6 run scripts/loadtest/dashboard.js",
     "loadtest:time": "k6 run scripts/loadtest/time-entries.js",
