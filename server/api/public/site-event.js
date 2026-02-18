@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimitGlobal, getClientIp } from '../_shared/rate-limit.js';
+import { sanitizeSlug, sanitizeString, logSecurityEvent } from '../_shared/security.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -29,17 +30,25 @@ export default async function handler(req, res) {
   if (!supabaseUrl || !serviceRoleKey) return json(res, 500, { error: 'Server not configured' });
 
   const body = parseBody(req);
-  const slug = String(body.slug || '').trim().toLowerCase();
+  const slug = sanitizeSlug(body.slug);
   const eventType = String(body.event_type || '').trim().toLowerCase();
-  if (!slug) return json(res, 400, { error: 'slug is required' });
-  if (!ALLOWED_EVENTS.has(eventType)) return json(res, 400, { error: 'invalid event_type' });
+  
+  if (!slug) return json(res, 400, { error: 'Valid slug is required' });
+  if (!ALLOWED_EVENTS.has(eventType)) {
+    logSecurityEvent({
+      type: 'INVALID_EVENT_TYPE',
+      eventType,
+      ip: getClientIp(req),
+    });
+    return json(res, 400, { error: 'Invalid event_type' });
+  }
 
   // Public analytics ingest guard:
   // - per-ip limit to block bursts
   // - per-session/anon limit to reduce spam events
   const ip = getClientIp(req);
-  const sessionId = body.session_id ? String(body.session_id).slice(0, 120) : '';
-  const anonId = body.anon_id ? String(body.anon_id).slice(0, 120) : '';
+  const sessionId = body.session_id ? sanitizeString(body.session_id, 120) : '';
+  const anonId = body.anon_id ? sanitizeString(body.anon_id, 120) : '';
   const actor = sessionId || anonId || ip || 'unknown';
 
   const ipLimit = await checkRateLimitGlobal({

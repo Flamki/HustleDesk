@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimitGlobal, getClientIp } from '../_shared/rate-limit.js';
 
 const json = (res, status, body) => {
   res.statusCode = status;
@@ -14,6 +15,19 @@ const getHeader = (req, name) => {
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' });
+
+  // Rate limiting - 10 health checks per minute per IP
+  const ip = getClientIp(req);
+  const ipLimit = await checkRateLimitGlobal({
+    key: `health-check:${ip}`,
+    limit: 10,
+    windowMs: 60 * 1000,
+  });
+
+  if (!ipLimit.allowed) {
+    res.setHeader('Retry-After', String(ipLimit.retryAfterSeconds));
+    return json(res, 429, { error: 'Too many requests' });
+  }
 
   const expectedToken = process.env.HEALTHCHECK_TOKEN || '';
   if (expectedToken) {
