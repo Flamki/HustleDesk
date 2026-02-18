@@ -67,7 +67,7 @@ export default async function handler(req, res) {
   const [jobsRes, timeRes, allJobsRes] = await Promise.all([
     supabase
       .from('jobs')
-      .select('id,title,company,platform,status,created_at,applied_at,closed_at,proposed_price,currency,followup_date')
+      .select('id,title,company,platform,status,created_at,applied_at,closed_at,proposed_price,currency,followup_date,followup_at')
       .eq('user_id', user.id)
       .gte('created_at', startIso)
       .lte('created_at', nowIso),
@@ -269,7 +269,12 @@ export default async function handler(req, res) {
     100
   );
 
-  const overdueFollowups = jobs.filter((j) => j.followup_date && new Date(j.followup_date).getTime() < Date.now() && j.status === 'applied').length;
+  const overdueFollowups = jobs.filter((j) => {
+    if (j.status !== 'applied') return false;
+    if (j.followup_at) return new Date(j.followup_at).getTime() < Date.now();
+    if (j.followup_date) return new Date(`${j.followup_date}T23:59:59.999Z`).getTime() < Date.now();
+    return false;
+  }).length;
 
   const insights = [];
   if (topPlatform) {

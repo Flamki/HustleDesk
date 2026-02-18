@@ -25,6 +25,21 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const [editedJob, setEditedJob] = useState<Job>(job);
   const [isEditing, setIsEditing] = useState(initialIsEditing);
 
+  const formatDateTime = (value?: string) => {
+    if (!value) return '-';
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return value;
+    return `${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+  };
+
+  const toDatetimeLocalValue = (value?: string) => {
+    if (!value) return '';
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return '';
+    const local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+  };
+
   useEffect(() => {
     setEditedJob(job);
     setIsEditing(initialIsEditing);
@@ -149,13 +164,13 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 <Calendar size={14} className="text-slate-400" />
                 {isEditing ? (
                   <input
-                    type="date"
+                    type="datetime-local"
                     className="bg-transparent border-b border-slate-300 dark:border-slate-700 focus:border-indigo-500 outline-none text-xs w-full"
-                    value={editedJob.followUpAt ? editedJob.followUpAt.slice(0, 10) : ''}
+                    value={toDatetimeLocalValue(editedJob.followUpAt)}
                     onChange={(e) => handleChange('followUpAt', e.target.value ? new Date(e.target.value).toISOString() : undefined)}
                   />
                 ) : editedJob.followUpAt ? (
-                  new Date(editedJob.followUpAt).toLocaleDateString()
+                  formatDateTime(editedJob.followUpAt)
                 ) : (
                   '-'
                 )}

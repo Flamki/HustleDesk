@@ -25,6 +25,17 @@ const startOfMonthIso = () => {
 };
 
 const todayDate = () => new Date().toISOString().slice(0, 10);
+const startOfTodayIso = () => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return now.toISOString();
+};
+const startOfTomorrowIso = () => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  now.setDate(now.getDate() + 1);
+  return now.toISOString();
+};
 
 const buildActivity = (jobs) => {
   const activity = [];
@@ -90,8 +101,10 @@ export default async function handler(req, res) {
   const weekStart = getRangeStartIso(range);
   const monthStart = startOfMonthIso();
   const today = todayDate();
+  const todayStart = startOfTodayIso();
+  const tomorrowStart = startOfTomorrowIso();
 
-  const [{ count: applicationsThisWeek }, { count: awaitingReply }, { count: activeConversations }, wonData, followupsDue, jobsForActivity] =
+  const [{ count: applicationsThisWeek }, { count: awaitingReply }, { count: activeConversations }, wonData, followupsDueTimed, followupsDueLegacy, jobsForActivity] =
     await Promise.all([
       supabase
         .from('jobs')
@@ -119,17 +132,33 @@ export default async function handler(req, res) {
         .from('jobs')
         .select('*')
         .eq('user_id', user.id)
+        .gte('followup_at', todayStart)
+        .lt('followup_at', tomorrowStart)
+        .order('followup_at', { ascending: true }),
+      supabase
+        .from('jobs')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('followup_at', null)
         .eq('followup_date', today)
         .order('created_at', { ascending: false }),
       supabase.from('jobs').select('title,platform,status,created_at,applied_at,closed_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
     ]);
 
-  if (wonData.error || followupsDue.error || jobsForActivity.error) {
-    return json(res, 500, { error: wonData.error?.message || followupsDue.error?.message || jobsForActivity.error?.message });
+  if (wonData.error || followupsDueTimed.error || followupsDueLegacy.error || jobsForActivity.error) {
+    return json(res, 500, {
+      error:
+        wonData.error?.message ||
+        followupsDueTimed.error?.message ||
+        followupsDueLegacy.error?.message ||
+        jobsForActivity.error?.message,
+    });
   }
 
   const totalRevenue = (wonData.data || []).reduce((sum, row) => sum + Number(row.proposed_price || 0), 0);
   const recentActivity = buildActivity(jobsForActivity.data || []);
+  const followupsDue = [...(followupsDueTimed.data || []), ...(followupsDueLegacy.data || [])];
+  const dedupedFollowupsDue = Array.from(new Map(followupsDue.map((job) => [job.id, job])).values());
 
   return json(res, 200, {
     applications_this_week: applicationsThisWeek || 0,
@@ -137,7 +166,7 @@ export default async function handler(req, res) {
     active_conversations: activeConversations || 0,
     projects_won: wonData.count || 0,
     total_revenue: totalRevenue,
-    followups_due: followupsDue.data || [],
+    followups_due: dedupedFollowupsDue,
     recent_activity: recentActivity,
   });
 }

@@ -23,7 +23,7 @@ create policy "Time share links public read"
   on public.time_share_links
   for select
   using (
-    published = true 
+    revoked_at is null
     and (expires_at is null or expires_at > now())
   );
 
