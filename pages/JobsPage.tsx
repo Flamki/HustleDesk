@@ -44,13 +44,29 @@ const relativeTime = (iso?: string) => {
   return `${days} day${days > 1 ? 's' : ''} ago`;
 };
 
+const dateOnlyFromValue = (value?: string) => {
+  if (!value) return '';
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match?.[1] || '';
+};
+
 const formatFollowup = (iso?: string) => {
   if (!iso) return { text: '-', overdue: false };
-  const date = new Date(iso);
-  const today = new Date();
-  const diff = Math.floor((date.setHours(0, 0, 0, 0) - new Date(today.setHours(0, 0, 0, 0)).getTime()) / 86400000);
-  if (diff < 0) return { text: 'Overdue', overdue: true };
-  return { text: new Date(iso).toLocaleDateString(), overdue: false };
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) {
+    const dateOnly = dateOnlyFromValue(iso);
+    if (!dateOnly) return { text: '-', overdue: false };
+    const fallback = new Date(`${dateOnly}T10:00:00`);
+    return {
+      text: `${fallback.toLocaleDateString()} ${fallback.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`,
+      overdue: fallback.getTime() < Date.now(),
+    };
+  }
+  if (dt.getTime() < Date.now()) return { text: 'Overdue', overdue: true };
+  return {
+    text: `${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`,
+    overdue: false,
+  };
 };
 
 const getPlatformBadge = (platform: string) => {
@@ -588,10 +604,19 @@ export const JobsPage: React.FC = () => {
             setSelectedJob(null);
             setIsEditMode(false);
           }}
-          onSave={(updatedJob) => {
-            void authService.updateJob(updatedJob.id, updatedJob);
-            setJobs((prev) => prev.map((j) => (j.id === updatedJob.id ? updatedJob : j)));
-            setSelectedJob(updatedJob);
+          onSave={async (updatedJob) => {
+            const { data, error } = await authService.updateJob(updatedJob.id, updatedJob);
+            if (error || !data) {
+              showToast({
+                variant: 'error',
+                title: 'Failed to update job',
+                message: error?.message || 'Please try again.',
+              });
+              return;
+            }
+
+            setJobs((prev) => prev.map((j) => (j.id === data.id ? data : j)));
+            setSelectedJob(data);
             setIsEditMode(false);
             showToast({
               variant: 'success',

@@ -63,6 +63,7 @@ type DbJobRow = {
   proposal: string | null;
   status: DbJobStatus;
   followup_date: string | null;
+  followup_at: string | null;
   applied_at: string | null;
   closed_at: string | null;
   created_at: string;
@@ -101,6 +102,45 @@ const statusFromDb = (status: DbJobStatus): JobStatus => {
   return 'Lost';
 };
 
+const extractDateOnly = (value?: string | null): string | undefined => {
+  if (!value) return undefined;
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match?.[1];
+};
+
+const normalizeFollowUpDateTime = (value?: string | null): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const dt = new Date(`${trimmed}T10:00:00`);
+    return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(trimmed)) {
+    const dt = new Date(trimmed);
+    return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
+  }
+
+  const dt = new Date(trimmed);
+  return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
+};
+
+const buildDefaultFollowUpAt = (appliedAtIso: string): string => {
+  const base = new Date(appliedAtIso);
+  const localReminder = new Date(
+    base.getFullYear(),
+    base.getMonth(),
+    base.getDate() + 3,
+    10,
+    0,
+    0,
+    0
+  );
+  return localReminder.toISOString();
+};
+
 const mapDbUserToAppUser = (row: DbUserRow): User => ({
   id: row.id,
   email: row.email,
@@ -125,7 +165,7 @@ const mapDbJobToAppJob = (row: DbJobRow): Job => ({
   status: statusFromDb(row.status),
   createdAt: row.created_at,
   appliedAt: row.applied_at ?? undefined,
-  followUpAt: row.followup_date ? new Date(row.followup_date).toISOString() : undefined,
+  followUpAt: row.followup_at ?? (row.followup_date ? `${row.followup_date}T10:00:00.000Z` : undefined),
   closedAt: row.closed_at ?? undefined,
   notes: row.notes ?? undefined,
   proposal: row.proposal ?? undefined,
@@ -797,12 +837,27 @@ export const updateJob = async (
   id: string,
   updates: Partial<Job>
 ): Promise<{ data: Job | null; error: Error | null }> => {
+  const normalizedUpdates: Partial<Job> = { ...updates };
+  if (normalizedUpdates.status === 'Applied') {
+    const nextAppliedAt = normalizedUpdates.appliedAt || new Date().toISOString();
+    normalizedUpdates.appliedAt = nextAppliedAt;
+
+    if (normalizedUpdates.followUpAt === undefined) {
+      normalizedUpdates.followUpAt = buildDefaultFollowUpAt(nextAppliedAt);
+    }
+  }
+
+  if (normalizedUpdates.followUpAt !== undefined) {
+    const normalizedFollowUp = normalizeFollowUpDateTime(normalizedUpdates.followUpAt);
+    normalizedUpdates.followUpAt = normalizedFollowUp ?? undefined;
+  }
+
   if (!supabase) {
     await new Promise((resolve) => setTimeout(resolve, 200));
     const jobs = getStoredJobs();
     const idx = jobs.findIndex((j) => j.id === id);
     if (idx === -1) return { data: null, error: new Error('Job not found') };
-    const updated = { ...jobs[idx], ...updates, id: jobs[idx].id };
+    const updated = { ...jobs[idx], ...normalizedUpdates, id: jobs[idx].id };
     jobs[idx] = updated;
     saveJobs(jobs);
     invalidateJobsAndDashboardCache();
@@ -810,19 +865,23 @@ export const updateJob = async (
   }
 
   const patch: Record<string, unknown> = {};
-  if (updates.title !== undefined) patch.title = updates.title;
-  if (updates.platform !== undefined) patch.platform = platformToDb(updates.platform);
-  if (updates.company !== undefined) patch.company = updates.company ?? null;
-  if (updates.description !== undefined) patch.job_description = updates.description;
-  if (updates.budgetMin !== undefined) patch.budget_min = updates.budgetMin ?? null;
-  if (updates.budgetMax !== undefined) patch.budget_max = updates.budgetMax ?? null;
-  if (updates.currency !== undefined) patch.currency = updates.currency;
-  if (updates.proposedPrice !== undefined) patch.proposed_price = updates.proposedPrice ?? null;
-  if (updates.status !== undefined) patch.status = statusToDb(updates.status);
-  if (updates.followUpAt !== undefined) patch.followup_date = updates.followUpAt ? updates.followUpAt.slice(0, 10) : null;
-  if (updates.appliedAt !== undefined) patch.applied_at = updates.appliedAt ?? null;
-  if (updates.notes !== undefined) patch.notes = updates.notes ?? null;
-  if (updates.proposal !== undefined) patch.proposal = updates.proposal ?? null;
+  if (normalizedUpdates.title !== undefined) patch.title = normalizedUpdates.title;
+  if (normalizedUpdates.platform !== undefined) patch.platform = platformToDb(normalizedUpdates.platform);
+  if (normalizedUpdates.company !== undefined) patch.company = normalizedUpdates.company ?? null;
+  if (normalizedUpdates.description !== undefined) patch.job_description = normalizedUpdates.description;
+  if (normalizedUpdates.budgetMin !== undefined) patch.budget_min = normalizedUpdates.budgetMin ?? null;
+  if (normalizedUpdates.budgetMax !== undefined) patch.budget_max = normalizedUpdates.budgetMax ?? null;
+  if (normalizedUpdates.currency !== undefined) patch.currency = normalizedUpdates.currency;
+  if (normalizedUpdates.proposedPrice !== undefined) patch.proposed_price = normalizedUpdates.proposedPrice ?? null;
+  if (normalizedUpdates.status !== undefined) patch.status = statusToDb(normalizedUpdates.status);
+  if (normalizedUpdates.followUpAt !== undefined) {
+    const followUpIso = normalizedUpdates.followUpAt ?? null;
+    patch.followup_at = followUpIso;
+    patch.followup_date = followUpIso ? extractDateOnly(followUpIso) ?? null : null;
+  }
+  if (normalizedUpdates.appliedAt !== undefined) patch.applied_at = normalizedUpdates.appliedAt ?? null;
+  if (normalizedUpdates.notes !== undefined) patch.notes = normalizedUpdates.notes ?? null;
+  if (normalizedUpdates.proposal !== undefined) patch.proposal = normalizedUpdates.proposal ?? null;
 
   const { data, error } = await supabase.from('jobs').update(patch).eq('id', id).select('*').single();
   if (error) return { data: null, error };

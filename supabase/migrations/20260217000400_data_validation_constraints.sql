@@ -245,17 +245,17 @@ alter table public.marketing_sites
 alter table public.time_share_links
   drop constraint if exists time_share_links_token_format,
   add constraint time_share_links_token_format
-  check (token ~* '^[0-9a-f]+$' and length(token) >= 32);
+  check (token ~* '^[0-9a-f]+$' and length(token) >= 32) not valid;
 
 alter table public.time_entry_share_links
   drop constraint if exists time_entry_share_links_token_format,
   add constraint time_entry_share_links_token_format
-  check (token ~* '^[0-9a-f]+$' and length(token) >= 32);
+  check (token ~* '^[0-9a-f]+$' and length(token) >= 32) not valid;
 
 alter table public.marketing_contacts
   drop constraint if exists marketing_contacts_unsubscribe_token_format,
   add constraint marketing_contacts_unsubscribe_token_format
-  check (unsubscribe_token ~* '^[0-9a-f]+$' and length(unsubscribe_token) >= 32);
+  check (unsubscribe_token ~* '^[0-9a-f]+$' and length(unsubscribe_token) >= 32) not valid;
 
 -- Add Stripe ID format validation
 alter table public.users

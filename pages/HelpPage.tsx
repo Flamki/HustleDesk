@@ -44,7 +44,7 @@ const CATEGORIES = [
         color: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
         articles: [
             { id: 'jt-1', title: 'Understanding job statuses', content: 'Saved: Found it, haven\'t applied.\nApplied: Proposal sent.\nReplied: Client responded (Good job!).\nWon: You got the gig.\nLost: Didn\'t work out.' },
-            { id: 'jt-2', title: 'How follow-up reminders work', content: 'When you mark a job as "Applied", we automatically set a follow-up reminder for 3 days later. You can adjust this date in the Job Details.' },
+            { id: 'jt-2', title: 'How follow-up reminders work', content: 'When you mark a job as "Applied", we automatically set a follow-up reminder for 3 days later at 10:00 AM. You can adjust both date and time in Job Details.' },
             { id: 'jt-3', title: 'Best follow-up practices', content: 'Keep it short. "Hi [Name], just bumping this to the top of your inbox. Are you still looking for help with [Project]?" is usually enough.' },
             { id: 'jt-4', title: 'Marking jobs as won/lost', content: 'Open the job details and change the status dropdown. Marking as "Won" updates your revenue stats in the dashboard.' },
         ] 
