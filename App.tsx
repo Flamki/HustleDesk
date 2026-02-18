@@ -1,9 +1,11 @@
 import React, { Suspense } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import type { RouteRecord } from 'vite-react-ssg';
+import { Analytics } from '@vercel/analytics/react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/ProfileContext';
+import { ToastProvider } from './components/ui/Toast';
 import { StartupEnvGuard } from './components/system/StartupEnvGuard';
 import { validateEnvironment } from './utils/envValidation';
 import { RouteLoader } from './components/system/RouteLoader';
@@ -106,13 +108,16 @@ const RootLayout: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <ProfileProvider>
-          <Suspense fallback={<RouteLoader label="Loading..." />}>
-            <Outlet />
-          </Suspense>
-        </ProfileProvider>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            <Suspense fallback={<RouteLoader label="Loading..." />}>
+              <Outlet />
+            </Suspense>
+            <Analytics />
+          </ProfileProvider>
+        </AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 };
