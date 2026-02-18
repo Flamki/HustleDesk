@@ -232,7 +232,8 @@ function mergeVersions(
     // Try to merge by combining unique lines
     const baseLines = baseVersion.split('\n');
     const featureLines = featureVersion.split('\n');
-    const merged = [...new Set([...baseLines, ...featureLines])].join('\n');
+    const uniqueLines = new Set([...baseLines, ...featureLines]);
+    const merged = Array.from(uniqueLines).join('\n');
 
     return {
       merged,
@@ -245,7 +246,8 @@ function mergeVersions(
   if (conflictType === 'import') {
     const baseImports = baseVersion.split('\n').filter((l) => l.trim());
     const featureImports = featureVersion.split('\n').filter((l) => l.trim());
-    const allImports = [...new Set([...baseImports, ...featureImports])];
+    const uniqueImports = new Set([...baseImports, ...featureImports]);
+    const allImports = Array.from(uniqueImports);
     const merged = allImports.sort().join('\n');
 
     return {
