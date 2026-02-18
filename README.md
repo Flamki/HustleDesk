@@ -188,6 +188,15 @@ Expected response:
 - **Row Level Security**: Supabase RLS policies on all tables
 
 ## Documentation
+
+### Strategic Planning
+- **📋 Planning Index:** `docs/PLANNING_INDEX.md` (start here for strategic overview)
+- **🎯 Executive Summary:** `docs/EXECUTIVE_SUMMARY.md` (high-level strategy & metrics)
+- **📊 Strategic Analysis:** `docs/STRATEGIC_ANALYSIS.md` (comprehensive planning document)
+- **🗺️ Roadmap Tracker:** `docs/ROADMAP_TRACKER.md` (task progress & sprint planning)
+- **🔍 Phase Comparison Guide:** `docs/PHASE_COMPARISON_GUIDE.md` (understand differences between phases)
+
+### Technical Documentation
 - Architecture: `docs/ARCHITECTURE.md`
 - API Reference: `docs/API_REFERENCE.md`
 - Deployment: `docs/DEPLOYMENT.md`
