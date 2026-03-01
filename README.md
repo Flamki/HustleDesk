@@ -208,6 +208,7 @@ Expected response:
 - Vercel linking/env import: `docs/VERCEL_SETUP.md`
 - Operations Runbook: `docs/OPERATIONS_RUNBOOK.md`
 - Security: `docs/SECURITY.md`
+- Supabase exit plan: `docs/SUPABASE_EXIT_MIGRATION_PLAN.md`
 - Release/versioning: `docs/RELEASE_VERSIONING.md`
 - Merge Conflict Resolver: `docs/MERGE_CONFLICT_RESOLVER.md`
 - Changelog: `CHANGELOG.md`

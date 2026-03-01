@@ -75,6 +75,7 @@ describe('JobsPage follow-up behavior', () => {
   it('saves status change to Applied and updates follow-up from service response', async () => {
     const user = userEvent.setup();
     const initialJob = baseJob();
+    const futureFollowup = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
 
     mockGetJobsList.mockResolvedValue({
       data: { jobs: [initialJob], total: 1, limit: 20, offset: 0 },
@@ -86,7 +87,7 @@ describe('JobsPage follow-up behavior', () => {
         ...initialJob,
         status: 'Applied',
         appliedAt: '2026-02-18T11:00:00.000Z',
-        followUpAt: '2026-02-21T15:00:00.000Z',
+        followUpAt: futureFollowup,
       },
       error: null,
     });
@@ -109,7 +110,7 @@ describe('JobsPage follow-up behavior', () => {
 
     await screen.findByText('Job updated successfully');
 
-    const expectedDate = new Date('2026-02-21T15:00:00.000Z').toLocaleDateString();
+    const expectedDate = new Date(futureFollowup).toLocaleDateString();
     const rowTrigger = screen.getAllByText('Dashboard build').find((el) => el.closest('tr'));
     const row = rowTrigger?.closest('tr') || null;
     expect(row).not.toBeNull();
