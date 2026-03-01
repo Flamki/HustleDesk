@@ -4,7 +4,7 @@ import { PublicPageTemplate } from './PublicPageTemplate';
 export const FreelancerCrm: React.FC = () => (
   <PublicPageTemplate
     title="Freelancer CRM"
-    description="Track leads, manage job pipeline, and convert opportunities with HustleDesk Freelancer CRM."
+    description="Track leads, manage job pipeline, and convert opportunities with GetSoloDesk Freelancer CRM."
     path="/freelancer-crm"
     heading="Freelancer CRM That Closes More Clients"
     intro="Organize leads, follow-ups, and active deals so nothing slips through."
@@ -18,3 +18,4 @@ export const FreelancerCrm: React.FC = () => (
 );
 
 export default FreelancerCrm;
+

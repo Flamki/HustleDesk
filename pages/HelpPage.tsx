@@ -14,10 +14,10 @@ const CATEGORIES = [
         id: 'getting-started', 
         title: 'Getting Started', 
         icon: Rocket, 
-        description: 'New to HustleDesk? Start here.',
+        description: 'New to GetSoloDesk? Start here.',
         color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20',
         articles: [
-            { id: 'gs-1', title: 'How HustleDesk works', content: 'HustleDesk is your freelance operating system. It helps you track jobs from various platforms (Upwork, Fiverr, etc.) in one pipeline and generate AI-powered proposals to win more clients.' },
+            { id: 'gs-1', title: 'How GetSoloDesk works', content: 'GetSoloDesk is your freelance operating system. It helps you track jobs from various platforms (Upwork, Fiverr, etc.) in one pipeline and generate AI-powered proposals to win more clients.' },
             { id: 'gs-2', title: 'Setting up your freelancer profile', content: 'Your profile is the brain of the AI. Go to Settings > Profile to add your skills, experience, and past projects. The more details you add, the better your proposals will be.' },
             { id: 'gs-3', title: 'Adding your first job', content: 'Click "Add Job" in the sidebar. Copy the job title and description from the freelance platform. We recommend pasting the full description so our AI can analyze requirements accurately.' },
             { id: 'gs-4', title: 'Generating your first proposal', content: 'Once a job is added, click "Generate Proposal". Select your tone and length preferences, then let the AI draft a cover letter for you.' },
@@ -449,3 +449,4 @@ export const HelpPage: React.FC = () => {
         </div>
     );
 };
+

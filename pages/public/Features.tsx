@@ -4,7 +4,7 @@ import { PublicPageTemplate } from './PublicPageTemplate';
 export const Features: React.FC = () => (
   <PublicPageTemplate
     title="Features"
-    description="Explore HustleDesk features for freelancers: CRM, proposals, time tracking, analytics, and website builder."
+    description="Explore GetSoloDesk features for freelancers: CRM, proposals, time tracking, analytics, and website builder."
     path="/features"
     heading="Features Built for Freelancers"
     intro="Run client acquisition and delivery from one workspace designed for solo operators and small teams."
@@ -19,3 +19,4 @@ export const Features: React.FC = () => (
 );
 
 export default Features;
+

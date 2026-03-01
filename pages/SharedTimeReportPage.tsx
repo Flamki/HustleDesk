@@ -60,7 +60,7 @@ export const SharedTimeReportPage: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                HustleDesk
+                GetSoloDesk
               </p>
               <h1 className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 {title}
@@ -178,4 +178,5 @@ export const SharedTimeReportPage: React.FC = () => {
     </div>
   );
 };
+
 

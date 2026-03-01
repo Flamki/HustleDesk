@@ -1,4 +1,4 @@
-const STATE_KEY = '__hustledesk_rate_limiter_state__';
+const STATE_KEY = '__getsolodesk_rate_limiter_state__';
 
 const getState = () => {
   if (!globalThis[STATE_KEY]) {
@@ -118,3 +118,4 @@ export const checkRateLimitGlobal = async ({ key, limit, windowMs }) => {
     return { ...checkRateLimit({ key: safeKey, limit: max, windowMs: window }), store: 'memory' };
   }
 };
+

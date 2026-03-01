@@ -1,5 +1,5 @@
 /**
- * Centralized logging utility for HustleDesk
+ * Centralized logging utility for GetSoloDesk
  * Provides structured logging with consistent formatting and integration points for external logging services
  */
 
@@ -155,3 +155,4 @@ export const logger = new Logger();
 
 // Export class for testing or custom instances
 export { Logger };
+

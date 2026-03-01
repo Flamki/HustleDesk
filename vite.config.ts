@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
       plugins: [
         react(),
         sitemap({
-          hostname: 'https://hustledesk.com',
+          hostname: 'https://getsolodesk.com',
           dynamicRoutes: SEO_ROUTES.filter((route) => route !== '/'),
           generateRobotsTxt: false,
         }),
@@ -79,3 +79,4 @@ export default defineConfig(({ mode }) => {
       }
     };
 });
+

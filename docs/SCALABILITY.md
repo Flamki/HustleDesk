@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the scalability strategy for the HustleDesk database to support growth from 1,000 to 100,000+ users. It covers performance optimization, capacity planning, and scaling techniques.
+This document outlines the scalability strategy for the GetSoloDesk database to support growth from 1,000 to 100,000+ users. It covers performance optimization, capacity planning, and scaling techniques.
 
 ## Table of Contents
 
@@ -312,7 +312,7 @@ For 4-core database: `(4 × 2) + 1 = 9 connections`
 
 ```ini
 [databases]
-hustledesk = host=<supabase-host> port=5432 dbname=postgres
+getsolodesk = host=<supabase-host> port=5432 dbname=postgres
 
 [pgbouncer]
 pool_mode = transaction
@@ -828,3 +828,4 @@ limit 10;
 **Document Version:** 1.0  
 **Last Updated:** 2026-02-17  
 **Next Review:** 2026-05-17
+

@@ -43,7 +43,7 @@ export const AppNavbar: React.FC = () => {
                         <path d="M7 20L3 20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-50"/>
                     </svg>
                 </div>
-                <span className="font-bold text-slate-900 dark:text-white hidden sm:block">HustleDesk</span>
+                <span className="font-bold text-slate-900 dark:text-white hidden sm:block">GetSoloDesk</span>
             </Link>
 
             {/* Desktop Nav */}
@@ -118,3 +118,4 @@ export const AppNavbar: React.FC = () => {
     </nav>
   );
 };
+

@@ -1,6 +1,6 @@
 # Build Optimization Guide
 
-Guide for optimizing HustleDesk build performance and output.
+Guide for optimizing GetSoloDesk build performance and output.
 
 ## Current Optimizations
 
@@ -327,4 +327,5 @@ Set size budgets in `package.json`:
 ---
 
 **Last Updated**: 2026-02-17
-**Maintained By**: HustleDesk Team
+**Maintained By**: GetSoloDesk Team
+

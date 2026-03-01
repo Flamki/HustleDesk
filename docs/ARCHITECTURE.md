@@ -1,7 +1,7 @@
 # Architecture
 
 ## Overview
-HustleDesk is a hybrid Vite app (SSG + SPA) with serverless APIs and Supabase as system of record.
+GetSoloDesk is a hybrid Vite app (SSG + SPA) with serverless APIs and Supabase as system of record.
 
 Core layers:
 - Frontend SPA (`pages/`, `components/`, `services/`)
@@ -102,3 +102,4 @@ For detailed documentation:
 - Startup environment validation guard to prevent broken runtime boots
 - Centralized error responses in API handlers
 - Deployment checklist and load test scripts in repo
+

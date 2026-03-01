@@ -4,7 +4,7 @@ import { PublicPageTemplate } from './PublicPageTemplate';
 export const Pricing: React.FC = () => (
   <PublicPageTemplate
     title="Pricing"
-    description="Simple HustleDesk pricing for freelancers with Stripe billing and subscription management."
+    description="Simple GetSoloDesk pricing for freelancers with Stripe billing and subscription management."
     path="/pricing"
     heading="Straightforward Pricing"
     intro="Start free, then upgrade when you need advanced operations, billing, and automation."
@@ -18,3 +18,4 @@ export const Pricing: React.FC = () => (
 );
 
 export default Pricing;
+

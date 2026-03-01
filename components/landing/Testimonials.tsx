@@ -14,14 +14,14 @@ const TESTIMONIALS = [
         name: "Elena R.",
         role: "UX Designer",
         image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Elena",
-        quote: "Before HustleDesk, my 'CRM' was a messy Notion page. Now I wake up, check my dashboard, and know exactly who to email. It feels like I have a superpower.",
+        quote: "Before GetSoloDesk, my 'CRM' was a messy Notion page. Now I wake up, check my dashboard, and know exactly who to email. It feels like I have a superpower.",
         metric: "Saved: 5h/week"
     },
     {
         name: "David K.",
         role: "Copywriter",
         image: "https://api.dicebear.com/7.x/avataaars/svg?seed=David",
-        quote: "The follow-up reminders alone are worth the subscription. I closed a $3k retainer deal just because HustleDesk pinged me to check in on a cold lead.",
+        quote: "The follow-up reminders alone are worth the subscription. I closed a $3k retainer deal just because GetSoloDesk pinged me to check in on a cold lead.",
         metric: "Revenue: +$3k/mo"
     }
 ];
@@ -65,4 +65,5 @@ export const Testimonials: React.FC = () => {
     </section>
   );
 };
+
 

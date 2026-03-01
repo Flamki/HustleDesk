@@ -1,10 +1,10 @@
 # Error Tracking Integration Guide
 
-Guide for integrating error tracking services (Sentry, Rollbar, Datadog, etc.) with HustleDesk.
+Guide for integrating error tracking services (Sentry, Rollbar, Datadog, etc.) with GetSoloDesk.
 
 ## Overview
 
-HustleDesk has built-in error tracking hooks that make it easy to integrate with popular error tracking services. The integration points are designed to be:
+GetSoloDesk has built-in error tracking hooks that make it easy to integrate with popular error tracking services. The integration points are designed to be:
 
 - **Service-agnostic**: Works with any error tracking service
 - **Zero-overhead**: No performance impact when disabled
@@ -193,7 +193,7 @@ datadogRum.init({
   applicationId: import.meta.env.VITE_DATADOG_APP_ID,
   clientToken: import.meta.env.VITE_DATADOG_CLIENT_TOKEN,
   site: 'datadoghq.com',
-  service: 'hustledesk',
+  service: 'getsolodesk',
   env: import.meta.env.MODE,
   version: import.meta.env.VITE_APP_VERSION,
   sessionSampleRate: 100,
@@ -486,4 +486,5 @@ function TestErrorButton() {
 ---
 
 **Last Updated**: 2026-02-17
-**Maintained By**: HustleDesk Team
+**Maintained By**: GetSoloDesk Team
+

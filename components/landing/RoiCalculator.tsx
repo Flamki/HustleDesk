@@ -93,7 +93,7 @@ export const RoiCalculator: React.FC = () => {
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-500 flex items-center gap-1">
                     <Sparkles size={12} />
-                    HustleDesk reduces this to ~5 mins
+                    GetSoloDesk reduces this to ~5 mins
                 </p>
               </div>
             </div>
@@ -141,3 +141,4 @@ export const RoiCalculator: React.FC = () => {
     </section>
   );
 };
+

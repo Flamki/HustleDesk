@@ -3,8 +3,8 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const FAQS = [
   {
-    q: "Does HustleDesk apply to jobs for me?",
-    a: "No. HustleDesk helps you manage your applications and generates proposals, but you stay in control and hit send yourself to avoid getting banned by platforms like Upwork. We provide the system, you execute the action."
+    q: "Does GetSoloDesk apply to jobs for me?",
+    a: "No. GetSoloDesk helps you manage your applications and generates proposals, but you stay in control and hit send yourself to avoid getting banned by platforms like Upwork. We provide the system, you execute the action."
   },
   {
     q: "Is it really free?",
@@ -12,11 +12,11 @@ const FAQS = [
   },
   {
     q: "Can I use it for Upwork and Fiverr?",
-    a: "Absolutely. HustleDesk is platform-agnostic. You can manually add jobs from Upwork, Fiverr, Freelancer, LinkedIn, or direct clients."
+    a: "Absolutely. GetSoloDesk is platform-agnostic. You can manually add jobs from Upwork, Fiverr, Freelancer, LinkedIn, or direct clients."
   },
   {
     q: "How does the AI Proposal Generator work?",
-    a: "You paste the job description and your skills into HustleDesk. Our AI analyzes the client's needs and drafts a professional, persuasive cover letter that you can tweak and send."
+    a: "You paste the job description and your skills into GetSoloDesk. Our AI analyzes the client's needs and drafts a professional, persuasive cover letter that you can tweak and send."
   }
 ];
 
@@ -62,3 +62,4 @@ export const FAQ: React.FC = () => {
     </section>
   );
 };
+

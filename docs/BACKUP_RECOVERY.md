@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the backup, recovery, and disaster recovery procedures for the HustleDesk Supabase PostgreSQL database. It covers automated backups, point-in-time recovery, and emergency procedures.
+This document outlines the backup, recovery, and disaster recovery procedures for the GetSoloDesk Supabase PostgreSQL database. It covers automated backups, point-in-time recovery, and emergency procedures.
 
 ## Table of Contents
 
@@ -111,7 +111,7 @@ Create a SQL dump for long-term retention:
 
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/backups/weekly"
-BACKUP_FILE="hustledesk_${DATE}.sql.gz"
+BACKUP_FILE="getsolodesk_${DATE}.sql.gz"
 
 # Create backup directory
 mkdir -p $BACKUP_DIR
@@ -131,7 +131,7 @@ pg_dump \
   <database-name> | gzip > "${BACKUP_DIR}/${BACKUP_FILE}"
 
 # Upload to S3/GCS
-aws s3 cp "${BACKUP_DIR}/${BACKUP_FILE}" "s3://hustledesk-backups/weekly/${BACKUP_FILE}"
+aws s3 cp "${BACKUP_DIR}/${BACKUP_FILE}" "s3://getsolodesk-backups/weekly/${BACKUP_FILE}"
 
 # Clean up old local backups (keep 3)
 ls -t ${BACKUP_DIR}/*.sql.gz | tail -n +4 | xargs rm -f
@@ -154,7 +154,7 @@ Always backup before major deployments:
 # pre-deploy-backup.sh
 
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="hustledesk_pre_deploy_${DATE}.sql.gz"
+BACKUP_FILE="getsolodesk_pre_deploy_${DATE}.sql.gz"
 
 pg_dump \
   --host=<supabase-host> \
@@ -167,10 +167,10 @@ pg_dump \
   --if-exists \
   <database-name> | gzip > "${BACKUP_FILE}"
 
-aws s3 cp "${BACKUP_FILE}" "s3://hustledesk-backups/pre-deploy/${BACKUP_FILE}"
+aws s3 cp "${BACKUP_FILE}" "s3://getsolodesk-backups/pre-deploy/${BACKUP_FILE}"
 
 echo "Pre-deployment backup completed: ${BACKUP_FILE}"
-echo "Recovery command: aws s3 cp s3://hustledesk-backups/pre-deploy/${BACKUP_FILE} - | gunzip | psql <connection-string>"
+echo "Recovery command: aws s3 cp s3://getsolodesk-backups/pre-deploy/${BACKUP_FILE} - | gunzip | psql <connection-string>"
 ```
 
 ### Schema-only Backup
@@ -288,7 +288,7 @@ where deleted_at > now() - interval '1 day'
 
 1. **Create new Supabase project** (if original is unrecoverable)
    ```bash
-   supabase projects create hustledesk-recovery
+   supabase projects create getsolodesk-recovery
    ```
 
 2. **Restore from backup**
@@ -379,7 +379,7 @@ where deleted_at > now() - interval '1 day'
 1. **Immediate rollback**
    ```bash
    # Restore from pre-deployment backup
-   aws s3 cp s3://hustledesk-backups/pre-deploy/latest.sql.gz - | \
+   aws s3 cp s3://getsolodesk-backups/pre-deploy/latest.sql.gz - | \
      gunzip | psql <connection-string>
    ```
 
@@ -406,7 +406,7 @@ Test your backup and recovery procedures monthly:
 
 1. **Create test environment**
    ```bash
-   supabase projects create hustledesk-test-recovery
+   supabase projects create getsolodesk-test-recovery
    ```
 
 2. **Restore latest backup**
@@ -442,7 +442,7 @@ Test your backup and recovery procedures monthly:
 
 7. **Clean up test environment**
    ```bash
-   supabase projects delete hustledesk-test-recovery
+   supabase projects delete getsolodesk-test-recovery
    ```
 
 ### Automated Recovery Tests
@@ -468,7 +468,7 @@ jobs:
           sudo dpkg -i supabase_linux_amd64.deb
       
       - name: Create test project
-        run: supabase projects create hustledesk-backup-test
+        run: supabase projects create getsolodesk-backup-test
       
       - name: Restore latest backup
         run: supabase db restore --backup-id latest
@@ -479,7 +479,7 @@ jobs:
           psql $TEST_DB_URL -c "SELECT COUNT(*) FROM jobs;"
       
       - name: Clean up
-        run: supabase projects delete hustledesk-backup-test
+        run: supabase projects delete getsolodesk-backup-test
 ```
 
 ---
@@ -688,7 +688,7 @@ select cron.schedule(
    - Is data corrupted or just schema?
 3. **Restore from pre-deployment backup**
    ```bash
-   aws s3 cp s3://hustledesk-backups/pre-deploy/latest.sql.gz - | \
+   aws s3 cp s3://getsolodesk-backups/pre-deploy/latest.sql.gz - | \
      gunzip | psql <connection-string>
    ```
 4. **Revert application deployment**
@@ -808,3 +808,4 @@ gunzip -c backup.sql.gz | head -100
 **Document Version:** 1.0  
 **Last Updated:** 2026-02-17  
 **Next Review:** 2026-05-17
+

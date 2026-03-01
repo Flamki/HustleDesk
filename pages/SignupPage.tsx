@@ -31,7 +31,7 @@ export const SignupPage: React.FC = () => {
                         <path d="M7 12H17" stroke="white" strokeWidth="3" strokeLinecap="round"/>
                     </svg>
                 </div>
-                <span className="text-xl font-bold tracking-tight">HustleDesk</span>
+                <span className="text-xl font-bold tracking-tight">GetSoloDesk</span>
             </div>
 
             {/* Central Content */}
@@ -121,4 +121,5 @@ export const SignupPage: React.FC = () => {
     </div>
   );
 };
+
 

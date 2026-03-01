@@ -4,7 +4,7 @@ import { PublicPageTemplate } from './PublicPageTemplate';
 export const ProposalGenerator: React.FC = () => (
   <PublicPageTemplate
     title="Proposal Generator"
-    description="Generate client-ready proposals faster with editable templates in HustleDesk."
+    description="Generate client-ready proposals faster with editable templates in GetSoloDesk."
     path="/proposal-generator"
     heading="Proposal Generator"
     intro="Turn job details into polished proposals quickly, then customize for each client."
@@ -18,3 +18,4 @@ export const ProposalGenerator: React.FC = () => (
 );
 
 export default ProposalGenerator;
+

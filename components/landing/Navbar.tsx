@@ -67,7 +67,7 @@ export const Navbar: React.FC = () => {
                     </svg>
                 </div>
                 <span className={`font-bold tracking-tight ${isScrolled ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
-                    HustleDesk
+                    GetSoloDesk
                 </span>
             </Link>
 
@@ -141,3 +141,4 @@ export const Navbar: React.FC = () => {
     </>
   );
 };
+

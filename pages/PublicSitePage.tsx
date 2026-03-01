@@ -289,7 +289,7 @@ const TemplateStudio: React.FC<{ data: PublicData }> = ({ data }) => {
         </main>
 
         <footer className="mt-14 pt-8 border-t border-white/10 text-xs text-white/50 flex items-center justify-between">
-          <span>Powered by HustleDesk</span>
+          <span>Powered by GetSoloDesk</span>
           <span>{new Date().getFullYear()}</span>
         </footer>
       </div>
@@ -558,4 +558,5 @@ export const PublicSitePage: React.FC = () => {
   }
   return <TemplateStudio data={data} />;
 };
+
 

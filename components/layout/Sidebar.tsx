@@ -354,8 +354,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
                 to="/app/dashboard"
                 onClick={onClose}
                 className={`flex items-center group ${isCollapsed ? 'justify-center w-auto' : 'gap-3 w-full'}`}
-                title={isCollapsed ? 'HustleDesk' : undefined}
-                aria-label={isCollapsed ? 'HustleDesk' : undefined}
+                title={isCollapsed ? 'GetSoloDesk' : undefined}
+                aria-label={isCollapsed ? 'GetSoloDesk' : undefined}
             >
                 <div className="relative">
                     <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/30 transition-all">
@@ -371,7 +371,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
                 
                 {!isCollapsed && (
                     <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 dark:text-white leading-none tracking-tight">HustleDesk</span>
+                        <span className="font-bold text-slate-900 dark:text-white leading-none tracking-tight">GetSoloDesk</span>
                         <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-1">Pro Workspace</span>
                     </div>
                  )}
@@ -551,6 +551,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
     </aside>
   );
 };
+
 
 
 

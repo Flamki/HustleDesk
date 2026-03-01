@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://hustledesk.com/sitemap.xml
+Sitemap: https://getsolodesk.com/sitemap.xml

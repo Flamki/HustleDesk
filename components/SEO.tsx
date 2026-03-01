@@ -8,8 +8,8 @@ type SEOProps = {
   image?: string;
 };
 
-const SITE_NAME = 'HustleDesk';
-const SITE_URL = 'https://hustledesk.com';
+const SITE_NAME = 'GetSoloDesk';
+const SITE_URL = 'https://getsolodesk.com';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.svg`;
 
 export const SEO: React.FC<SEOProps> = ({ title, description, path, image }) => {
@@ -38,3 +38,4 @@ export const SEO: React.FC<SEOProps> = ({ title, description, path, image }) => 
 };
 
 export default SEO;
+

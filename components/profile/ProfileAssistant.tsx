@@ -8,7 +8,7 @@ import { useProfile } from '../../context/ProfileContext';
 const STEPS = [
     {
         id: 'intro',
-        message: "Hi there! I'm your HustleDesk AI agent. Let's build your professional profile so I can write better proposals for you. You can upload your Resume/CV to autocomplete everything, or we can chat manually. First, what services do you offer?",
+        message: "Hi there! I'm your GetSoloDesk AI agent. Let's build your professional profile so I can write better proposals for you. You can upload your Resume/CV to autocomplete everything, or we can chat manually. First, what services do you offer?",
         field: 'skills'
     },
     {
@@ -256,4 +256,5 @@ export const ProfileAssistant: React.FC = () => {
         </div>
     );
 };
+
 

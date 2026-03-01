@@ -182,7 +182,7 @@ export const EmailMarketingPage: React.FC = () => {
   useEffect(() => {
     if (composePurpose === 'newsletter') {
       if (!composeName.trim()) setComposeName('Weekly update');
-      if (!composeSubject.trim()) setComposeSubject('Weekly update from HustleDesk');
+      if (!composeSubject.trim()) setComposeSubject('Weekly update from GetSoloDesk');
       if (!composeText.trim()) {
         setComposeText('Hi {{first_name}},\n\nHere is your weekly update.\n\nUnsubscribe: {{unsubscribe_url}}\n');
       }
@@ -687,3 +687,4 @@ export const EmailMarketingPage: React.FC = () => {
     </div>
   );
 };
+

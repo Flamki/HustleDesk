@@ -1,4 +1,4 @@
-# HustleDesk Website Mindmap
+# GetSoloDesk Website Mindmap
 
 ## 1. Auth and Access
 - Goal: Secure account lifecycle and route protection.
@@ -129,4 +129,5 @@
   - Prevent blank screens from bad env.
   - Fail gracefully.
   - Keep navigation responsive with lazy routes.
+
 

@@ -1,6 +1,6 @@
-# HustleDesk
+# GetSoloDesk
 
-HustleDesk is a freelancer operations platform built with React + Vite + Supabase + Vercel serverless APIs.
+GetSoloDesk is a freelancer operations platform built with React + Vite + Supabase + Vercel serverless APIs.
 It uses a hybrid rendering model:
 - Public marketing pages are statically generated (SEO-ready).
 - Private product pages under `/app/*` are client-rendered.
@@ -106,7 +106,7 @@ See `.env.example` for the complete template.
 - `npm run loadtest:public-site` load test public site
 
 ## Testing
-HustleDesk uses Vitest for unit and integration testing.
+GetSoloDesk uses Vitest for unit and integration testing.
 
 ### Running Tests
 ```bash
@@ -232,3 +232,4 @@ Key production behaviors:
 ## License
 Private project. All rights reserved.
  
+

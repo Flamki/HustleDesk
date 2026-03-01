@@ -83,7 +83,7 @@ export const ProtectedRoute: React.FC = () => {
                         <path d="M7 12H17" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
                     </svg>
                  </div>
-                 <span className="font-bold text-slate-900 dark:text-white text-lg">HustleDesk</span>
+                 <span className="font-bold text-slate-900 dark:text-white text-lg">GetSoloDesk</span>
             </div>
             <button 
                 onClick={() => setIsMobileMenuOpen(true)}
@@ -107,3 +107,4 @@ export const ProtectedRoute: React.FC = () => {
     </div>
   );
 };
+

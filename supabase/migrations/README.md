@@ -1,6 +1,6 @@
 # Database Migrations
 
-This directory contains all SQL migration files for the HustleDesk database schema.
+This directory contains all SQL migration files for the GetSoloDesk database schema.
 
 ## Migration Naming Convention
 
@@ -295,3 +295,4 @@ After deploying migration:
 - [SCALABILITY.md](../docs/SCALABILITY.md) - Scaling strategy
 - [Supabase Migrations Docs](https://supabase.com/docs/guides/cli/local-development#database-migrations)
 - [PostgreSQL ALTER TABLE](https://www.postgresql.org/docs/current/sql-altertable.html)
+

@@ -5,7 +5,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const APP_BASE_URL = (process.env.APP_BASE_URL || process.env.PUBLIC_APP_URL || '').replace(/\/+$/, '');
 const FROM_EMAIL = process.env.MARKETING_FROM_EMAIL || '';
-const FROM_NAME = process.env.MARKETING_FROM_NAME || 'HustleDesk';
+const FROM_NAME = process.env.MARKETING_FROM_NAME || 'GetSoloDesk';
 
 const json = (res, status, body) => {
   res.statusCode = status;
@@ -160,3 +160,4 @@ export default async function handler(req, res) {
     return json(res, 500, { error: err instanceof Error ? err.message : 'Failed to send test reminder' });
   }
 }
+

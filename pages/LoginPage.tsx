@@ -31,7 +31,7 @@ export const LoginPage: React.FC = () => {
                         <path d="M7 12H17" stroke="white" strokeWidth="3" strokeLinecap="round"/>
                     </svg>
                 </div>
-                <span className="text-xl font-bold tracking-tight">HustleDesk</span>
+                <span className="text-xl font-bold tracking-tight">GetSoloDesk</span>
             </div>
 
             {/* Central Content */}
@@ -41,7 +41,7 @@ export const LoginPage: React.FC = () => {
                         <Quote size={24} fill="currentColor" />
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold leading-tight mb-6">
-                        "HustleDesk isn't just a tool; it's my COO."
+                        "GetSoloDesk isn't just a tool; it's my COO."
                     </h2>
                     <p className="text-lg text-slate-400 leading-relaxed mb-8">
                          I spend less time managing chaos and more time serving the clients I love. The AI proposals alone save me 10 hours a week.
@@ -66,7 +66,7 @@ export const LoginPage: React.FC = () => {
                     <ShieldCheck size={16} /> Secure Login
                 </span>
                 <span>•</span>
-                <span>© 2024 HustleDesk Inc.</span>
+                <span>© 2024 GetSoloDesk Inc.</span>
             </div>
         </div>
 
@@ -99,4 +99,5 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
+
 

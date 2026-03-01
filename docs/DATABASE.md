@@ -2,7 +2,7 @@
 
 ## Overview
 
-HustleDesk uses **Supabase PostgreSQL** as its primary database with Row Level Security (RLS) enabled on all tables. The database is designed to scale to 100,000+ users with proper indexing, partitioning strategies, and performance optimizations.
+GetSoloDesk uses **Supabase PostgreSQL** as its primary database with Row Level Security (RLS) enabled on all tables. The database is designed to scale to 100,000+ users with proper indexing, partitioning strategies, and performance optimizations.
 
 ## Table of Contents
 
@@ -725,3 +725,4 @@ notify pgrst, 'reload schema';
 - [Supabase Database Documentation](https://supabase.com/docs/guides/database)
 - [PostgreSQL Performance Tuning](https://wiki.postgresql.org/wiki/Performance_Optimization)
 - [RLS Best Practices](https://supabase.com/docs/guides/auth/row-level-security)
+

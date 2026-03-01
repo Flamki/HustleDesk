@@ -12,7 +12,7 @@ export const Manifesto: React.FC = () => {
             The Freelancer Upgrade
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Most freelancers are stuck in Level 1. HustleDesk is the cheat code to get to Level 2.
+            Most freelancers are stuck in Level 1. GetSoloDesk is the cheat code to get to Level 2.
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export const Manifesto: React.FC = () => {
 
              <div className="relative z-10">
                 <div className="inline-block px-4 py-1.5 rounded-full bg-white text-indigo-900 text-sm font-bold mb-8">
-                    The HustleDesk Way
+                    The GetSoloDesk Way
                 </div>
                 
                 <div className="space-y-6">
@@ -74,3 +74,4 @@ export const Manifesto: React.FC = () => {
     </section>
   );
 };
+

@@ -4,7 +4,7 @@ import { PublicPageTemplate } from './PublicPageTemplate';
 export const TimeTracking: React.FC = () => (
   <PublicPageTemplate
     title="Time Tracking"
-    description="Track billable time, earnings, and share reports with clients using HustleDesk."
+    description="Track billable time, earnings, and share reports with clients using GetSoloDesk."
     path="/time-tracking"
     heading="Time Tracking and Earnings"
     intro="Capture billable sessions, monitor effective hourly rate, and share trusted reports."
@@ -18,3 +18,4 @@ export const TimeTracking: React.FC = () => (
 );
 
 export default TimeTracking;
+

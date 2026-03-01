@@ -9,7 +9,7 @@ type SupabaseBrowserClient = SupabaseClient<any, 'public', any>;
 
 declare global {
   interface Window {
-    __hustledesk_supabase_client__?: SupabaseBrowserClient | null;
+    __getsolodesk_supabase_client__?: SupabaseBrowserClient | null;
   }
 }
 
@@ -23,7 +23,7 @@ const createSupabaseClient = (): SupabaseBrowserClient | null => {
 export const supabase =
   typeof window === 'undefined'
     ? createSupabaseClient()
-    : (window.__hustledesk_supabase_client__ ??= createSupabaseClient());
+    : (window.__getsolodesk_supabase_client__ ??= createSupabaseClient());
 
 const isLocalHost = (host: string): boolean => {
   const h = (host || '').toLowerCase();
@@ -50,3 +50,4 @@ export const getAuthBaseUrl = (): string => {
   }
   return window.location.origin;
 };
+
