@@ -4,12 +4,20 @@ import { Link } from 'react-router-dom';
 import { LoginForm } from '../components/auth/LoginForm';
 import { Sun, Moon, ArrowLeft, Star, ShieldCheck, Quote } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import SEO from '../components/SEO';
 
 export const LoginPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen w-full flex bg-white dark:bg-slate-950 transition-colors duration-300">
+    <>
+      <SEO
+        title="Login"
+        description="Log in to your GetSoloDesk account."
+        path="/login"
+        noindex
+      />
+      <div className="min-h-screen w-full flex bg-white dark:bg-slate-950 transition-colors duration-300">
         
         {/* Left Column: Brand & Visuals (Hidden on Mobile) */}
         <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 text-white overflow-hidden flex-col justify-between p-16 z-10">
@@ -96,7 +104,8 @@ export const LoginPage: React.FC = () => {
             </div>
         </div>
 
-    </div>
+      </div>
+    </>
   );
 };
 

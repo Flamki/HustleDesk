@@ -6,6 +6,12 @@ export const PortfolioBuilderPublic: React.FC = () => (
     title="Portfolio Builder"
     description="Build and publish your portfolio site with customizable templates, typography, and palettes."
     path="/portfolio-builder"
+    keywords={[
+      'freelancer portfolio builder',
+      'portfolio website templates',
+      'online portfolio for freelancers',
+      'personal brand portfolio',
+    ]}
     heading="Portfolio Builder"
     intro="Launch a branded portfolio quickly with templates designed for different creator styles."
     bullets={[

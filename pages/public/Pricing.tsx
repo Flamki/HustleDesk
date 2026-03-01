@@ -6,6 +6,11 @@ export const Pricing: React.FC = () => (
     title="Pricing"
     description="Simple GetSoloDesk pricing for freelancers with Stripe billing and subscription management."
     path="/pricing"
+    keywords={[
+      'freelancer crm pricing',
+      'freelancer software subscription',
+      'proposal and time tracking pricing',
+    ]}
     heading="Straightforward Pricing"
     intro="Start free, then upgrade when you need advanced operations, billing, and automation."
     bullets={[

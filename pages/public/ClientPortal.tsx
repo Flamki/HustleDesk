@@ -6,6 +6,12 @@ export const ClientPortal: React.FC = () => (
     title="Client Portal"
     description="Share progress, reports, and selected deliverables with clients using public portal pages."
     path="/client-portal"
+    keywords={[
+      'client portal for freelancers',
+      'share project progress',
+      'freelancer client updates',
+      'public client dashboard',
+    ]}
     heading="Client Portal Experience"
     intro="Publish clear project visibility with secure share links and public-facing pages."
     bullets={[

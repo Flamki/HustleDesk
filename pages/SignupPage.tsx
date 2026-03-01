@@ -4,12 +4,20 @@ import { Link } from 'react-router-dom';
 import { SignupForm } from '../components/auth/SignupForm';
 import { Sun, Moon, ArrowLeft, CheckCircle2, Zap, Rocket, BarChart3, Star } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import SEO from '../components/SEO';
 
 export const SignupPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen w-full flex bg-white dark:bg-slate-950 transition-colors duration-300">
+    <>
+      <SEO
+        title="Sign Up"
+        description="Create your GetSoloDesk account."
+        path="/signup"
+        noindex
+      />
+      <div className="min-h-screen w-full flex bg-white dark:bg-slate-950 transition-colors duration-300">
         
         {/* Left Column: Brand & Value (Hidden on Mobile) */}
         <div className="hidden lg:flex lg:w-1/2 relative bg-slate-950 text-white overflow-hidden flex-col justify-between p-16 z-10">
@@ -118,7 +126,8 @@ export const SignupPage: React.FC = () => {
             </div>
         </div>
 
-    </div>
+      </div>
+    </>
   );
 };
 

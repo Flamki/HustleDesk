@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /app/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+Disallow: /unsubscribe
+Disallow: /share/
 
 Sitemap: https://getsolodesk.com/sitemap.xml

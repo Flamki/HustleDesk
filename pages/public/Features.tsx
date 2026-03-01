@@ -6,6 +6,12 @@ export const Features: React.FC = () => (
     title="Features"
     description="Explore GetSoloDesk features for freelancers: CRM, proposals, time tracking, analytics, and website builder."
     path="/features"
+    keywords={[
+      'freelancer crm features',
+      'freelancer productivity tools',
+      'proposal and time tracking software',
+      'freelancer dashboard',
+    ]}
     heading="Features Built for Freelancers"
     intro="Run client acquisition and delivery from one workspace designed for solo operators and small teams."
     bullets={[

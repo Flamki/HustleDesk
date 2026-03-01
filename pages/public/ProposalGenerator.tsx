@@ -6,6 +6,12 @@ export const ProposalGenerator: React.FC = () => (
     title="Proposal Generator"
     description="Generate client-ready proposals faster with editable templates in GetSoloDesk."
     path="/proposal-generator"
+    keywords={[
+      'proposal generator for freelancers',
+      'ai proposal writing',
+      'freelance cover letter generator',
+      'proposal templates',
+    ]}
     heading="Proposal Generator"
     intro="Turn job details into polished proposals quickly, then customize for each client."
     bullets={[

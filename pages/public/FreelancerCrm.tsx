@@ -6,6 +6,12 @@ export const FreelancerCrm: React.FC = () => (
     title="Freelancer CRM"
     description="Track leads, manage job pipeline, and convert opportunities with GetSoloDesk Freelancer CRM."
     path="/freelancer-crm"
+    keywords={[
+      'freelancer crm',
+      'crm for solo freelancers',
+      'lead tracking for freelancers',
+      'job pipeline software',
+    ]}
     heading="Freelancer CRM That Closes More Clients"
     intro="Organize leads, follow-ups, and active deals so nothing slips through."
     bullets={[

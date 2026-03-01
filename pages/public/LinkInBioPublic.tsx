@@ -6,6 +6,12 @@ export const LinkInBioPublic: React.FC = () => (
     title="Link in Bio Builder"
     description="Create high-converting link-in-bio pages with templates, social links, and custom branding."
     path="/link-in-bio"
+    keywords={[
+      'link in bio builder',
+      'bio link page for freelancers',
+      'social media landing page',
+      'custom link in bio',
+    ]}
     heading="Link in Bio Builder"
     intro="Build a conversion-focused bio page for social audiences with full customization."
     bullets={[
