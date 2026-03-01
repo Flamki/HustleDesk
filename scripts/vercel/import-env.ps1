@@ -14,6 +14,13 @@ if (!(Get-Command vercel -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
+# Fail fast if CLI is not authenticated.
+vercel whoami | Out-Null
+if ($LASTEXITCODE -ne 0) {
+  Write-Error "Vercel CLI is not authenticated. Run 'vercel login' first."
+  exit 1
+}
+
 $lines = Get-Content $FilePath
 $pairs = @()
 
@@ -42,13 +49,21 @@ if ($pairs.Count -eq 0) {
 Write-Host "Importing $($pairs.Count) env vars into Vercel ($Environment)..."
 Write-Host "Tip: run 'vercel link' first if this folder is not linked."
 
+$successCount = 0
+$errorCount = 0
+
 foreach ($pair in $pairs) {
-  try {
-    $pair.Value | vercel env add $pair.Key $Environment --yes | Out-Null
+  $pair.Value | vercel env add $pair.Key $Environment --yes 2>$null | Out-Null
+  if ($LASTEXITCODE -eq 0) {
     Write-Host "[OK] $($pair.Key)"
-  } catch {
-    Write-Warning "[SKIP/ERR] $($pair.Key) -> $($_.Exception.Message)"
+    $successCount++
+  } else {
+    Write-Warning "[ERR] $($pair.Key) -> failed to add"
+    $errorCount++
   }
 }
 
-Write-Host "Done."
+Write-Host "Done. Success: $successCount, Errors: $errorCount"
+if ($errorCount -gt 0) {
+  exit 1
+}
