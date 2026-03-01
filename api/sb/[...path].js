@@ -15,6 +15,8 @@ const RESPONSE_HEADERS_TO_SKIP = new Set([
   'transfer-encoding',
 ]);
 
+const EXPECTS_JSON_PREFIXES = ['/auth/v1', '/rest/v1'];
+
 const json = (res, status, body) => {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
@@ -89,6 +91,16 @@ export default async function handler(req, res) {
       body: body || undefined,
       signal: controller.signal,
     });
+
+    const contentType = String(upstream.headers.get('content-type') || '').toLowerCase();
+    const expectsJson = EXPECTS_JSON_PREFIXES.some((prefix) => targetPath.startsWith(prefix));
+    if (expectsJson && !contentType.includes('application/json')) {
+      const sample = (await upstream.text()).slice(0, 120);
+      return json(res, 502, {
+        error: 'Upstream returned a non-JSON response',
+        details: sample,
+      });
+    }
 
     res.statusCode = upstream.status;
     upstream.headers.forEach((value, key) => {
