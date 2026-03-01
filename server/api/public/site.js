@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const json = (res, status, body) => {
@@ -80,3 +80,4 @@ export default async function handler(req, res) {
   setCache(res, 'public, s-maxage=300, stale-while-revalidate=86400');
   return json(res, 200, { site, portfolio: items });
 }
+

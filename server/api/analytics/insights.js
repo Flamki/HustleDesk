@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
 const json = (res, status, body) => {
@@ -337,3 +337,4 @@ export default async function handler(req, res) {
     cohort_retention,
   });
 }
+

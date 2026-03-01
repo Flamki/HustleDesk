@@ -19,6 +19,16 @@ const isLikelySupabaseUrl = (value: string): boolean => {
   return value.includes('.supabase.co');
 };
 
+const isLikelySupabaseProxyUrl = (value: string): boolean => {
+  if (!isValidHttpUrl(value)) return false;
+  try {
+    const url = new URL(value);
+    return url.pathname.replace(/\/+$/, '').endsWith('/api/sb');
+  } catch {
+    return false;
+  }
+};
+
 export const validateEnvironment = (): EnvValidationResult => {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -41,8 +51,12 @@ export const validateEnvironment = (): EnvValidationResult => {
         ? 'Missing VITE_SUPABASE_URL. Set it in Vercel Project Settings -> Environment Variables, then redeploy.'
         : 'Missing VITE_SUPABASE_URL.'
     );
-  } else if (!isLikelySupabaseUrl(supabaseUrl)) {
-    errors.push('VITE_SUPABASE_URL must be a valid Supabase URL (https://<project-ref>.supabase.co).');
+  } else if (!isValidHttpUrl(supabaseUrl)) {
+    errors.push('VITE_SUPABASE_URL must be a valid URL.');
+  } else if (!isLikelySupabaseUrl(supabaseUrl) && !isLikelySupabaseProxyUrl(supabaseUrl)) {
+    warnings.push(
+      'VITE_SUPABASE_URL does not look like a Supabase hostname or /api/sb proxy URL. Verify this value is intentional.'
+    );
   }
 
   if (!supabaseAnonKey) {

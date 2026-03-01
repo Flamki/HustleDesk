@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimitGlobal, getClientIp } from '../_shared/rate-limit.js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const json = (res, status, body) => {
@@ -98,3 +98,4 @@ export default async function handler(req, res) {
   if (insertError) return json(res, 500, { error: insertError.message });
   return json(res, 200, { ok: true });
 }
+

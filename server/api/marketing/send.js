@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimitGlobal, getClientIp } from '../_shared/rate-limit.js';
 
-const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
@@ -271,3 +271,4 @@ export default async function handler(req, res) {
 
   return json(res, 200, { success: true, sent, failed, skipped, audience_tag: finalTag });
 }
+

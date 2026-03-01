@@ -1,7 +1,9 @@
 # Deployment Checklist
 
 ## 1. Environment Variables
-- [ ] `VITE_SUPABASE_URL` is set to `https://<project-ref>.supabase.co`
+- [ ] `VITE_SUPABASE_URL` is set to either:
+- [ ] Direct: `https://<project-ref>.supabase.co`
+- [ ] Proxy: `https://<your-app-domain>/api/sb`
 - [ ] `VITE_SUPABASE_ANON_KEY` is set to your publishable/anon key
 - [ ] `VITE_AUTH_REDIRECT_ORIGIN` is set to your deployed app origin (example: `https://app.yourdomain.com`)
 - [ ] `SUPABASE_URL` is set in serverless/runtime env

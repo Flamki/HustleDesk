@@ -62,6 +62,13 @@ const resolveApiModulePath = (pathname) => {
   const asIndex = path.join(repoRoot, 'api', rest, 'index.js');
   if (existsSync(asIndex)) return asIndex;
 
+  // Support nested catch-all API routes (example: api/sb/[...path].js).
+  const segments = rest.split('/').filter(Boolean);
+  for (let i = segments.length; i >= 1; i -= 1) {
+    const nestedCatchAll = path.join(repoRoot, 'api', ...segments.slice(0, i), '[...path].js');
+    if (existsSync(nestedCatchAll)) return nestedCatchAll;
+  }
+
   const catchAll = path.join(repoRoot, 'api', '[...path].js');
   if (existsSync(catchAll)) return catchAll;
 

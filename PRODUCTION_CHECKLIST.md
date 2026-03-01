@@ -7,7 +7,7 @@ Complete production deployment checklist for HustleDesk. Follow this guide to en
 ### 1. Environment Configuration
 
 #### Frontend Environment Variables (VITE_*)
-- [ ] `VITE_SUPABASE_URL` - Set to production Supabase URL (`https://<project-ref>.supabase.co`)
+- [ ] `VITE_SUPABASE_URL` - Set to production Supabase URL OR proxy URL (`https://<your-domain>/api/sb`)
 - [ ] `VITE_SUPABASE_ANON_KEY` - Set to production publishable/anon key
 - [ ] `VITE_AUTH_REDIRECT_ORIGIN` - Set to production app URL (no localhost)
 - [ ] `VITE_STRIPE_PRICE_ID_PRO_MONTHLY` - Set to production Stripe price ID

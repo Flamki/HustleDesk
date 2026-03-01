@@ -26,6 +26,12 @@ const readRawBody = async (req) => {
 const resolveModulePath = (pathname) => {
   if (!pathname || !pathname.startsWith('/api')) return null;
 
+  // Support dedicated proxy route even when this catch-all is invoked first.
+  if (pathname.startsWith('/api/sb/')) {
+    const supabaseProxyRoute = path.resolve(__dirname, 'sb', '[...path].js');
+    if (existsSync(supabaseProxyRoute)) return supabaseProxyRoute;
+  }
+
   const rest = pathname.replace(/^\/api\/?/, '');
   if (!rest) return null;
 

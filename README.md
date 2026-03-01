@@ -60,6 +60,10 @@ Core:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `HEALTHCHECK_TOKEN`
 
+Notes:
+- `VITE_SUPABASE_URL` supports direct mode (`https://<project-ref>.supabase.co`) and proxy mode (`https://<your-domain>/api/sb`).
+- In proxy mode, keep `SUPABASE_URL` pointed to the real Supabase project URL on the server.
+
 Billing:
 - `APP_BASE_URL`
 - `STRIPE_SECRET_KEY`
