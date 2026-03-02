@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { ensureSupabaseRuntimeEnv } from './_shared/supabase-upstream.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,6 +48,12 @@ const resolveModulePath = (pathname) => {
 export default async function handler(req, res) {
   try {
     const pathname = req.url ? new URL(req.url, 'http://localhost').pathname : '/';
+
+    // Ensure all server handlers see a usable Supabase URL before module import.
+    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/sb/')) {
+      await ensureSupabaseRuntimeEnv(process.env);
+    }
+
     const modPath = resolveModulePath(pathname);
 
     if (!modPath) {

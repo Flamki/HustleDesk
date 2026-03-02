@@ -14,6 +14,16 @@ const isValidHttpUrl = (value: string): boolean => {
   }
 };
 
+const hasTemplatePlaceholder = (value: string): boolean => {
+  const v = value.toUpperCase();
+  return (
+    v.includes('YOUR_PROJECT') ||
+    v.includes('YOUR_SUPABASE') ||
+    v.includes('SET_A_LONG_RANDOM_TOKEN') ||
+    v.includes('PRICE_...')
+  );
+};
+
 const isLikelySupabaseUrl = (value: string): boolean => {
   if (!isValidHttpUrl(value)) return false;
   return value.includes('.supabase.co');
@@ -53,6 +63,8 @@ export const validateEnvironment = (): EnvValidationResult => {
     );
   } else if (!isValidHttpUrl(supabaseUrl)) {
     errors.push('VITE_SUPABASE_URL must be a valid URL.');
+  } else if (hasTemplatePlaceholder(supabaseUrl)) {
+    errors.push('VITE_SUPABASE_URL still contains a template placeholder value.');
   } else if (!isLikelySupabaseUrl(supabaseUrl) && !isLikelySupabaseProxyUrl(supabaseUrl)) {
     warnings.push(
       'VITE_SUPABASE_URL does not look like a Supabase hostname or /api/sb proxy URL. Verify this value is intentional.'
@@ -61,6 +73,8 @@ export const validateEnvironment = (): EnvValidationResult => {
 
   if (!supabaseAnonKey) {
     errors.push('Missing VITE_SUPABASE_ANON_KEY.');
+  } else if (hasTemplatePlaceholder(supabaseAnonKey)) {
+    errors.push('VITE_SUPABASE_ANON_KEY still contains a template placeholder value.');
   } else if (!(supabaseAnonKey.startsWith('sb_publishable_') || supabaseAnonKey.startsWith('eyJ'))) {
     warnings.push('VITE_SUPABASE_ANON_KEY format looks unusual. Verify you are using the public/publishable key.');
   }
@@ -91,6 +105,11 @@ export const validateEnvironment = (): EnvValidationResult => {
   if (import.meta.env.PROD) {
     if (redirectOrigin && redirectOrigin.includes('localhost')) {
       errors.push('VITE_AUTH_REDIRECT_ORIGIN should not use localhost in production');
+    }
+    if (isLikelySupabaseUrl(supabaseUrl)) {
+      warnings.push(
+        'Production is using direct Supabase hostname. For ISP-block resilience, prefer https://<your-domain>/api/sb.'
+      );
     }
   }
 

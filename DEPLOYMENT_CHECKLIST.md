@@ -7,6 +7,9 @@
 - [ ] `VITE_SUPABASE_ANON_KEY` is set to your publishable/anon key
 - [ ] `VITE_AUTH_REDIRECT_ORIGIN` is set to your deployed app origin (example: `https://app.yourdomain.com`)
 - [ ] `SUPABASE_URL` is set in serverless/runtime env
+- [ ] `SUPABASE_URL` points to a resolvable host (no DNS NXDOMAIN)
+- [ ] Optional: set `SUPABASE_FALLBACK_URL` for upstream failover
+- [ ] Optional: set `SUPABASE_UPSTREAM_URLS` for additional fallback candidates
 - [ ] `SUPABASE_ANON_KEY` is set in serverless/runtime env
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` is set in serverless/runtime env
 - [ ] `HEALTHCHECK_TOKEN` is set for `/api/auth/health`

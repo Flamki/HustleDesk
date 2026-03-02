@@ -1,3 +1,5 @@
+import { ensureSupabaseRuntimeEnv } from '../_shared/supabase-upstream.js';
+
 const HOP_BY_HOP_HEADERS = new Set([
   'connection',
   'keep-alive',
@@ -37,8 +39,6 @@ const getRawBody = async (req) => {
   return chunks.length ? Buffer.concat(chunks) : null;
 };
 
-const normalizeBaseUrl = (value) => String(value || '').trim().replace(/\/+$/, '');
-
 const buildForwardHeaders = (incomingHeaders) => {
   const next = {};
   for (const [key, value] of Object.entries(incomingHeaders || {})) {
@@ -52,22 +52,12 @@ const buildForwardHeaders = (incomingHeaders) => {
 };
 
 export default async function handler(req, res) {
-  const baseUrl = normalizeBaseUrl(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL);
-  if (!baseUrl) {
-    return json(res, 500, { error: 'SUPABASE_URL is not configured for proxy mode' });
-  }
-
-  let parsedBase;
-  try {
-    parsedBase = new URL(baseUrl);
-  } catch {
-    return json(res, 500, { error: 'SUPABASE_URL must be a valid URL' });
-  }
-
-  // Safety guard: prevent accidental self-proxy loops.
-  const basePath = parsedBase.pathname.replace(/\/+$/, '');
-  if (basePath.endsWith('/api/sb')) {
-    return json(res, 500, { error: 'SUPABASE_URL cannot point to /api/sb (proxy loop detected)' });
+  const selection = await ensureSupabaseRuntimeEnv(process.env);
+  if (!selection.selected || selection.prioritized.length === 0) {
+    return json(res, 500, {
+      error: 'SUPABASE_URL is not configured for proxy mode',
+      details: selection.reason,
+    });
   }
 
   const incoming = new URL(req.url || '/', 'http://localhost');
@@ -77,48 +67,63 @@ export default async function handler(req, res) {
   }
 
   const targetPath = incoming.pathname.slice(prefix.length);
-  const targetUrl = `${baseUrl}${targetPath}${incoming.search}`;
   const method = String(req.method || 'GET').toUpperCase();
+  const body = method === 'GET' || method === 'HEAD' ? undefined : await getRawBody(req);
+  const upstreamErrors = [];
+  const timeoutMs = Math.max(5000, Number(process.env.SUPABASE_PROXY_TIMEOUT_MS || 12000));
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25000);
+  for (const baseUrl of selection.prioritized) {
+    const targetUrl = `${baseUrl}${targetPath}${incoming.search}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  try {
-    const body = method === 'GET' || method === 'HEAD' ? undefined : await getRawBody(req);
-    const upstream = await fetch(targetUrl, {
-      method,
-      headers: buildForwardHeaders(req.headers || {}),
-      body: body || undefined,
-      signal: controller.signal,
-    });
-
-    const contentType = String(upstream.headers.get('content-type') || '').toLowerCase();
-    const expectsJson = EXPECTS_JSON_PREFIXES.some((prefix) => targetPath.startsWith(prefix));
-    if (expectsJson && !contentType.includes('application/json')) {
-      const sample = (await upstream.text()).slice(0, 120);
-      return json(res, 502, {
-        error: 'Upstream returned a non-JSON response',
-        details: sample,
+    try {
+      const upstream = await fetch(targetUrl, {
+        method,
+        headers: buildForwardHeaders(req.headers || {}),
+        body: body || undefined,
+        signal: controller.signal,
       });
+
+      const contentType = String(upstream.headers.get('content-type') || '').toLowerCase();
+      const expectsJson = EXPECTS_JSON_PREFIXES.some((prefix) => targetPath.startsWith(prefix));
+      if (expectsJson && !contentType.includes('application/json')) {
+        const sample = (await upstream.text()).slice(0, 120);
+        upstreamErrors.push({
+          upstream: new URL(baseUrl).hostname,
+          reason: 'non-json-response',
+          details: sample,
+        });
+        continue;
+      }
+
+      res.statusCode = upstream.status;
+      upstream.headers.forEach((value, key) => {
+        if (RESPONSE_HEADERS_TO_SKIP.has(key.toLowerCase())) return;
+        res.setHeader(key, value);
+      });
+
+      res.setHeader('x-supabase-upstream', new URL(baseUrl).hostname);
+      const payload = Buffer.from(await upstream.arrayBuffer());
+      res.end(payload);
+      return;
+    } catch (err) {
+      const reason =
+        err && typeof err === 'object' && 'name' in err && err.name === 'AbortError'
+          ? 'timeout'
+          : 'network-error';
+      upstreamErrors.push({ upstream: new URL(baseUrl).hostname, reason });
+    } finally {
+      clearTimeout(timeout);
     }
-
-    res.statusCode = upstream.status;
-    upstream.headers.forEach((value, key) => {
-      if (RESPONSE_HEADERS_TO_SKIP.has(key.toLowerCase())) return;
-      res.setHeader(key, value);
-    });
-
-    const payload = Buffer.from(await upstream.arrayBuffer());
-    res.end(payload);
-  } catch (err) {
-    const message =
-      err && typeof err === 'object' && 'name' in err && err.name === 'AbortError'
-        ? 'Supabase proxy request timed out'
-        : 'Failed to reach upstream Supabase';
-    return json(res, 502, { error: message });
-  } finally {
-    clearTimeout(timeout);
   }
+
+  const latestError = upstreamErrors[upstreamErrors.length - 1] || null;
+  return json(res, 502, {
+    error: 'Failed to reach upstream Supabase',
+    attempted_upstreams: upstreamErrors.map((item) => item.upstream),
+    reason: latestError?.reason || 'unknown',
+  });
 }
 
 export const config = {
