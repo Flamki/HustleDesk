@@ -23,7 +23,7 @@ const organizationSchema = {
   '@type': 'Organization',
   name: 'GetSoloDesk',
   url: 'https://getsolodesk.com',
-  logo: 'https://getsolodesk.com/og-default.svg',
+  logo: 'https://getsolodesk.com/logo-wordmark.svg',
 };
 
 const websiteSchema = {

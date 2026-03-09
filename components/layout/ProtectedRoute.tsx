@@ -6,9 +6,12 @@ import { Loader2, Menu, X } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { AppErrorBoundary } from '../system/AppErrorBoundary';
 import { RouteLoader } from '../system/RouteLoader';
+import { BrandLogo } from '../brand/BrandLogo';
+import { useTheme } from '../../context/ThemeContext';
 
 export const ProtectedRoute: React.FC = () => {
   const { user, loading } = useAuth();
+  const { theme } = useTheme();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -75,16 +78,7 @@ export const ProtectedRoute: React.FC = () => {
         
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-shrink-0 z-10">
-            <div className="flex items-center gap-2">
-                 <div className="bg-indigo-600 p-1.5 rounded-lg text-white">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7 4V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                        <path d="M17 4V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                        <path d="M7 12H17" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                    </svg>
-                 </div>
-                 <span className="font-bold text-slate-900 dark:text-white text-lg">GetSoloDesk</span>
-            </div>
+            <BrandLogo className="h-7 w-auto" tone={theme === 'dark' ? 'inverse' : 'default'} />
             <button 
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"

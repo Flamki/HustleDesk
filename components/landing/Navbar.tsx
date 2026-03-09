@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Moon, Sun, ArrowRight } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { BrandLogo } from '../brand/BrandLogo';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -59,16 +60,10 @@ export const Navbar: React.FC = () => {
         >
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 group">
-                <div className={`p-1.5 rounded-lg text-white transition-colors ${isScrolled ? 'bg-indigo-600' : 'bg-slate-900 dark:bg-indigo-600'}`}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7 4V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                        <path d="M17 4V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                        <path d="M7 12H17" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                    </svg>
-                </div>
-                <span className={`font-bold tracking-tight ${isScrolled ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
-                    GetSoloDesk
-                </span>
+                <BrandLogo
+                    className="h-8 w-auto"
+                    tone={isScrolled || theme === 'dark' ? 'inverse' : 'default'}
+                />
             </Link>
 
             {/* Desktop Links */}

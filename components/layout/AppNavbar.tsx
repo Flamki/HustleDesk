@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, Plus, Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { BrandLogo } from '../brand/BrandLogo';
 
 export const AppNavbar: React.FC = () => {
   const location = useLocation();
@@ -34,16 +35,7 @@ export const AppNavbar: React.FC = () => {
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center gap-8">
             <Link to="/app" className="flex items-center gap-2 group">
-                <div className="bg-indigo-600 p-1.5 rounded-lg text-white shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7 4V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                        <path d="M17 4V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                        <path d="M7 12H17" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                        <path d="M21 4L17 4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-50"/>
-                        <path d="M7 20L3 20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-50"/>
-                    </svg>
-                </div>
-                <span className="font-bold text-slate-900 dark:text-white hidden sm:block">GetSoloDesk</span>
+                <BrandLogo className="h-7 w-auto" tone={theme === 'dark' ? 'inverse' : 'default'} />
             </Link>
 
             {/* Desktop Nav */}

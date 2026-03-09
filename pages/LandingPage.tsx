@@ -13,7 +13,7 @@ import { Footer } from '../components/landing/Footer';
 
 export const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-300">
+    <div className="landing-premium-grain min-h-screen bg-white dark:bg-slate-950 transition-colors duration-300">
       <Navbar />
       <main>
         <Hero />

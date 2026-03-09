@@ -1,0 +1,5 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="GetSoloDesk favicon">
+  <rect width="96" height="96" rx="20" fill="#0D1B2A"/>
+  <ellipse cx="48" cy="50" rx="30" ry="32" stroke="#E2E8F0" stroke-width="5" fill="none"/>
+  <polyline points="33,50 44,62 65,38" stroke="#14C99A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

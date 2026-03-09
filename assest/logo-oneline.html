@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #F7F5F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    line-height: 1;
+  }
+
+  .get {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    color: #AAAAAA;
+    letter-spacing: 2px;
+    text-transform: lowercase;
+    margin-right: 6px;
+  }
+
+  .sol {
+    font-family: 'Instrument Serif', serif;
+    font-size: 48px;
+    color: #0D1B2A;
+    letter-spacing: -1px;
+  }
+
+  .desk {
+    font-family: 'Instrument Serif', serif;
+    font-size: 48px;
+    color: #0D1B2A;
+    letter-spacing: -1px;
+    margin-left: 2px;
+  }
+
+  .desk span {
+    color: #14C99A;
+  }
+</style>
+</head>
+<body>
+  <div class="logo">
+    <span class="get">get</span>
+    <span class="sol">sol</span>
+
+    <!-- The O with a check -->
+    <svg width="38" height="52" viewBox="0 0 38 56" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:-2px">
+      <ellipse cx="19" cy="32" rx="16" ry="18" stroke="#0D1B2A" stroke-width="2.8" fill="none"/>
+      <polyline points="11,32 17,39 28,23" stroke="#14C99A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+
+    <span class="desk">desk</span>
+  </div>
+</body>
+</html>

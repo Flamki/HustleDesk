@@ -2,9 +2,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { SignupForm } from '../components/auth/SignupForm';
-import { Sun, Moon, ArrowLeft, CheckCircle2, Zap, Rocket, BarChart3, Star } from 'lucide-react';
+import { Sun, Moon, ArrowLeft, Rocket, BarChart3, Star } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import SEO from '../components/SEO';
+import { BrandLogo } from '../components/brand/BrandLogo';
 
 export const SignupPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -32,14 +33,7 @@ export const SignupPage: React.FC = () => {
 
             {/* Header */}
             <div className="relative z-10 flex items-center gap-3">
-                <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7 4V20" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                        <path d="M17 4V20" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                        <path d="M7 12H17" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                    </svg>
-                </div>
-                <span className="text-xl font-bold tracking-tight">GetSoloDesk</span>
+                <BrandLogo className="h-8 w-auto" tone="inverse" />
             </div>
 
             {/* Central Content */}

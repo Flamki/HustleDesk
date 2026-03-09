@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #F7F5F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .logo {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  /* "get" sits top-left, small and quiet */
+  .get-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    color: #AAAAAA;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    padding-left: 3px;
+    margin-bottom: 2px;
+  }
+
+  /* sol + O row */
+  .word-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    line-height: 1;
+  }
+
+  .sol {
+    font-family: 'Instrument Serif', serif;
+    font-size: 64px;
+    color: #0D1B2A;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+
+  /* check-O — sized to match the serif O optically */
+  .check-o svg {
+    display: block;
+    margin-bottom: 1px;
+  }
+
+  /* bottom row: rule + desk label perfectly aligned */
+  .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 8px;
+    gap: 12px;
+  }
+
+  .rule {
+    flex: 1;
+    height: 1.5px;
+    background: linear-gradient(to right, #0D1B2A 40%, #14C99A);
+  }
+
+  .desk-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: #14C99A;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+  <div class="logo">
+    <div class="get-label">get</div>
+
+    <div class="word-row">
+      <span class="sol">sol</span>
+      <span class="check-o">
+        <svg width="52" height="60" viewBox="0 0 52 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="26" cy="36" rx="22" ry="24" stroke="#0D1B2A" stroke-width="3.2" fill="none"/>
+          <polyline points="15,36 22,44 37,26" stroke="#14C99A" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </div>
+
+    <div class="bottom-row">
+      <div class="rule"></div>
+      <div class="desk-label">desk</div>
+    </div>
+  </div>
+
+</body>
+</html>

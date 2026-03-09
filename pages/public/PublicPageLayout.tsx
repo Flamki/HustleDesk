@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { BrandLogo } from '../../components/brand/BrandLogo';
 
 type Props = {
   children: React.ReactNode;
@@ -22,7 +23,9 @@ export const PublicPageLayout: React.FC<Props> = ({ children }) => {
     <div className="min-h-screen bg-white text-slate-900">
       <header className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
-          <Link to="/" className="font-bold text-lg tracking-tight">GetSoloDesk</Link>
+          <Link to="/" className="flex items-center">
+            <BrandLogo className="h-7 w-auto" />
+          </Link>
           <nav className="hidden lg:flex items-center gap-5 text-sm text-slate-600">
             {links.map((l) => (
               <Link key={l.href} to={l.href} className="hover:text-slate-900 transition-colors">
@@ -41,7 +44,9 @@ export const PublicPageLayout: React.FC<Props> = ({ children }) => {
 
       <footer className="border-t border-slate-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-slate-500">
-          <div className="font-semibold text-slate-800">GetSoloDesk</div>
+          <div className="flex items-center">
+            <BrandLogo className="h-7 w-auto" />
+          </div>
           <p className="mt-1">Freelancer CRM, proposals, time tracking, and client growth tools.</p>
         </div>
       </footer>
