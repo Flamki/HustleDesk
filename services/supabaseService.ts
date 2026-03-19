@@ -333,8 +333,8 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
   });
 };
 
-const AUTH_CALL_TIMEOUT_MS = 12000;
-const SESSION_SETUP_TIMEOUT_MS = 8000;
+const AUTH_CALL_TIMEOUT_MS = 30000;
+const SESSION_SETUP_TIMEOUT_MS = 20000;
 
 const applySessionWithRetry = async (accessToken: string, refreshToken: string): Promise<void> => {
   if (!supabase) throw new Error('Supabase not configured');
@@ -414,6 +414,9 @@ export const hydrateSessionFromUrl = async (): Promise<void> => {
   const originalPathWithParams = `${url.pathname}${url.search}${url.hash}`;
   const hashParams = new URLSearchParams((url.hash || '').replace(/^#/, ''));
   let pendingError: unknown = null;
+  const hasOAuthPayload =
+    Boolean(hashParams.get('access_token') && hashParams.get('refresh_token')) ||
+    Boolean(url.searchParams.get('code'));
 
   try {
     const accessToken = hashParams.get('access_token');
@@ -436,35 +439,38 @@ export const hydrateSessionFromUrl = async (): Promise<void> => {
   } catch (err) {
     pendingError = err;
   } finally {
-    // Remove one-time OAuth params from URL after session setup.
-    [
-      'code',
-      'state',
-      'error',
-      'error_code',
-      'error_description',
-      'error_uri',
-    ].forEach((key) => url.searchParams.delete(key));
+    // Only strip one-time OAuth params when session hydration succeeded.
+    // If hydration fails, keep params so refresh can retry instead of losing callback data.
+    if (!pendingError || !hasOAuthPayload) {
+      [
+        'code',
+        'state',
+        'error',
+        'error_code',
+        'error_description',
+        'error_uri',
+      ].forEach((key) => url.searchParams.delete(key));
 
-    [
-      'access_token',
-      'refresh_token',
-      'token_type',
-      'expires_in',
-      'expires_at',
-      'provider_token',
-      'provider_refresh_token',
-      'sb',
-      'type',
-      'error',
-      'error_code',
-      'error_description',
-    ].forEach((key) => hashParams.delete(key));
+      [
+        'access_token',
+        'refresh_token',
+        'token_type',
+        'expires_in',
+        'expires_at',
+        'provider_token',
+        'provider_refresh_token',
+        'sb',
+        'type',
+        'error',
+        'error_code',
+        'error_description',
+      ].forEach((key) => hashParams.delete(key));
 
-    const nextHash = hashParams.toString();
-    const nextPathWithParams = `${url.pathname}${url.search}${nextHash ? `#${nextHash}` : ''}`;
-    if (nextPathWithParams !== originalPathWithParams) {
-      window.history.replaceState({}, document.title, nextPathWithParams);
+      const nextHash = hashParams.toString();
+      const nextPathWithParams = `${url.pathname}${url.search}${nextHash ? `#${nextHash}` : ''}`;
+      if (nextPathWithParams !== originalPathWithParams) {
+        window.history.replaceState({}, document.title, nextPathWithParams);
+      }
     }
   }
 
