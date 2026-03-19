@@ -44,6 +44,17 @@
   ],
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.getsolodesk.com"
+        }
+      ],
+      "destination": "https://getsolodesk.com/",
+      "permanent": true
+    },
+    {
       "source": "/api/sb/:path*/",
       "destination": "/api/sb/:path*",
       "permanent": false
