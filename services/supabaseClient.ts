@@ -6,10 +6,10 @@ const sanitizeEnvValue = (value: unknown): string =>
     .replace(/(?:\\r\\n|\\n|\\r)+$/g, '')
     .trim();
 
-const supabaseUrl = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_URL).replace(/\/+$/, '');
-const supabaseAnonKey = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
+const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
-export const hasSupabase = Boolean(supabaseUrl && supabaseAnonKey);
+const supabaseUrlFromEnv = trimTrailingSlash(sanitizeEnvValue(import.meta.env.VITE_SUPABASE_URL));
+const supabaseAnonKey = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 type SupabaseBrowserClient = SupabaseClient<any, 'public', any>;
 
@@ -19,9 +19,26 @@ declare global {
   }
 }
 
+const isLocalHost = (host: string): boolean => {
+  const h = (host || '').toLowerCase();
+  return h === 'localhost' || h === '127.0.0.1' || h === '::1';
+};
+
+const resolveSupabaseUrl = (): string => {
+  // In production browsers, route Supabase traffic through first-party proxy to avoid ISP/CDN blocks.
+  if (typeof window !== 'undefined' && import.meta.env.PROD && !isLocalHost(window.location.hostname)) {
+    return `${trimTrailingSlash(window.location.origin)}/api/sb`;
+  }
+  return supabaseUrlFromEnv;
+};
+
+export const getSupabaseBaseUrl = (): string => resolveSupabaseUrl();
+export const hasSupabase = Boolean(getSupabaseBaseUrl() && supabaseAnonKey);
+
 const createSupabaseClient = (): SupabaseBrowserClient | null => {
+  const baseUrl = getSupabaseBaseUrl();
   if (!hasSupabase) return null;
-  return createClient(supabaseUrl as string, supabaseAnonKey as string, {
+  return createClient(baseUrl as string, supabaseAnonKey as string, {
     auth: { persistSession: true, autoRefreshToken: true },
   });
 };
@@ -30,11 +47,6 @@ export const supabase =
   typeof window === 'undefined'
     ? createSupabaseClient()
     : (window.__getsolodesk_supabase_client__ ??= createSupabaseClient());
-
-const isLocalHost = (host: string): boolean => {
-  const h = (host || '').toLowerCase();
-  return h === 'localhost' || h === '127.0.0.1' || h === '::1';
-};
 
 export const getAuthBaseUrl = (): string => {
   const forced = sanitizeEnvValue(import.meta.env.VITE_AUTH_REDIRECT_ORIGIN);

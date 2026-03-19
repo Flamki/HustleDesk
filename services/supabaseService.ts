@@ -12,7 +12,7 @@ import {
   User,
 } from '../types';
 import { MOCK_DELAY_MS } from '../constants';
-import { getAuthBaseUrl, hasSupabase, supabase } from './supabaseClient';
+import { getAuthBaseUrl, getSupabaseBaseUrl, hasSupabase, supabase } from './supabaseClient';
 
 const AUTH_STORAGE_KEY = 'user_session';
 const PROFILE_STORAGE_KEY = 'freelancer_profile';
@@ -339,8 +339,8 @@ const SESSION_SETUP_TIMEOUT_MS = 20000;
 const applySessionWithRetry = async (accessToken: string, refreshToken: string): Promise<void> => {
   if (!supabase) throw new Error('Supabase not configured');
 
-  const setOnce = async () =>
-    withTimeout(
+  const setOnce = async () => {
+    const { error } = await withTimeout(
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
@@ -348,6 +348,8 @@ const applySessionWithRetry = async (accessToken: string, refreshToken: string):
       SESSION_SETUP_TIMEOUT_MS,
       'Session setup timed out. Please refresh and try again.'
     );
+    if (error) throw error;
+  };
 
   try {
     await setOnce();
@@ -363,7 +365,7 @@ const signInViaRestFallback = async (email: string, password: string): Promise<{
     throw new Error('Supabase not configured');
   }
 
-  const url = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+  const url = getSupabaseBaseUrl();
   const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
   if (!url || !anon) {
     throw new Error('Supabase env is missing');
@@ -410,54 +412,63 @@ export const hydrateSessionFromUrl = async (): Promise<void> => {
 
   const url = new URL(window.location.href);
   const originalPathWithParams = `${url.pathname}${url.search}${url.hash}`;
-
   const hashParams = new URLSearchParams((url.hash || '').replace(/^#/, ''));
-  const accessToken = hashParams.get('access_token');
-  const refreshToken = hashParams.get('refresh_token');
-  if (accessToken && refreshToken) {
-    await applySessionWithRetry(accessToken, refreshToken);
-  }
+  let pendingError: unknown = null;
 
-  const authCode = url.searchParams.get('code');
-  if (authCode) {
-    const { error } = await withTimeout(
-      supabase.auth.exchangeCodeForSession(authCode),
-      AUTH_CALL_TIMEOUT_MS,
-      'OAuth session exchange timed out. Please try login again.'
-    );
-    if (error) {
-      throw error;
+  try {
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    if (accessToken && refreshToken) {
+      await applySessionWithRetry(accessToken, refreshToken);
+    }
+
+    const authCode = url.searchParams.get('code');
+    if (authCode) {
+      const { error } = await withTimeout(
+        supabase.auth.exchangeCodeForSession(authCode),
+        AUTH_CALL_TIMEOUT_MS,
+        'OAuth session exchange timed out. Please try login again.'
+      );
+      if (error) {
+        throw error;
+      }
+    }
+  } catch (err) {
+    pendingError = err;
+  } finally {
+    // Remove one-time OAuth params from URL after session setup.
+    [
+      'code',
+      'state',
+      'error',
+      'error_code',
+      'error_description',
+      'error_uri',
+    ].forEach((key) => url.searchParams.delete(key));
+
+    [
+      'access_token',
+      'refresh_token',
+      'token_type',
+      'expires_in',
+      'expires_at',
+      'provider_token',
+      'provider_refresh_token',
+      'type',
+      'error',
+      'error_code',
+      'error_description',
+    ].forEach((key) => hashParams.delete(key));
+
+    const nextHash = hashParams.toString();
+    const nextPathWithParams = `${url.pathname}${url.search}${nextHash ? `#${nextHash}` : ''}`;
+    if (nextPathWithParams !== originalPathWithParams) {
+      window.history.replaceState({}, document.title, nextPathWithParams);
     }
   }
 
-  // Remove one-time OAuth params from URL after session setup.
-  [
-    'code',
-    'state',
-    'error',
-    'error_code',
-    'error_description',
-    'error_uri',
-  ].forEach((key) => url.searchParams.delete(key));
-
-  [
-    'access_token',
-    'refresh_token',
-    'token_type',
-    'expires_in',
-    'expires_at',
-    'provider_token',
-    'provider_refresh_token',
-    'type',
-    'error',
-    'error_code',
-    'error_description',
-  ].forEach((key) => hashParams.delete(key));
-
-  const nextHash = hashParams.toString();
-  const nextPathWithParams = `${url.pathname}${url.search}${nextHash ? `#${nextHash}` : ''}`;
-  if (nextPathWithParams !== originalPathWithParams) {
-    window.history.replaceState({}, document.title, nextPathWithParams);
+  if (pendingError) {
+    throw pendingError;
   }
 };
 

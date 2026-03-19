@@ -75,11 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!needsUrlHydration && isMounted) setLoading(false);
 
       try {
-        if (needsUrlHydration) {
-          await authService.hydrateSessionFromUrl();
-          // Prevent repeated OAuth callback detection on refresh.
-          stripOAuthParamsFromHash();
-        }
+        // Always attempt URL hydration; it no-ops if no OAuth params are present.
+        await authService.hydrateSessionFromUrl();
+        // Prevent repeated OAuth callback detection on refresh.
+        stripOAuthParamsFromHash();
 
         // Always try to sync with Supabase in the background. If cached user is stale, this corrects it.
         const currentUser = await authService.getCurrentUser();
