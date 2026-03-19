@@ -12,6 +12,34 @@
     {
       "source": "/api/:path*",
       "destination": "/api/[...path]"
+    },
+    {
+      "source": "/login",
+      "destination": "/"
+    },
+    {
+      "source": "/signup",
+      "destination": "/"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "/"
+    },
+    {
+      "source": "/unsubscribe",
+      "destination": "/"
+    },
+    {
+      "source": "/share/:path*",
+      "destination": "/"
+    },
+    {
+      "source": "/w/:slug",
+      "destination": "/"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "/"
     }
   ],
   "functions": {
