@@ -15,6 +15,10 @@ const RESPONSE_HEADERS_TO_SKIP = new Set([
   'connection',
   'keep-alive',
   'transfer-encoding',
+  // Node fetch may decode upstream bodies before we forward them.
+  // Forwarding original encoding/length can cause browser decode failures.
+  'content-encoding',
+  'content-length',
 ]);
 
 const EXPECTS_JSON_PREFIXES = ['/auth/v1', '/rest/v1'];
