@@ -333,9 +333,48 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
   });
 };
 
-const AUTH_CALL_TIMEOUT_MS = 30000;
-const SESSION_SETUP_TIMEOUT_MS = 20000;
+const AUTH_CALL_TIMEOUT_MS = 15000;
+const SESSION_SETUP_TIMEOUT_MS = 12000;
 const CURRENT_USER_TIMEOUT_MS = 8000;
+const OAUTH_QUERY_KEYS = [
+  'code',
+  'state',
+  'error',
+  'error_code',
+  'error_description',
+  'error_uri',
+];
+const OAUTH_HASH_KEYS = [
+  'access_token',
+  'refresh_token',
+  'token_type',
+  'expires_in',
+  'expires_at',
+  'provider_token',
+  'provider_refresh_token',
+  'sb',
+  'type',
+  'error',
+  'error_code',
+  'error_description',
+];
+
+const clearOAuthArtifactsFromUrl = (): void => {
+  if (typeof window === 'undefined') return;
+
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams((url.hash || '').replace(/^#/, ''));
+
+  OAUTH_QUERY_KEYS.forEach((key) => url.searchParams.delete(key));
+  OAUTH_HASH_KEYS.forEach((key) => hashParams.delete(key));
+
+  const nextHash = hashParams.toString();
+  const nextPathWithParams = `${url.pathname}${url.search}${nextHash ? `#${nextHash}` : ''}`;
+  const currentPathWithParams = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (nextPathWithParams !== currentPathWithParams) {
+    window.history.replaceState({}, document.title, nextPathWithParams);
+  }
+};
 
 const applySessionWithRetry = async (accessToken: string, refreshToken: string): Promise<void> => {
   if (!supabase) throw new Error('Supabase not configured');
@@ -412,71 +451,35 @@ export const hydrateSessionFromUrl = async (): Promise<void> => {
   if (!supabase || typeof window === 'undefined') return;
 
   const url = new URL(window.location.href);
-  const originalPathWithParams = `${url.pathname}${url.search}${url.hash}`;
   const hashParams = new URLSearchParams((url.hash || '').replace(/^#/, ''));
-  let pendingError: unknown = null;
-  const hasOAuthPayload =
-    Boolean(hashParams.get('access_token') && hashParams.get('refresh_token')) ||
-    Boolean(url.searchParams.get('code'));
 
-  try {
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
-    if (accessToken && refreshToken) {
-      await applySessionWithRetry(accessToken, refreshToken);
-    }
-
-    const authCode = url.searchParams.get('code');
-    if (authCode) {
-      const { error } = await withTimeout(
-        supabase.auth.exchangeCodeForSession(authCode),
-        AUTH_CALL_TIMEOUT_MS,
-        'OAuth session exchange timed out. Please try login again.'
-      );
-      if (error) {
-        throw error;
-      }
-    }
-  } catch (err) {
-    pendingError = err;
-  } finally {
-    // Only strip one-time OAuth params when session hydration succeeded.
-    // If hydration fails, keep params so refresh can retry instead of losing callback data.
-    if (!pendingError || !hasOAuthPayload) {
-      [
-        'code',
-        'state',
-        'error',
-        'error_code',
-        'error_description',
-        'error_uri',
-      ].forEach((key) => url.searchParams.delete(key));
-
-      [
-        'access_token',
-        'refresh_token',
-        'token_type',
-        'expires_in',
-        'expires_at',
-        'provider_token',
-        'provider_refresh_token',
-        'sb',
-        'type',
-        'error',
-        'error_code',
-        'error_description',
-      ].forEach((key) => hashParams.delete(key));
-
-      const nextHash = hashParams.toString();
-      const nextPathWithParams = `${url.pathname}${url.search}${nextHash ? `#${nextHash}` : ''}`;
-      if (nextPathWithParams !== originalPathWithParams) {
-        window.history.replaceState({}, document.title, nextPathWithParams);
-      }
-    }
+  const callbackError =
+    url.searchParams.get('error_description') ||
+    hashParams.get('error_description') ||
+    url.searchParams.get('error') ||
+    hashParams.get('error');
+  if (callbackError) {
+    clearOAuthArtifactsFromUrl();
+    throw new Error(callbackError);
   }
 
-  if (pendingError) {
-    throw pendingError;
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+  if (accessToken && refreshToken) {
+    await applySessionWithRetry(accessToken, refreshToken);
+    clearOAuthArtifactsFromUrl();
+    return;
+  }
+
+  const authCode = url.searchParams.get('code');
+  if (authCode) {
+    const { error } = await withTimeout(
+      supabase.auth.exchangeCodeForSession(authCode),
+      AUTH_CALL_TIMEOUT_MS,
+      'OAuth session exchange timed out. Please try login again.'
+    );
+    clearOAuthArtifactsFromUrl();
+    if (error) throw error;
   }
 };
 
@@ -560,7 +563,10 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${getAuthBaseUrl()}/login` },
+    options: {
+      redirectTo: `${getAuthBaseUrl()}/login`,
+      queryParams: { prompt: 'select_account' },
+    },
   });
 
   return { user: null, error: error ?? null };
@@ -568,6 +574,7 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
 export const signOut = async (): Promise<void> => {
   localStorage.removeItem(AUTH_STORAGE_KEY);
+  clearOAuthArtifactsFromUrl();
   if (!supabase) return;
 
   // Clear local session immediately for responsive UX.
@@ -586,13 +593,25 @@ export const getCurrentUser = async (): Promise<User | null> => {
   }
 
   try {
-    const { data, error } = await withTimeout(
-      supabase.auth.getUser(),
-      CURRENT_USER_TIMEOUT_MS,
-      'Session check timed out. Please refresh and try again.'
-    );
-    if (error || !data.user) return null;
-    return loadUserFromUsersTable(data.user.id, data.user.email ?? '');
+    const { data: sessionData } = await supabase.auth.getSession();
+    const sessionUser = sessionData.session?.user;
+    if (!sessionUser) return null;
+
+    try {
+      const { data, error } = await withTimeout(
+        supabase.auth.getUser(),
+        CURRENT_USER_TIMEOUT_MS,
+        'Session check timed out. Please refresh and try again.'
+      );
+      const verifiedUser = error ? null : data.user;
+      if (verifiedUser) {
+        return await loadUserFromUsersTable(verifiedUser.id, verifiedUser.email ?? '');
+      }
+    } catch {
+      // Fall back to session user.
+    }
+
+    return await loadUserFromUsersTable(sessionUser.id, sessionUser.email ?? '');
   } catch {
     return null;
   }
@@ -618,7 +637,12 @@ export const onAuthStateChanged = (listener: AuthStateListener): (() => void) =>
       listener(null);
       return;
     }
-    const user = await loadUserFromUsersTable(session.user.id, session.user.email ?? '');
+    let user: User;
+    try {
+      user = await loadUserFromUsersTable(session.user.id, session.user.email ?? '');
+    } catch {
+      user = buildFallbackUser(session.user.id, session.user.email ?? '');
+    }
     listener(user);
   });
 

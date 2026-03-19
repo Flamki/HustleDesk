@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, AuthResponse } from '../types';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { AuthResponse, User } from '../types';
 import * as authService from '../services/supabaseService';
 
 interface AuthContextType {
@@ -11,114 +11,72 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_CACHE_KEY = 'user_session';
 
-const hasOAuthParamsInUrl = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  const h = (window.location.hash || '').toLowerCase();
-  const search = new URLSearchParams(window.location.search || '');
-  // OAuth callbacks can append tokens in the URL hash.
-  // Example: http://localhost:5173/app/dashboard#access_token=...
-  return (
-    h.includes('access_token=') ||
-    h.includes('refresh_token=') ||
-    h.includes('provider_token=') ||
-    h.includes('error=') ||
-    h.includes('code=') ||
-    search.has('code') ||
-    search.has('error') ||
-    search.has('error_description')
-  );
-};
-
-const stripOAuthParamsFromHash = (): void => {
-  if (typeof window === 'undefined') return;
-  const hash = window.location.hash || '';
-  // Drop trailing OAuth fragments while preserving the route path.
-  const secondHashIndex = hash.indexOf('#', 1);
-  if (secondHashIndex === -1) return;
-  const tail = hash.slice(secondHashIndex + 1).toLowerCase();
-  const looksLikeOAuth =
-    tail.includes('access_token=') ||
-    tail.includes('refresh_token=') ||
-    tail.includes('provider_token=') ||
-    tail.includes('error=') ||
-    tail.includes('code=');
-  if (!looksLikeOAuth) return;
-  window.location.hash = hash.slice(0, secondHashIndex);
-};
-
-const getCachedUser = (): User | null => {
+const readCachedUser = (): User | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem('user_session');
+    const raw = localStorage.getItem(AUTH_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as User;
-    if (!parsed || typeof parsed !== 'object') return null;
+    if (!parsed || typeof parsed !== 'object' || typeof parsed.id !== 'string') return null;
     return parsed;
   } catch {
     return null;
   }
 };
 
+const writeCachedUser = (user: User | null): void => {
+  if (typeof window === 'undefined') return;
+  if (!user) {
+    localStorage.removeItem(AUTH_CACHE_KEY);
+    return;
+  }
+  localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(user));
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Perceived performance: render immediately if we have a cached user and we are NOT in an OAuth callback.
-  const [user, setUser] = useState<User | null>(() => getCachedUser());
+  const [user, setUser] = useState<User | null>(() => readCachedUser());
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
-    const bootstrapSession = async () => {
-      const needsUrlHydration = hasOAuthParamsInUrl();
-      let hydratedUser: User | null = null;
-
-      // If we are NOT handling an OAuth callback, don't block the app.
-      if (!needsUrlHydration && isMounted) setLoading(false);
-
+    const bootstrap = async () => {
       try {
-        // Always attempt URL hydration; it no-ops if no OAuth params are present.
         await authService.hydrateSessionFromUrl();
-        // Prevent repeated OAuth callback detection on refresh.
-        stripOAuthParamsFromHash();
-
-        // Fast path: if a session already exists locally, unblock and navigate immediately.
-        const quickUser = await authService.getCurrentUserFromSession();
-        if (isMounted && quickUser) {
-          hydratedUser = quickUser;
-          setUser(quickUser);
-          localStorage.setItem('user_session', JSON.stringify(quickUser));
-          setLoading(false);
-        }
-
-        // Always try to sync with Supabase in the background. If cached user is stale, this corrects it.
-        const currentUser = await authService.getCurrentUser();
-        if (!isMounted) return;
-        const effectiveUser = currentUser ?? hydratedUser;
-        setUser(effectiveUser);
-        if (effectiveUser) localStorage.setItem('user_session', JSON.stringify(effectiveUser));
-        else localStorage.removeItem('user_session');
       } catch (err) {
-        if (!isMounted) return;
-        // Keep app usable even if auth bootstrap fails once.
-        console.error('Auth bootstrap failed:', err);
-        // If we had no cached user, ensure state reflects that.
-        if (!getCachedUser()) setUser(null);
-      } finally {
-        if (isMounted && needsUrlHydration) {
-          setLoading(false);
-        }
+        console.error('OAuth callback processing failed:', err);
       }
+
+      const sessionUser = await authService.getCurrentUserFromSession();
+      if (!mounted) return;
+
+      setUser(sessionUser);
+      writeCachedUser(sessionUser);
+      setLoading(false);
+
+      // Enrich profile in background, but never block UI.
+      void authService.getCurrentUser().then((fullUser) => {
+        if (!mounted) return;
+        if (fullUser) {
+          setUser(fullUser);
+          writeCachedUser(fullUser);
+        }
+      });
     };
 
-    bootstrapSession();
+    void bootstrap();
 
     const unsubscribe = authService.onAuthStateChanged((nextUser) => {
-      if (!isMounted) return;
+      if (!mounted) return;
       setUser(nextUser);
+      writeCachedUser(nextUser);
+      setLoading(false);
     });
 
     return () => {
-      isMounted = false;
+      mounted = false;
       unsubscribe();
     };
   }, []);
@@ -127,25 +85,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await authService.signIn(email, password);
     if (response.user) {
       setUser(response.user);
-      localStorage.setItem('user_session', JSON.stringify(response.user));
+      writeCachedUser(response.user);
     }
     return response;
   };
 
   const signUp = async (email: string, password: string): Promise<AuthResponse> => {
-    const response = await authService.signUp(email, password);
-    return response;
+    return authService.signUp(email, password);
   };
 
-  const signOut = async () => {
-    // Optimistic UI update for instant sign-out feedback.
+  const signOut = async (): Promise<void> => {
     setUser(null);
-    localStorage.removeItem('user_session');
+    writeCachedUser(null);
     try {
       await authService.signOut();
-    } finally {
-      // Keep local auth state cleared even if remote sign-out fails.
-      setUser(null);
+    } catch (err) {
+      console.error('Sign-out failed:', err);
     }
   };
 
@@ -156,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

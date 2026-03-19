@@ -39,7 +39,12 @@ const createSupabaseClient = (): SupabaseBrowserClient | null => {
   const baseUrl = getSupabaseBaseUrl();
   if (!hasSupabase) return null;
   return createClient(baseUrl as string, supabaseAnonKey as string, {
-    auth: { persistSession: true, autoRefreshToken: true },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+      flowType: 'pkce',
+    },
   });
 };
 
