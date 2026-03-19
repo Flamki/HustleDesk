@@ -335,6 +335,7 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
 
 const AUTH_CALL_TIMEOUT_MS = 30000;
 const SESSION_SETUP_TIMEOUT_MS = 20000;
+const CURRENT_USER_TIMEOUT_MS = 8000;
 
 const applySessionWithRetry = async (accessToken: string, refreshToken: string): Promise<void> => {
   if (!supabase) throw new Error('Supabase not configured');
@@ -587,7 +588,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const { data, error } = await withTimeout(
       supabase.auth.getUser(),
-      AUTH_CALL_TIMEOUT_MS,
+      CURRENT_USER_TIMEOUT_MS,
       'Session check timed out. Please refresh and try again.'
     );
     if (error || !data.user) return null;

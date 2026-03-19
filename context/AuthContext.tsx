@@ -70,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const bootstrapSession = async () => {
       const needsUrlHydration = hasOAuthParamsInUrl();
+      let hydratedUser: User | null = null;
 
       // If we are NOT handling an OAuth callback, don't block the app.
       if (!needsUrlHydration && isMounted) setLoading(false);
@@ -83,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fast path: if a session already exists locally, unblock and navigate immediately.
         const quickUser = await authService.getCurrentUserFromSession();
         if (isMounted && quickUser) {
+          hydratedUser = quickUser;
           setUser(quickUser);
           localStorage.setItem('user_session', JSON.stringify(quickUser));
           setLoading(false);
@@ -91,8 +93,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Always try to sync with Supabase in the background. If cached user is stale, this corrects it.
         const currentUser = await authService.getCurrentUser();
         if (!isMounted) return;
-        setUser(currentUser);
-        if (currentUser) localStorage.setItem('user_session', JSON.stringify(currentUser));
+        const effectiveUser = currentUser ?? hydratedUser;
+        setUser(effectiveUser);
+        if (effectiveUser) localStorage.setItem('user_session', JSON.stringify(effectiveUser));
         else localStorage.removeItem('user_session');
       } catch (err) {
         if (!isMounted) return;
