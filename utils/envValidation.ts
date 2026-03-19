@@ -85,16 +85,6 @@ export const validateEnvironment = (): EnvValidationResult => {
     errors.push('VITE_AUTH_REDIRECT_ORIGIN must be a valid URL (http://localhost:5173 or your production domain).');
   }
 
-  if (import.meta.env.PROD && redirectOrigin && typeof window !== 'undefined') {
-    const clean = redirectOrigin.replace(/\/+$/, '');
-    const current = window.location.origin.replace(/\/+$/, '');
-    if (clean !== current) {
-      warnings.push(
-        `VITE_AUTH_REDIRECT_ORIGIN (${clean}) does not match current origin (${current}). OAuth may redirect incorrectly.`
-      );
-    }
-  }
-
   if (!hasStripePrice) {
     warnings.push(
       'VITE_STRIPE_PRICE_ID_PRO_MONTHLY is not set (optional on client). Billing UI will rely on server env only.'

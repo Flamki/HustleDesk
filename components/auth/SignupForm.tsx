@@ -180,6 +180,7 @@ export const SignupForm: React.FC = () => {
             type="email"
             label="Email Address"
             placeholder="you@example.com"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => setIsEmailTouched(true)}
@@ -196,6 +197,7 @@ export const SignupForm: React.FC = () => {
               type={showPassword ? 'text' : 'password'}
               label="Password"
               placeholder="Create a strong password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setIsPasswordTouched(true)}

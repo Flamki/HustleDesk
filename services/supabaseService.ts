@@ -454,6 +454,7 @@ export const hydrateSessionFromUrl = async (): Promise<void> => {
       'expires_at',
       'provider_token',
       'provider_refresh_token',
+      'sb',
       'type',
       'error',
       'error_code',
@@ -552,7 +553,7 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${getAuthBaseUrl()}/login` },
+    options: { redirectTo: `${getAuthBaseUrl()}/app/dashboard` },
   });
 
   return { user: null, error: error ?? null };

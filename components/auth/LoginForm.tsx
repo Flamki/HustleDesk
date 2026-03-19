@@ -90,6 +90,7 @@ export const LoginForm: React.FC = () => {
             type="email"
             label="Email Address"
             placeholder="you@example.com"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             icon={Mail}
@@ -111,6 +112,7 @@ export const LoginForm: React.FC = () => {
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 icon={Lock}

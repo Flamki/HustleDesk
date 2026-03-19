@@ -48,8 +48,6 @@ export default defineConfig(({ mode }) => {
       ],
       ssgOptions: {
         includedRoutes: () => [...SEO_ROUTES, ...APP_AUTH_ROUTES],
-        onPageRendered: (_route, renderedHTML) =>
-          renderedHTML.replace(/data-server-rendered="true"/g, 'data-server-rendered="false"'),
       },
       build: {
         target: 'es2020',

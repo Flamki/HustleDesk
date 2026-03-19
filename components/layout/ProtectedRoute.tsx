@@ -15,14 +15,15 @@ export const ProtectedRoute: React.FC = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Sidebar collapsed state with persistence
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('sidebar_collapsed');
-        return saved === 'true';
+  // Keep SSR/client initial render deterministic; then hydrate persisted sidebar state.
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar_collapsed');
+    if (saved === 'true') {
+      setIsSidebarCollapsed(true);
     }
-    return false;
-  });
+  }, []);
 
   const toggleSidebar = () => {
       const newState = !isSidebarCollapsed;
