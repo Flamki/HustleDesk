@@ -4,7 +4,8 @@ const HOST_CACHE_TTL_MS = 5 * 60 * 1000;
 const hostReachabilityCache = new Map();
 
 const trimOuterQuotes = (value) => value.replace(/^['"]+|['"]+$/g, '');
-const normalizeValue = (value) => trimOuterQuotes(String(value || '').trim());
+const stripEscapedTrailingNewlines = (value) => value.replace(/(?:\\r\\n|\\n|\\r)+$/g, '');
+const normalizeValue = (value) => trimOuterQuotes(stripEscapedTrailingNewlines(String(value || '').trim()));
 const normalizeBaseUrl = (value) => normalizeValue(value).replace(/\/+$/, '');
 
 const splitCandidateList = (value) =>

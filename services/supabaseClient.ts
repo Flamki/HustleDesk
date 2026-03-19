@@ -1,7 +1,13 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const sanitizeEnvValue = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/^(["'])+|(["'])+$/g, '')
+    .replace(/(?:\\r\\n|\\n|\\r)+$/g, '')
+    .trim();
+
+const supabaseUrl = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_URL).replace(/\/+$/, '');
+const supabaseAnonKey = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 export const hasSupabase = Boolean(supabaseUrl && supabaseAnonKey);
 
@@ -31,7 +37,7 @@ const isLocalHost = (host: string): boolean => {
 };
 
 export const getAuthBaseUrl = (): string => {
-  const forced = (import.meta.env.VITE_AUTH_REDIRECT_ORIGIN || '').trim();
+  const forced = sanitizeEnvValue(import.meta.env.VITE_AUTH_REDIRECT_ORIGIN);
   if (forced) {
     const clean = forced.replace(/\/+$/, '');
     // Safety guard: prevent production sessions from being redirected to localhost.
