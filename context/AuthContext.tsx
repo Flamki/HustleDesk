@@ -12,6 +12,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const hasOAuthParamsInUrl = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const h = (window.location.hash || '').toLowerCase();
+  const search = new URLSearchParams(window.location.search || '');
+  // OAuth callbacks can append tokens in the URL hash.
+  // Example: http://localhost:5173/app/dashboard#access_token=...
+  return (
+    h.includes('access_token=') ||
+    h.includes('refresh_token=') ||
+    h.includes('provider_token=') ||
+    h.includes('error=') ||
+    h.includes('code=') ||
+    search.has('code') ||
+    search.has('error') ||
+    search.has('error_description')
+  );
+};
+
 const stripOAuthParamsFromHash = (): void => {
   if (typeof window === 'undefined') return;
   const hash = window.location.hash || '';
@@ -51,37 +69,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let isMounted = true;
 
     const bootstrapSession = async () => {
+      const needsUrlHydration = hasOAuthParamsInUrl();
+
+      // If we are NOT handling an OAuth callback, don't block the app.
+      if (!needsUrlHydration && isMounted) setLoading(false);
+
       try {
         // Always attempt URL hydration; it no-ops if no OAuth params are present.
         await authService.hydrateSessionFromUrl();
         // Prevent repeated OAuth callback detection on refresh.
         stripOAuthParamsFromHash();
 
-        // Fast path: if a session already exists locally, unblock quickly.
+        // Fast path: if a session already exists locally, unblock and navigate immediately.
         const quickUser = await authService.getCurrentUserFromSession();
-        if (isMounted) {
-          if (quickUser) {
-            setUser(quickUser);
-            localStorage.setItem('user_session', JSON.stringify(quickUser));
-          }
+        if (isMounted && quickUser) {
+          setUser(quickUser);
+          localStorage.setItem('user_session', JSON.stringify(quickUser));
           setLoading(false);
         }
 
-        // Sync with Supabase in the background. If cached user is stale, this corrects it.
-        void (async () => {
-          const currentUser = await authService.getCurrentUser();
-          if (!isMounted) return;
-          setUser(currentUser);
-          if (currentUser) localStorage.setItem('user_session', JSON.stringify(currentUser));
-          else localStorage.removeItem('user_session');
-        })();
+        // Always try to sync with Supabase in the background. If cached user is stale, this corrects it.
+        const currentUser = await authService.getCurrentUser();
+        if (!isMounted) return;
+        setUser(currentUser);
+        if (currentUser) localStorage.setItem('user_session', JSON.stringify(currentUser));
+        else localStorage.removeItem('user_session');
       } catch (err) {
         if (!isMounted) return;
         // Keep app usable even if auth bootstrap fails once.
         console.error('Auth bootstrap failed:', err);
         // If we had no cached user, ensure state reflects that.
         if (!getCachedUser()) setUser(null);
-        setLoading(false);
+      } finally {
+        if (isMounted && needsUrlHydration) {
+          setLoading(false);
+        }
       }
     };
 
