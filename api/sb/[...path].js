@@ -18,6 +18,7 @@ const RESPONSE_HEADERS_TO_SKIP = new Set([
 ]);
 
 const EXPECTS_JSON_PREFIXES = ['/auth/v1', '/rest/v1'];
+const NON_JSON_AUTH_PATH_PREFIXES = ['/auth/v1/authorize'];
 
 const json = (res, status, body) => {
   res.statusCode = status;
@@ -86,7 +87,9 @@ export default async function handler(req, res) {
       });
 
       const contentType = String(upstream.headers.get('content-type') || '').toLowerCase();
-      const expectsJson = EXPECTS_JSON_PREFIXES.some((prefix) => targetPath.startsWith(prefix));
+      const expectsJsonBase = EXPECTS_JSON_PREFIXES.some((prefix) => targetPath.startsWith(prefix));
+      const allowsNonJson = NON_JSON_AUTH_PATH_PREFIXES.some((prefix) => targetPath.startsWith(prefix));
+      const expectsJson = expectsJsonBase && !allowsNonJson;
       if (expectsJson && !contentType.includes('application/json')) {
         const sample = (await upstream.text()).slice(0, 120);
         upstreamErrors.push({
