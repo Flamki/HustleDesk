@@ -1,14 +1,23 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/auth/LoginForm';
 import { Sun, Moon, ArrowLeft, ShieldCheck, Quote } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import SEO from '../components/SEO';
 import { BrandLogo } from '../components/brand/BrandLogo';
+import { useAuth } from '../context/AuthContext';
 
 export const LoginPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/app/dashboard', { replace: true });
+    }
+  }, [loading, user, navigate]);
 
   return (
     <>

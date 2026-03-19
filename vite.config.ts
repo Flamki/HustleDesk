@@ -15,6 +15,14 @@ const SEO_ROUTES = [
   '/link-in-bio',
 ];
 
+const APP_AUTH_ROUTES = [
+  '/login',
+  '/signup',
+  '/auth/check-email',
+  '/unsubscribe',
+  '/app/dashboard',
+];
+
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     const devPort = Number(env.VITE_PORT || 5173);
@@ -39,7 +47,9 @@ export default defineConfig(({ mode }) => {
         }),
       ],
       ssgOptions: {
-        includedRoutes: () => SEO_ROUTES,
+        includedRoutes: () => [...SEO_ROUTES, ...APP_AUTH_ROUTES],
+        onPageRendered: (_route, renderedHTML) =>
+          renderedHTML.replace(/data-server-rendered="true"/g, 'data-server-rendered="false"'),
       },
       build: {
         target: 'es2020',

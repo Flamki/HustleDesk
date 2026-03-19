@@ -310,6 +310,14 @@ const fetchWithTimeout = async (
   }
 };
 
+const parseJsonSafe = async <T = any>(response: Response): Promise<T | null> => {
+  try {
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+};
+
 const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
   return await new Promise<T>((resolve, reject) => {
     const timer = window.setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
@@ -498,7 +506,7 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${getAuthBaseUrl()}/app/dashboard` },
+    options: { redirectTo: `${getAuthBaseUrl()}/login` },
   });
 
   return { user: null, error: error ?? null };
@@ -626,7 +634,8 @@ export const getJobsList = async (query: JobsListQuery = {}): Promise<{ data: Jo
         headers: { Authorization: `Bearer ${token}` },
       }, 6500);
       if (response.ok) {
-        const body = await response.json();
+        const body = await parseJsonSafe<{ jobs: DbJobRow[]; total?: number; limit?: number; offset?: number }>(response);
+        if (!body) throw new Error('Invalid jobs response');
         const jobs = (body.jobs as DbJobRow[]).map(mapDbJobToAppJob);
         const result = {
           jobs,
@@ -735,7 +744,8 @@ export const getDashboardStats = async (
         headers: { Authorization: `Bearer ${token}` },
       }, 4500);
       if (withRange.ok) {
-        const body = await withRange.json();
+        const body = await parseJsonSafe<DashboardStatsResponse>(withRange);
+        if (!body) throw new Error('Invalid dashboard response');
         const result = body as DashboardStatsResponse;
         dashboardCache.set(range, { ts: Date.now(), data: result });
         return { data: result, error: null };
@@ -805,7 +815,8 @@ export const createJob = async (
       });
 
       if (response.ok) {
-        const body = await response.json();
+        const body = await parseJsonSafe<{ job_id: string }>(response);
+        if (!body?.job_id) throw new Error('Invalid create-job response');
         const result = await getJobById(body.job_id);
         if (!result.error) invalidateJobsAndDashboardCache();
         return result;

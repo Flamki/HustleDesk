@@ -59,7 +59,7 @@ const getCachedUser = (): User | null => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Perceived performance: render immediately if we have a cached user and we are NOT in an OAuth callback.
   const [user, setUser] = useState<User | null>(() => getCachedUser());
-  const [loading, setLoading] = useState<boolean>(() => hasOAuthParamsInHash());
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     let isMounted = true;

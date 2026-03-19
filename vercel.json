@@ -14,20 +14,8 @@
       "destination": "/api/[...path]"
     },
     {
-      "source": "/login",
-      "destination": "/"
-    },
-    {
-      "source": "/signup",
-      "destination": "/"
-    },
-    {
       "source": "/auth/:path*",
-      "destination": "/"
-    },
-    {
-      "source": "/unsubscribe",
-      "destination": "/"
+      "destination": "/auth/check-email"
     },
     {
       "source": "/share/:path*",
@@ -39,7 +27,7 @@
     },
     {
       "source": "/app/:path*",
-      "destination": "/"
+      "destination": "/app/dashboard"
     }
   ],
   "functions": {

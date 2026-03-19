@@ -147,7 +147,8 @@ export const listTimeEntries = async (
         headers: { Authorization: `Bearer ${token}` },
       }, 6500);
       if (response.ok) {
-        const body = await response.json();
+        const body = await response.json().catch(() => null);
+        if (!body) throw new Error('Invalid time entries response');
         return {
           data: (() => {
             const result = {
