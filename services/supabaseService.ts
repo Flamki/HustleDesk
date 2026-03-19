@@ -333,8 +333,8 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
   });
 };
 
-const AUTH_CALL_TIMEOUT_MS = 30000;
-const SESSION_SETUP_TIMEOUT_MS = 20000;
+const AUTH_CALL_TIMEOUT_MS = 12000;
+const SESSION_SETUP_TIMEOUT_MS = 8000;
 
 const applySessionWithRetry = async (accessToken: string, refreshToken: string): Promise<void> => {
   if (!supabase) throw new Error('Supabase not configured');
@@ -560,7 +560,16 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
 export const signOut = async (): Promise<void> => {
   localStorage.removeItem(AUTH_STORAGE_KEY);
-  if (supabase) await supabase.auth.signOut();
+  if (!supabase) return;
+
+  // Clear local session immediately for responsive UX.
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+  // Best-effort remote sign-out; do not block UI.
+  void withTimeout(
+    supabase.auth.signOut(),
+    4000,
+    'Remote sign-out timed out'
+  ).catch(() => undefined);
 };
 
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -576,6 +585,18 @@ export const getCurrentUser = async (): Promise<User | null> => {
     );
     if (error || !data.user) return null;
     return loadUserFromUsersTable(data.user.id, data.user.email ?? '');
+  } catch {
+    return null;
+  }
+};
+
+export const getCurrentUserFromSession = async (): Promise<User | null> => {
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    const sessionUser = data.session?.user;
+    if (!sessionUser) return null;
+    return buildFallbackUser(sessionUser.id, sessionUser.email ?? '');
   } catch {
     return null;
   }

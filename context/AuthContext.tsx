@@ -80,6 +80,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Prevent repeated OAuth callback detection on refresh.
         stripOAuthParamsFromHash();
 
+        // Fast path: if a session already exists locally, unblock and navigate immediately.
+        const quickUser = await authService.getCurrentUserFromSession();
+        if (isMounted && quickUser) {
+          setUser(quickUser);
+          localStorage.setItem('user_session', JSON.stringify(quickUser));
+          setLoading(false);
+        }
+
         // Always try to sync with Supabase in the background. If cached user is stale, this corrects it.
         const currentUser = await authService.getCurrentUser();
         if (!isMounted) return;
@@ -127,12 +135,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Optimistic UI update for instant sign-out feedback.
+    setUser(null);
+    localStorage.removeItem('user_session');
     try {
       await authService.signOut();
     } finally {
-      // Always clear local auth state even if remote sign-out fails.
+      // Keep local auth state cleared even if remote sign-out fails.
       setUser(null);
-      localStorage.removeItem('user_session');
     }
   };
 
