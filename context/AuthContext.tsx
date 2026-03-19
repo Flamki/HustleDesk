@@ -12,9 +12,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const hasOAuthParamsInHash = (): boolean => {
+const hasOAuthParamsInUrl = (): boolean => {
   if (typeof window === 'undefined') return false;
   const h = (window.location.hash || '').toLowerCase();
+  const search = new URLSearchParams(window.location.search || '');
   // OAuth callbacks can append tokens in the URL hash.
   // Example: http://localhost:5173/app/dashboard#access_token=...
   return (
@@ -22,7 +23,10 @@ const hasOAuthParamsInHash = (): boolean => {
     h.includes('refresh_token=') ||
     h.includes('provider_token=') ||
     h.includes('error=') ||
-    h.includes('code=')
+    h.includes('code=') ||
+    search.has('code') ||
+    search.has('error') ||
+    search.has('error_description')
   );
 };
 
@@ -65,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let isMounted = true;
 
     const bootstrapSession = async () => {
-      const needsUrlHydration = hasOAuthParamsInHash();
+      const needsUrlHydration = hasOAuthParamsInUrl();
 
       // If we are NOT handling an OAuth callback, don't block the app.
       if (!needsUrlHydration && isMounted) setLoading(false);

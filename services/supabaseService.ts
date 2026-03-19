@@ -408,22 +408,57 @@ export const hasSupabaseAuth = (): boolean => hasSupabase;
 export const hydrateSessionFromUrl = async (): Promise<void> => {
   if (!supabase || typeof window === 'undefined') return;
 
-  const href = window.location.href;
-  const marker = '#access_token=';
-  const markerIndex = href.indexOf(marker);
-  if (markerIndex === -1) return;
+  const url = new URL(window.location.href);
+  const originalPathWithParams = `${url.pathname}${url.search}${url.hash}`;
 
-  const tokenHash = href.slice(markerIndex + 1);
-  const params = new URLSearchParams(tokenHash);
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-
+  const hashParams = new URLSearchParams((url.hash || '').replace(/^#/, ''));
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
   if (accessToken && refreshToken) {
     await applySessionWithRetry(accessToken, refreshToken);
   }
 
-  const cleanedUrl = href.slice(0, markerIndex);
-  window.history.replaceState({}, document.title, cleanedUrl);
+  const authCode = url.searchParams.get('code');
+  if (authCode) {
+    const { error } = await withTimeout(
+      supabase.auth.exchangeCodeForSession(authCode),
+      AUTH_CALL_TIMEOUT_MS,
+      'OAuth session exchange timed out. Please try login again.'
+    );
+    if (error) {
+      throw error;
+    }
+  }
+
+  // Remove one-time OAuth params from URL after session setup.
+  [
+    'code',
+    'state',
+    'error',
+    'error_code',
+    'error_description',
+    'error_uri',
+  ].forEach((key) => url.searchParams.delete(key));
+
+  [
+    'access_token',
+    'refresh_token',
+    'token_type',
+    'expires_in',
+    'expires_at',
+    'provider_token',
+    'provider_refresh_token',
+    'type',
+    'error',
+    'error_code',
+    'error_description',
+  ].forEach((key) => hashParams.delete(key));
+
+  const nextHash = hashParams.toString();
+  const nextPathWithParams = `${url.pathname}${url.search}${nextHash ? `#${nextHash}` : ''}`;
+  if (nextPathWithParams !== originalPathWithParams) {
+    window.history.replaceState({}, document.title, nextPathWithParams);
+  }
 };
 
 export const signUp = async (email: string, password: string): Promise<AuthResponse> => {
