@@ -83,6 +83,7 @@ export default async function handler(req, res) {
         method,
         headers: buildForwardHeaders(req.headers || {}),
         body: body || undefined,
+        redirect: 'manual',
         signal: controller.signal,
       });
 
