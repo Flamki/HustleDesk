@@ -49,21 +49,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('OAuth callback processing failed:', err);
       }
 
-      const sessionUser = await authService.getCurrentUserFromSession();
+      const currentUser = await authService.getCurrentUser();
       if (!mounted) return;
 
-      setUser(sessionUser);
-      writeCachedUser(sessionUser);
+      setUser(currentUser);
+      writeCachedUser(currentUser);
       setLoading(false);
-
-      // Enrich profile in background, but never block UI.
-      void authService.getCurrentUser().then((fullUser) => {
-        if (!mounted) return;
-        if (fullUser) {
-          setUser(fullUser);
-          writeCachedUser(fullUser);
-        }
-      });
     };
 
     void bootstrap();

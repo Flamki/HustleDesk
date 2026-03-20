@@ -244,9 +244,9 @@ const saveJobs = (jobs: Job[]) => {
   localStorage.setItem(JOBS_STORAGE_KEY, JSON.stringify(jobs));
 };
 
-const loadUserFromUsersTable = async (id: string, email: string): Promise<User> => {
+const loadUserFromUsersTable = async (id: string, email: string): Promise<User | null> => {
   if (!supabase) {
-    return buildFallbackUser(id, email);
+    return null;
   }
 
   let data: DbUserRow | null = null;
@@ -287,10 +287,7 @@ const loadUserFromUsersTable = async (id: string, email: string): Promise<User> 
     data = null;
   }
 
-  if (!data) {
-    return buildFallbackUser(id, email);
-  }
-
+  if (!data) return null;
   return mapDbUserToAppUser(data as DbUserRow);
 };
 
@@ -328,6 +325,19 @@ const fetchWithTimeout = async (
   } finally {
     window.clearTimeout(timeout);
   }
+};
+
+const resolveUserAfterAuth = async (
+  userId: string,
+  email: string,
+  accessToken: string | null
+): Promise<User | null> => {
+  await ensureProfileSetup(accessToken);
+  const user = await loadUserFromUsersTable(userId, email);
+  if (user) return user;
+  // One retry after setup in case row creation was delayed.
+  await wait(250);
+  return await loadUserFromUsersTable(userId, email);
 };
 
 const parseJsonSafe = async <T = any>(response: Response): Promise<T | null> => {
@@ -550,8 +560,14 @@ export const signUp = async (email: string, password: string): Promise<AuthRespo
     if (error) return { user: null, error };
     if (!data.user) return { user: null, error: null };
 
-    await ensureProfileSetup(data.session?.access_token ?? null);
-    const user = await loadUserFromUsersTable(data.user.id, data.user.email ?? email);
+    const user = await resolveUserAfterAuth(
+      data.user.id,
+      data.user.email ?? email,
+      data.session?.access_token ?? null
+    );
+    if (!user) {
+      return { user: null, error: new Error('Account setup failed. Please try again.') };
+    }
     return { user, error: null };
   } catch (err) {
     return {
@@ -576,14 +592,26 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
       return { user: null, error: error ?? new Error('Invalid login credentials') };
     }
 
-    const user = await loadUserFromUsersTable(data.user.id, data.user.email ?? email);
+    const user = await resolveUserAfterAuth(
+      data.user.id,
+      data.user.email ?? email,
+      data.session?.access_token ?? null
+    );
+    if (!user) {
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+      return { user: null, error: new Error('Account setup failed. Please sign up first.') };
+    }
     return { user, error: null };
   } catch (err) {
     const message = err instanceof Error ? err.message : '';
     if (message.toLowerCase().includes('timed out')) {
       try {
         const restUser = await signInViaRestFallback(email, password);
-        const user = await loadUserFromUsersTable(restUser.id, restUser.email ?? email);
+        const user = await resolveUserAfterAuth(restUser.id, restUser.email ?? email, null);
+        if (!user) {
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+          return { user: null, error: new Error('Account setup failed. Please sign up first.') };
+        }
         return { user, error: null };
       } catch (fallbackErr) {
         return {
@@ -642,6 +670,8 @@ export const getCurrentUser = async (): Promise<User | null> => {
     const sessionUser = sessionData.session?.user;
     if (!sessionUser) return null;
 
+    let accessToken: string | null = sessionData.session?.access_token ?? null;
+
     try {
       const { data, error } = await withTimeout(
         supabase.auth.getUser(),
@@ -650,28 +680,21 @@ export const getCurrentUser = async (): Promise<User | null> => {
       );
       const verifiedUser = error ? null : data.user;
       if (verifiedUser) {
-        return await loadUserFromUsersTable(verifiedUser.id, verifiedUser.email ?? '');
+        accessToken = accessToken ?? sessionData.session?.access_token ?? null;
+        return await resolveUserAfterAuth(verifiedUser.id, verifiedUser.email ?? '', accessToken);
       }
     } catch {
       // Fall back to session user.
     }
 
-    return await loadUserFromUsersTable(sessionUser.id, sessionUser.email ?? '');
+    return await resolveUserAfterAuth(sessionUser.id, sessionUser.email ?? '', accessToken);
   } catch {
     return null;
   }
 };
 
 export const getCurrentUserFromSession = async (): Promise<User | null> => {
-  if (!supabase) return null;
-  try {
-    const { data } = await supabase.auth.getSession();
-    const sessionUser = data.session?.user;
-    if (!sessionUser) return null;
-    return buildFallbackUser(sessionUser.id, sessionUser.email ?? '');
-  } catch {
-    return null;
-  }
+  return null;
 };
 
 export const onAuthStateChanged = (listener: AuthStateListener): (() => void) => {
@@ -682,11 +705,15 @@ export const onAuthStateChanged = (listener: AuthStateListener): (() => void) =>
       listener(null);
       return;
     }
-    let user: User;
+    let user: User | null = null;
     try {
-      user = await loadUserFromUsersTable(session.user.id, session.user.email ?? '');
+      user = await resolveUserAfterAuth(
+        session.user.id,
+        session.user.email ?? '',
+        session.access_token ?? null
+      );
     } catch {
-      user = buildFallbackUser(session.user.id, session.user.email ?? '');
+      user = null;
     }
     listener(user);
   });
