@@ -3,7 +3,7 @@ import { secureJson, validateInput } from '../_shared/security.js';
 
 const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 
 const json = secureJson;
 
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   if (userError || !user) return json(res, 401, { error: 'Unauthorized' });
 
   const adminClient = createClient(url, serviceRoleKey);
-  const payload = {
+  const userPayload = {
     id: user.id,
     email: user.email ?? '',
     plan: 'free',
@@ -38,13 +38,52 @@ export default async function handler(req, res) {
     skills: [],
   };
 
-  const { error: upsertError } = await adminClient
+  const { error: usersUpsertError } = await adminClient
     .from('users')
-    .upsert(payload, { onConflict: 'id' });
+    .upsert(userPayload, { onConflict: 'id' });
 
-  if (upsertError) {
-    return json(res, 500, { error: upsertError.message });
+  if (usersUpsertError) {
+    return json(res, 500, { error: usersUpsertError.message });
   }
 
-  return json(res, 200, { success: true, message: 'Profile is ready' });
+  // Best-effort upsert for freelancer profile. Keep this non-fatal for older schemas.
+  let freelancerProfileReady = false;
+  try {
+    const { error: profileUpsertError } = await adminClient
+      .from('freelancer_profiles')
+      .upsert(
+        {
+          user_id: user.id,
+          skills: [],
+          experience_level: 'Entry',
+          years_experience: 0,
+          bio: '',
+          hourly_rate: 0,
+          past_projects: [],
+          communication_style: 'Professional',
+          completed_onboarding: false,
+          preferences: {},
+          notification_settings: {},
+        },
+        { onConflict: 'user_id' }
+      );
+    if (
+      !profileUpsertError ||
+      /relation .*freelancer_profiles.* does not exist|column .*freelancer_profiles.* does not exist|Could not find .* in the schema cache/i.test(
+        profileUpsertError.message || ''
+      )
+    ) {
+      freelancerProfileReady = true;
+    }
+  } catch {
+    // Ignore profile bootstrap exceptions to avoid blocking auth.
+  }
+
+  return json(res, 200, {
+    success: true,
+    account_ready: true,
+    users_row_ready: true,
+    freelancer_profile_ready: freelancerProfileReady,
+    message: 'Account is ready',
+  });
 }

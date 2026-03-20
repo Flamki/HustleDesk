@@ -20,6 +20,8 @@ const JOBS_LIST_CACHE_TTL_MS = 15_000;
 const DASHBOARD_CACHE_TTL_MS = 10_000;
 const AUTH_USE_DB_PROFILE_LOOKUP =
   String(import.meta.env.VITE_AUTH_USE_DB_PROFILE_LOOKUP || '').toLowerCase() === 'true';
+const AUTH_REQUIRE_ACCOUNT_READY =
+  String(import.meta.env.VITE_AUTH_REQUIRE_ACCOUNT_READY || '').toLowerCase() === 'true';
 
 type CacheEntry<T> = { ts: number; data: T };
 const jobsListCache = new Map<string, CacheEntry<JobsListResponse>>();
@@ -291,10 +293,10 @@ const getSupabaseToken = async (): Promise<string | null> => {
   return data.session?.access_token ?? null;
 };
 
-const ensureProfileSetup = async (accessToken: string | null): Promise<void> => {
-  if (!accessToken) return;
+const ensureProfileSetup = async (accessToken: string | null): Promise<boolean> => {
+  if (!accessToken) return false;
   try {
-    await fetchWithTimeout(
+    const response = await fetchWithTimeout(
       '/api/auth/setup-profile',
       {
         method: 'POST',
@@ -302,8 +304,13 @@ const ensureProfileSetup = async (accessToken: string | null): Promise<void> => 
       },
       4500
     );
+    if (!response.ok) return false;
+    const body = await parseJsonSafe<{ success?: boolean; account_ready?: boolean }>(response);
+    if (!body) return true;
+    return Boolean(body.success !== false && body.account_ready !== false);
   } catch {
     // Trigger-based creation is primary; API setup is best-effort fallback.
+    return false;
   }
 };
 
@@ -327,7 +334,10 @@ const resolveUserAfterAuth = async (
   accessToken: string | null,
   createdAt?: string
 ): Promise<User | null> => {
-  void ensureProfileSetup(accessToken);
+  const accountReady = await ensureProfileSetup(accessToken);
+  if (AUTH_REQUIRE_ACCOUNT_READY && accessToken && !accountReady) {
+    return null;
+  }
   const user = await loadUserFromUsersTable(userId, email);
   if (user) return user;
   return buildFallbackUser(userId, email, createdAt);
@@ -1094,6 +1104,7 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
   if (userError || !user) return { data: null, error: new Error('Unauthorized') };
 
   type DbFreelancerProfile = {
+    id?: string;
     user_id: string;
     skills: string[] | null;
     experience_level: 'Entry' | 'Intermediate' | 'Expert' | null;
@@ -1110,19 +1121,29 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
   };
 
   try {
-    const profileSelect =
-      'user_id,skills,experience_level,years_experience,bio,portfolio_url,linkedin_url,hourly_rate,past_projects,communication_style,completed_onboarding';
-
     let data: DbFreelancerProfile | null = null;
     let error: { message?: string } | null = null;
 
+    // Query all available columns to avoid 400 errors from schema drift
+    // (missing columns in explicit select lists).
     const primaryResult = await supabase
       .from('freelancer_profiles')
-      .select(profileSelect)
+      .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
-    data = (primaryResult.data as DbFreelancerProfile | null) ?? null;
-    error = (primaryResult.error as { message?: string } | null) ?? null;
+    data = (primaryResult.data as DbFreelancerProfile | null) || null;
+    error = (primaryResult.error as { message?: string } | null) || null;
+
+    // Compatibility fallback for schemas using `id` instead of `user_id`.
+    if (error && /column .*user_id.* does not exist|Could not find.*user_id/i.test(error.message || '')) {
+      const idResult = await supabase
+        .from('freelancer_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+      data = (idResult.data as DbFreelancerProfile | null) || null;
+      error = (idResult.error as { message?: string } | null) || null;
+    }
 
     if (error) {
       if (/relation .*freelancer_profiles.* does not exist/i.test(error.message || '')) {
@@ -1138,9 +1159,10 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
     }
 
     const row = data as DbFreelancerProfile;
+    const rowUserId = row.user_id || row.id || user.id;
     const profile: FreelancerProfile = {
-      id: row.user_id,
-      userId: row.user_id,
+      id: rowUserId,
+      userId: rowUserId,
       skills: Array.isArray(row.skills) ? row.skills : [],
       experienceLevel: row.experience_level || 'Entry',
       yearsExperience: Number(row.years_experience || 0),

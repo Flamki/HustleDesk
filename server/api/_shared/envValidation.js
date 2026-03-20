@@ -30,7 +30,9 @@ export const validateServerEnvironment = () => {
   // Core Supabase configuration
   checks.supabaseUrl = validatePresence(process.env.SUPABASE_URL);
   checks.supabaseAnonKey = validatePresence(process.env.SUPABASE_ANON_KEY);
-  checks.supabaseServiceRoleKey = validatePresence(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  checks.supabaseServiceRoleKey = validatePresence(
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
+  );
 
   if (!checks.supabaseUrl) {
     errors.push('SUPABASE_URL is required');
@@ -43,7 +45,7 @@ export const validateServerEnvironment = () => {
   }
 
   if (!checks.supabaseServiceRoleKey) {
-    errors.push('SUPABASE_SERVICE_ROLE_KEY is required');
+    errors.push('SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) is required');
   }
 
   // Health check token (recommended)
