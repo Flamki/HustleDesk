@@ -251,18 +251,38 @@ const loadUserFromUsersTable = async (id: string, email: string): Promise<User> 
 
   let data: DbUserRow | null = null;
   try {
-    const query = supabase
+    const primaryQuery = supabase
       .from('users')
       .select('id,email,plan,ai_credits_used,ai_credits_limit,skills,created_at')
       .eq('id', id)
       .maybeSingle();
 
-    const result = await withTimeout(
-      Promise.resolve(query),
+    let result = await withTimeout(
+      Promise.resolve(primaryQuery),
       8000,
       'Profile lookup timed out'
-    );
-    data = ((result as { data: DbUserRow | null }).data ?? null);
+    ) as { data: DbUserRow | null; error?: { message?: string } | null };
+
+    // Backward-compatible fallback for projects where ai_credits_limit column isn't present yet.
+    if (result.error && /column .*ai_credits_limit.* does not exist/i.test(result.error.message || '')) {
+      const fallbackQuery = supabase
+        .from('users')
+        .select('id,email,plan,ai_credits_used,skills,created_at')
+        .eq('id', id)
+        .maybeSingle();
+      const fallback = await withTimeout(
+        Promise.resolve(fallbackQuery),
+        8000,
+        'Profile lookup timed out'
+      ) as { data: (Omit<DbUserRow, 'ai_credits_limit'> & { ai_credits_limit?: number | null }) | null };
+      result = {
+        data: fallback.data
+          ? ({ ...fallback.data, ai_credits_limit: fallback.data.ai_credits_limit ?? 5 } as DbUserRow)
+          : null,
+      };
+    }
+
+    data = result.data ?? null;
   } catch {
     data = null;
   }
@@ -333,7 +353,7 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
   });
 };
 
-const AUTH_CALL_TIMEOUT_MS = 15000;
+const AUTH_CALL_TIMEOUT_MS = 35000;
 const SESSION_SETUP_TIMEOUT_MS = 12000;
 const CURRENT_USER_TIMEOUT_MS = 8000;
 const OAUTH_QUERY_KEYS = [
@@ -375,6 +395,9 @@ const clearOAuthArtifactsFromUrl = (): void => {
     window.history.replaceState({}, document.title, nextPathWithParams);
   }
 };
+
+const wait = (ms: number): Promise<void> =>
+  new Promise((resolve) => window.setTimeout(resolve, ms));
 
 const applySessionWithRetry = async (accessToken: string, refreshToken: string): Promise<void> => {
   if (!supabase) throw new Error('Supabase not configured');
@@ -473,13 +496,38 @@ export const hydrateSessionFromUrl = async (): Promise<void> => {
 
   const authCode = url.searchParams.get('code');
   if (authCode) {
-    const { error } = await withTimeout(
-      supabase.auth.exchangeCodeForSession(authCode),
-      AUTH_CALL_TIMEOUT_MS,
-      'OAuth session exchange timed out. Please try login again.'
-    );
-    clearOAuthArtifactsFromUrl();
-    if (error) throw error;
+    let lastError: unknown = null;
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const { error } = await withTimeout(
+          supabase.auth.exchangeCodeForSession(authCode),
+          AUTH_CALL_TIMEOUT_MS,
+          'OAuth session exchange timed out. Please try login again.'
+        );
+        if (error) throw error;
+        clearOAuthArtifactsFromUrl();
+        return;
+      } catch (err) {
+        lastError = err;
+        if (attempt === 0) {
+          await wait(400);
+        }
+      }
+    }
+
+    // If exchange timed out but session eventually landed, proceed without failing login UX.
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        clearOAuthArtifactsFromUrl();
+        return;
+      }
+    } catch {
+      // Keep original error below.
+    }
+
+    throw (lastError instanceof Error ? lastError : new Error('OAuth callback failed. Please try again.'));
   }
 };
 
@@ -1140,25 +1188,44 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
     past_projects: any[] | null;
     communication_style: string | null;
     completed_onboarding: boolean | null;
-    preferences: FreelancerProfile['preferences'] | null;
-    notification_settings: FreelancerProfile['notificationSettings'] | null;
+    preferences?: FreelancerProfile['preferences'] | null;
+    notification_settings?: FreelancerProfile['notificationSettings'] | null;
   };
 
   try {
-    const { data, error } = await supabase
+    const primarySelect =
+      'user_id,skills,experience_level,years_experience,bio,portfolio_url,linkedin_url,hourly_rate,past_projects,communication_style,completed_onboarding,preferences,notification_settings';
+    const fallbackSelect =
+      'user_id,skills,experience_level,years_experience,bio,portfolio_url,linkedin_url,hourly_rate,past_projects,communication_style,completed_onboarding';
+
+    let data: DbFreelancerProfile | null = null;
+    let error: { message?: string } | null = null;
+
+    const primaryResult = await supabase
       .from('freelancer_profiles')
-      .select(
-        'user_id,skills,experience_level,years_experience,bio,portfolio_url,linkedin_url,hourly_rate,past_projects,communication_style,completed_onboarding,preferences,notification_settings'
-      )
+      .select(primarySelect)
       .eq('user_id', user.id)
       .maybeSingle();
+    data = (primaryResult.data as DbFreelancerProfile | null) ?? null;
+    error = (primaryResult.error as { message?: string } | null) ?? null;
+
+    // Backward-compatible fallback for schemas missing preferences/notification_settings.
+    if (error && /column .*freelancer_profiles.*(preferences|notification_settings).* does not exist/i.test(error.message || '')) {
+      const fallbackResult = await supabase
+        .from('freelancer_profiles')
+        .select(fallbackSelect)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      data = (fallbackResult.data as DbFreelancerProfile | null) ?? null;
+      error = (fallbackResult.error as { message?: string } | null) ?? null;
+    }
 
     if (error) {
       if (/relation .*freelancer_profiles.* does not exist/i.test(error.message || '')) {
         const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
         return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
       }
-      return { data: null, error };
+      return { data: null, error: new Error(error.message || 'Failed to load profile') };
     }
 
     if (!data) {

@@ -75,7 +75,8 @@ export default async function handler(req, res) {
   const method = String(req.method || 'GET').toUpperCase();
   const body = method === 'GET' || method === 'HEAD' ? undefined : await getRawBody(req);
   const upstreamErrors = [];
-  const timeoutMs = Math.max(5000, Number(process.env.SUPABASE_PROXY_TIMEOUT_MS || 12000));
+  const defaultTimeoutMs = targetPath.startsWith('/auth/v1') ? 45000 : 20000;
+  const timeoutMs = Math.max(5000, Number(process.env.SUPABASE_PROXY_TIMEOUT_MS || defaultTimeoutMs));
 
   for (const baseUrl of selection.prioritized) {
     const targetUrl = `${baseUrl}${targetPath}${incoming.search}`;
