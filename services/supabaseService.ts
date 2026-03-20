@@ -563,10 +563,7 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo: `${getAuthBaseUrl()}/login`,
-      queryParams: { prompt: 'select_account' },
-    },
+    options: { redirectTo: `${getAuthBaseUrl()}/login` },
   });
 
   return { user: null, error: error ?? null };
