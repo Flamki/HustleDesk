@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Input } from '../ui/Input';
 import { useAuth } from '../../context/AuthContext';
 import { EMAIL_REGEX } from '../../constants';
@@ -9,6 +9,7 @@ import * as authService from '../../services/supabaseService';
 
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn } = useAuth();
   
   const [email, setEmail] = useState('');
@@ -16,6 +17,12 @@ export const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (searchParams.get('error') === 'oauth_failed') {
+      setError('Google login could not be completed. Please try again.');
+    }
+  }, [searchParams]);
 
   const getFriendlyOAuthError = (message: string) => {
     const normalized = message.toLowerCase();

@@ -13,19 +13,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTH_CACHE_KEY = 'user_session';
 
-const readCachedUser = (): User | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(AUTH_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as User;
-    if (!parsed || typeof parsed !== 'object' || typeof parsed.id !== 'string') return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-};
-
 const writeCachedUser = (user: User | null): void => {
   if (typeof window === 'undefined') return;
   if (!user) {
@@ -36,7 +23,7 @@ const writeCachedUser = (user: User | null): void => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => readCachedUser());
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {

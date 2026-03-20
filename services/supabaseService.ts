@@ -11,14 +11,15 @@ import {
   JobStatus,
   User,
 } from '../types';
-import { MOCK_DELAY_MS } from '../constants';
-import { getAuthBaseUrl, getSupabaseBaseUrl, hasSupabase, supabase } from './supabaseClient';
+import { getAuthBaseUrl, hasSupabase, supabase } from './supabaseClient';
 
 const AUTH_STORAGE_KEY = 'user_session';
 const PROFILE_STORAGE_KEY = 'freelancer_profile';
 const JOBS_STORAGE_KEY = 'jobs_store_v1';
 const JOBS_LIST_CACHE_TTL_MS = 15_000;
 const DASHBOARD_CACHE_TTL_MS = 10_000;
+const AUTH_USE_DB_PROFILE_LOOKUP =
+  String(import.meta.env.VITE_AUTH_USE_DB_PROFILE_LOOKUP || '').toLowerCase() === 'true';
 
 type CacheEntry<T> = { ts: number; data: T };
 const jobsListCache = new Map<string, CacheEntry<JobsListResponse>>();
@@ -219,14 +220,14 @@ const buildActivityFromJobs = (jobs: Job[]): DashboardActivity[] => {
     .slice(0, 10);
 };
 
-const buildFallbackUser = (id: string, email: string): User => ({
+const buildFallbackUser = (id: string, email: string, createdAt?: string): User => ({
   id,
   email,
   plan: 'free',
   aiCreditsUsed: 0,
   aiCreditsLimit: 5,
   skills: [],
-  createdAt: new Date().toISOString(),
+  createdAt: createdAt || new Date().toISOString(),
 });
 
 const getStoredJobs = (): Job[] => {
@@ -245,42 +246,43 @@ const saveJobs = (jobs: Job[]) => {
 };
 
 const loadUserFromUsersTable = async (id: string, email: string): Promise<User | null> => {
-  if (!supabase) {
+  // Default auth mode does not depend on public.users to avoid login breakage
+  // when schema drift/migrations are incomplete in production.
+  if (!supabase || !AUTH_USE_DB_PROFILE_LOOKUP) {
     return null;
   }
 
-  let data: DbUserRow | null = null;
   try {
-    // Keep this select schema-safe for older projects missing newer credit columns.
-    const query = supabase
-      .from('users')
-      .select('id,email,plan,skills,created_at')
-      .eq('id', id)
-      .maybeSingle();
-
     const result = await withTimeout(
-      Promise.resolve(query),
-      8000,
+      Promise.resolve(
+        supabase
+          .from('users')
+          .select('id,email,plan,skills,created_at')
+          .eq('id', id)
+          .maybeSingle()
+      ),
+      3500,
       'Profile lookup timed out'
-    ) as { data: Partial<DbUserRow> | null };
+    ) as {
+      data: Partial<DbUserRow> | null;
+      error?: { message?: string } | null;
+    };
 
-    data = result.data
-      ? ({
-          id: String(result.data.id || id),
-          email: String(result.data.email || email),
-          plan: result.data.plan === 'pro' ? 'pro' : 'free',
-          ai_credits_used: Number(result.data.ai_credits_used ?? 0),
-          ai_credits_limit: Number(result.data.ai_credits_limit ?? 5),
-          skills: Array.isArray(result.data.skills) ? result.data.skills : [],
-          created_at: String(result.data.created_at || new Date().toISOString()),
-        } as DbUserRow)
-      : null;
+    if (result.error || !result.data) return null;
+
+    const data: DbUserRow = {
+      id: String(result.data.id || id),
+      email: String(result.data.email || email),
+      plan: result.data.plan === 'pro' ? 'pro' : 'free',
+      ai_credits_used: Number(result.data.ai_credits_used ?? 0),
+      ai_credits_limit: Number(result.data.ai_credits_limit ?? 5),
+      skills: Array.isArray(result.data.skills) ? result.data.skills : [],
+      created_at: String(result.data.created_at || new Date().toISOString()),
+    };
+    return mapDbUserToAppUser(data);
   } catch {
-    data = null;
+    return null;
   }
-
-  if (!data) return null;
-  return mapDbUserToAppUser(data as DbUserRow);
 };
 
 const getSupabaseToken = async (): Promise<string | null> => {
@@ -322,14 +324,13 @@ const fetchWithTimeout = async (
 const resolveUserAfterAuth = async (
   userId: string,
   email: string,
-  accessToken: string | null
+  accessToken: string | null,
+  createdAt?: string
 ): Promise<User | null> => {
-  await ensureProfileSetup(accessToken);
+  void ensureProfileSetup(accessToken);
   const user = await loadUserFromUsersTable(userId, email);
   if (user) return user;
-  // One retry after setup in case row creation was delayed.
-  await wait(250);
-  return await loadUserFromUsersTable(userId, email);
+  return buildFallbackUser(userId, email, createdAt);
 };
 
 const parseJsonSafe = async <T = any>(response: Response): Promise<T | null> => {
@@ -355,9 +356,8 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
   });
 };
 
-const AUTH_CALL_TIMEOUT_MS = 35000;
-const SESSION_SETUP_TIMEOUT_MS = 12000;
-const CURRENT_USER_TIMEOUT_MS = 8000;
+const AUTH_CALL_TIMEOUT_MS = 15000;
+const SESSION_SETUP_TIMEOUT_MS = 8000;
 const OAUTH_QUERY_KEYS = [
   'code',
   'state',
@@ -398,9 +398,6 @@ const clearOAuthArtifactsFromUrl = (): void => {
   }
 };
 
-const wait = (ms: number): Promise<void> =>
-  new Promise((resolve) => window.setTimeout(resolve, ms));
-
 const applySessionWithRetry = async (accessToken: string, refreshToken: string): Promise<void> => {
   if (!supabase) throw new Error('Supabase not configured');
 
@@ -425,51 +422,6 @@ const applySessionWithRetry = async (accessToken: string, refreshToken: string):
   }
 };
 
-const signInViaRestFallback = async (email: string, password: string): Promise<{ id: string; email?: string }> => {
-  if (!supabase) {
-    throw new Error('Supabase not configured');
-  }
-
-  const url = getSupabaseBaseUrl();
-  const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
-  if (!url || !anon) {
-    throw new Error('Supabase env is missing');
-  }
-
-  const response = await fetchWithTimeout(
-    `${url}/auth/v1/token?grant_type=password`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: anon,
-        Authorization: `Bearer ${anon}`,
-      },
-      body: JSON.stringify({ email, password }),
-    },
-    15000
-  );
-
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message =
-      body?.error_description || body?.msg || body?.error || 'Invalid login credentials';
-    throw new Error(message);
-  }
-
-  const accessToken = body?.access_token as string | undefined;
-  const refreshToken = body?.refresh_token as string | undefined;
-  const user = body?.user as { id: string; email?: string } | undefined;
-
-  if (!accessToken || !refreshToken || !user?.id) {
-    throw new Error('Login response was incomplete. Please try again.');
-  }
-
-  await applySessionWithRetry(accessToken, refreshToken);
-
-  return user;
-};
-
 export const hasSupabaseAuth = (): boolean => hasSupabase;
 
 export const hydrateSessionFromUrl = async (): Promise<void> => {
@@ -491,45 +443,27 @@ export const hydrateSessionFromUrl = async (): Promise<void> => {
   const accessToken = hashParams.get('access_token');
   const refreshToken = hashParams.get('refresh_token');
   if (accessToken && refreshToken) {
-    await applySessionWithRetry(accessToken, refreshToken);
-    clearOAuthArtifactsFromUrl();
+    try {
+      await applySessionWithRetry(accessToken, refreshToken);
+    } finally {
+      clearOAuthArtifactsFromUrl();
+    }
     return;
   }
 
   const authCode = url.searchParams.get('code');
   if (authCode) {
-    let lastError: unknown = null;
-
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        const { error } = await withTimeout(
-          supabase.auth.exchangeCodeForSession(authCode),
-          AUTH_CALL_TIMEOUT_MS,
-          'OAuth session exchange timed out. Please try login again.'
-        );
-        if (error) throw error;
-        clearOAuthArtifactsFromUrl();
-        return;
-      } catch (err) {
-        lastError = err;
-        if (attempt === 0) {
-          await wait(400);
-        }
-      }
-    }
-
-    // If exchange timed out but session eventually landed, proceed without failing login UX.
     try {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.user) {
-        clearOAuthArtifactsFromUrl();
-        return;
-      }
-    } catch {
-      // Keep original error below.
+      const { error } = await withTimeout(
+        supabase.auth.exchangeCodeForSession(authCode),
+        AUTH_CALL_TIMEOUT_MS,
+        'OAuth session exchange timed out. Please try login again.'
+      );
+      if (error) throw error;
+    } finally {
+      clearOAuthArtifactsFromUrl();
     }
-
-    throw (lastError instanceof Error ? lastError : new Error('OAuth callback failed. Please try again.'));
+    return;
   }
 };
 
@@ -543,7 +477,7 @@ export const signUp = async (email: string, password: string): Promise<AuthRespo
       supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${getAuthBaseUrl()}/login` },
+        options: { emailRedirectTo: `${getAuthBaseUrl()}/auth/callback` },
       }),
       AUTH_CALL_TIMEOUT_MS,
       'Signup request timed out. Please try again.'
@@ -551,15 +485,15 @@ export const signUp = async (email: string, password: string): Promise<AuthRespo
 
     if (error) return { user: null, error };
     if (!data.user) return { user: null, error: null };
+    // Email-confirmation mode: no active session yet, treat as successful signup.
+    if (!data.session?.access_token) return { user: null, error: null };
 
     const user = await resolveUserAfterAuth(
       data.user.id,
       data.user.email ?? email,
-      data.session?.access_token ?? null
+      data.session.access_token,
+      (data.user as { created_at?: string }).created_at
     );
-    if (!user) {
-      return { user: null, error: new Error('Account setup failed. Please try again.') };
-    }
     return { user, error: null };
   } catch (err) {
     return {
@@ -587,35 +521,11 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
     const user = await resolveUserAfterAuth(
       data.user.id,
       data.user.email ?? email,
-      data.session?.access_token ?? null
+      data.session?.access_token ?? null,
+      (data.user as { created_at?: string }).created_at
     );
-    if (!user) {
-      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-      return { user: null, error: new Error('Account setup failed. Please sign up first.') };
-    }
     return { user, error: null };
   } catch (err) {
-    const message = err instanceof Error ? err.message : '';
-    if (message.toLowerCase().includes('timed out')) {
-      try {
-        const restUser = await signInViaRestFallback(email, password);
-        const user = await resolveUserAfterAuth(restUser.id, restUser.email ?? email, null);
-        if (!user) {
-          await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-          return { user: null, error: new Error('Account setup failed. Please sign up first.') };
-        }
-        return { user, error: null };
-      } catch (fallbackErr) {
-        return {
-          user: null,
-          error:
-            fallbackErr instanceof Error
-              ? fallbackErr
-              : new Error('Login failed after retry. Please try again.'),
-        };
-      }
-    }
-
     return {
       user: null,
       error: err instanceof Error ? err : new Error('Login failed. Please try again.'),
@@ -631,7 +541,7 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${getAuthBaseUrl()}/login` },
+    options: { redirectTo: `${getAuthBaseUrl()}/auth/callback` },
   });
 
   return { user: null, error: error ?? null };
@@ -661,25 +571,12 @@ export const getCurrentUser = async (): Promise<User | null> => {
     const { data: sessionData } = await supabase.auth.getSession();
     const sessionUser = sessionData.session?.user;
     if (!sessionUser) return null;
-
-    let accessToken: string | null = sessionData.session?.access_token ?? null;
-
-    try {
-      const { data, error } = await withTimeout(
-        supabase.auth.getUser(),
-        CURRENT_USER_TIMEOUT_MS,
-        'Session check timed out. Please refresh and try again.'
-      );
-      const verifiedUser = error ? null : data.user;
-      if (verifiedUser) {
-        accessToken = accessToken ?? sessionData.session?.access_token ?? null;
-        return await resolveUserAfterAuth(verifiedUser.id, verifiedUser.email ?? '', accessToken);
-      }
-    } catch {
-      // Fall back to session user.
-    }
-
-    return await resolveUserAfterAuth(sessionUser.id, sessionUser.email ?? '', accessToken);
+    return await resolveUserAfterAuth(
+      sessionUser.id,
+      sessionUser.email ?? '',
+      sessionData.session?.access_token ?? null,
+      (sessionUser as { created_at?: string }).created_at
+    );
   } catch {
     return null;
   }
@@ -702,7 +599,8 @@ export const onAuthStateChanged = (listener: AuthStateListener): (() => void) =>
       user = await resolveUserAfterAuth(
         session.user.id,
         session.user.email ?? '',
-        session.access_token ?? null
+        session.access_token ?? null,
+        (session.user as { created_at?: string }).created_at
       );
     } catch {
       user = null;
@@ -722,7 +620,7 @@ export const resendConfirmationEmail = async (email: string): Promise<{ error: E
   const { error } = await supabase.auth.resend({
     type: 'signup',
     email,
-    options: { emailRedirectTo: `${getAuthBaseUrl()}/login` },
+    options: { emailRedirectTo: `${getAuthBaseUrl()}/auth/callback` },
   });
 
   return { error: error ?? null };

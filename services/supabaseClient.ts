@@ -10,6 +10,8 @@ const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
 const supabaseUrlFromEnv = trimTrailingSlash(sanitizeEnvValue(import.meta.env.VITE_SUPABASE_URL));
 const supabaseAnonKey = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
+const supabaseProxyMode =
+  sanitizeEnvValue(import.meta.env.VITE_SUPABASE_PROXY_MODE).toLowerCase() === 'true';
 
 type SupabaseBrowserClient = SupabaseClient<any, 'public', any>;
 
@@ -25,8 +27,14 @@ const isLocalHost = (host: string): boolean => {
 };
 
 const resolveSupabaseUrl = (): string => {
-  // In production browsers, route Supabase traffic through first-party proxy to avoid ISP/CDN blocks.
-  if (typeof window !== 'undefined' && import.meta.env.PROD && !isLocalHost(window.location.hostname)) {
+  // Default to direct Supabase to keep auth/session stable.
+  // Enable first-party proxy only when VITE_SUPABASE_PROXY_MODE=true.
+  if (
+    typeof window !== 'undefined' &&
+    import.meta.env.PROD &&
+    supabaseProxyMode &&
+    !isLocalHost(window.location.hostname)
+  ) {
     return `${trimTrailingSlash(window.location.origin)}/api/sb`;
   }
   return supabaseUrlFromEnv;

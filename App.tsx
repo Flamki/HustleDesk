@@ -13,6 +13,7 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { SignupPage } from './pages/SignupPage';
 import { LoginPage } from './pages/LoginPage';
 import { CheckEmailPage } from './pages/CheckEmailPage';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { Home } from './pages/public/Home';
 import { Features } from './pages/public/Features';
 import { Pricing } from './pages/public/Pricing';
@@ -140,6 +141,7 @@ export const routes: RouteRecord[] = [
       { path: 'signup', element: <SignupPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'auth/check-email', element: <CheckEmailPage /> },
+      { path: 'auth/callback', element: <AuthCallbackPage /> },
       { path: 'unsubscribe', element: <UnsubscribePage /> },
       { path: 'share/time/:token', element: <SharedTimeReportPage /> },
       { path: 'share/time-entry/:token', element: <SharedTimeEntryPage /> },

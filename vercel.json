@@ -14,8 +14,8 @@
       "destination": "/api/[...path]"
     },
     {
-      "source": "/auth/:path*",
-      "destination": "/auth/check-email"
+      "source": "/auth/callback",
+      "destination": "/login"
     },
     {
       "source": "/share/:path*",

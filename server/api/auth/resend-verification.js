@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       type: 'signup',
       email: email,
       options: {
-        emailRedirectTo: `${process.env.VITE_AUTH_REDIRECT_ORIGIN || 'http://localhost:5173'}/login`,
+        emailRedirectTo: `${process.env.VITE_AUTH_REDIRECT_ORIGIN || 'http://localhost:5173'}/auth/callback`,
       },
     });
 
