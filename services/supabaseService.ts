@@ -251,38 +251,30 @@ const loadUserFromUsersTable = async (id: string, email: string): Promise<User |
 
   let data: DbUserRow | null = null;
   try {
-    const primaryQuery = supabase
+    // Keep this select schema-safe for older projects missing newer credit columns.
+    const query = supabase
       .from('users')
-      .select('id,email,plan,ai_credits_used,ai_credits_limit,skills,created_at')
+      .select('id,email,plan,skills,created_at')
       .eq('id', id)
       .maybeSingle();
 
-    let result = await withTimeout(
-      Promise.resolve(primaryQuery),
+    const result = await withTimeout(
+      Promise.resolve(query),
       8000,
       'Profile lookup timed out'
-    ) as { data: DbUserRow | null; error?: { message?: string } | null };
+    ) as { data: Partial<DbUserRow> | null };
 
-    // Backward-compatible fallback for projects where ai_credits_limit column isn't present yet.
-    if (result.error && /column .*ai_credits_limit.* does not exist/i.test(result.error.message || '')) {
-      const fallbackQuery = supabase
-        .from('users')
-        .select('id,email,plan,ai_credits_used,skills,created_at')
-        .eq('id', id)
-        .maybeSingle();
-      const fallback = await withTimeout(
-        Promise.resolve(fallbackQuery),
-        8000,
-        'Profile lookup timed out'
-      ) as { data: (Omit<DbUserRow, 'ai_credits_limit'> & { ai_credits_limit?: number | null }) | null };
-      result = {
-        data: fallback.data
-          ? ({ ...fallback.data, ai_credits_limit: fallback.data.ai_credits_limit ?? 5 } as DbUserRow)
-          : null,
-      };
-    }
-
-    data = result.data ?? null;
+    data = result.data
+      ? ({
+          id: String(result.data.id || id),
+          email: String(result.data.email || email),
+          plan: result.data.plan === 'pro' ? 'pro' : 'free',
+          ai_credits_used: Number(result.data.ai_credits_used ?? 0),
+          ai_credits_limit: Number(result.data.ai_credits_limit ?? 5),
+          skills: Array.isArray(result.data.skills) ? result.data.skills : [],
+          created_at: String(result.data.created_at || new Date().toISOString()),
+        } as DbUserRow)
+      : null;
   } catch {
     data = null;
   }
@@ -1220,9 +1212,7 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
   };
 
   try {
-    const primarySelect =
-      'user_id,skills,experience_level,years_experience,bio,portfolio_url,linkedin_url,hourly_rate,past_projects,communication_style,completed_onboarding,preferences,notification_settings';
-    const fallbackSelect =
+    const profileSelect =
       'user_id,skills,experience_level,years_experience,bio,portfolio_url,linkedin_url,hourly_rate,past_projects,communication_style,completed_onboarding';
 
     let data: DbFreelancerProfile | null = null;
@@ -1230,22 +1220,11 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
 
     const primaryResult = await supabase
       .from('freelancer_profiles')
-      .select(primarySelect)
+      .select(profileSelect)
       .eq('user_id', user.id)
       .maybeSingle();
     data = (primaryResult.data as DbFreelancerProfile | null) ?? null;
     error = (primaryResult.error as { message?: string } | null) ?? null;
-
-    // Backward-compatible fallback for schemas missing preferences/notification_settings.
-    if (error && /column .*freelancer_profiles.*(preferences|notification_settings).* does not exist/i.test(error.message || '')) {
-      const fallbackResult = await supabase
-        .from('freelancer_profiles')
-        .select(fallbackSelect)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      data = (fallbackResult.data as DbFreelancerProfile | null) ?? null;
-      error = (fallbackResult.error as { message?: string } | null) ?? null;
-    }
 
     if (error) {
       if (/relation .*freelancer_profiles.* does not exist/i.test(error.message || '')) {
@@ -1303,7 +1282,7 @@ export const updateProfile = async (
   if (userError || !user) return { data: profile, error: new Error('Unauthorized') };
 
   try {
-    const payload = {
+    const basePayload = {
       user_id: user.id,
       skills: profile.skills || [],
       experience_level: profile.experienceLevel || 'Entry',
@@ -1315,12 +1294,28 @@ export const updateProfile = async (
       past_projects: profile.pastProjects || [],
       communication_style: profile.communicationStyle || 'Professional',
       completed_onboarding: Boolean(profile.completedOnboarding),
-      preferences: profile.preferences || {},
-      notification_settings: profile.notificationSettings || {},
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('freelancer_profiles').upsert(payload, { onConflict: 'user_id' });
+    let { error } = await supabase
+      .from('freelancer_profiles')
+      .upsert(
+        {
+          ...basePayload,
+          preferences: profile.preferences || {},
+          notification_settings: profile.notificationSettings || {},
+        },
+        { onConflict: 'user_id' }
+      );
+
+    // Backward-compatible fallback for schemas missing preferences/notification_settings.
+    if (error && /column .*freelancer_profiles.*(preferences|notification_settings).*does not exist|Could not find .* (preferences|notification_settings)/i.test(error.message || '')) {
+      const fallback = await supabase
+        .from('freelancer_profiles')
+        .upsert(basePayload, { onConflict: 'user_id' });
+      error = fallback.error;
+    }
+
     if (error) {
       if (/relation .*freelancer_profiles.* does not exist/i.test(error.message || '')) {
         return { data: profile, error: null };
