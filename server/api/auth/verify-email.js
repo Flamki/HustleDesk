@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { secureJson, validateInput } from '../_shared/security.js';
+import { secureJson } from '../_shared/security.js';
 
 const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -23,9 +23,11 @@ export default async function handler(req, res) {
   }
 
   // Parse query parameters
-  const { token, type } = req.query || {};
+  const tokenHash = String(req.query?.token_hash || req.query?.token || '').trim();
+  const type = String(req.query?.type || '').trim().toLowerCase();
+  const allowedTypes = new Set(['signup', 'recovery', 'invite', 'email_change', 'magiclink', 'email']);
 
-  if (!token || !type || !validateInput(token, 500) || !validateInput(type, 20)) {
+  if (!tokenHash || tokenHash.length > 1000 || !/^[A-Za-z0-9._-]+$/.test(tokenHash) || !allowedTypes.has(type)) {
     return json(res, 400, { error: 'Invalid token or type parameters' });
   }
 
@@ -35,15 +37,14 @@ export default async function handler(req, res) {
   try {
     // Verify the token
     const { data, error } = await supabase.auth.verifyOtp({
-      token_hash: token,
-      type: type === 'signup' ? 'signup' : 'email',
+      token_hash: tokenHash,
+      type: type === 'email' ? 'email' : type,
     });
 
     if (error) {
       console.error('Email verification error:', error.message);
       return json(res, 400, {
         error: 'Invalid or expired verification token',
-        details: error.message,
       });
     }
 

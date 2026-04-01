@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { timingSafeEqual } from 'node:crypto';
 
 const json = (res, status, body) => {
   res.statusCode = status;
@@ -12,14 +13,24 @@ const getHeader = (req, name) => {
   return value || '';
 };
 
+const safeEqual = (a, b) => {
+  const x = Buffer.from(String(a || ''));
+  const y = Buffer.from(String(b || ''));
+  if (x.length !== y.length) return false;
+  return timingSafeEqual(x, y);
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' });
 
   const expectedToken = process.env.HEALTHCHECK_TOKEN || '';
+  const hasConfiguredToken =
+    Boolean(expectedToken) &&
+    !/SET_A_LONG_RANDOM_TOKEN/i.test(expectedToken);
   if (expectedToken) {
     const providedToken =
       getHeader(req, 'x-health-token') || getHeader(req, 'authorization').replace(/^Bearer\s+/i, '');
-    if (providedToken !== expectedToken) {
+    if (!safeEqual(providedToken, expectedToken)) {
       return json(res, 401, { error: 'Unauthorized' });
     }
   }
@@ -90,6 +101,7 @@ export default async function handler(req, res) {
   return json(res, 200, {
     ok: true,
     checks,
+    health_token_configured: hasConfiguredToken,
     message: 'Supabase environment and admin access are configured correctly.',
     timestamp: new Date().toISOString(),
   });

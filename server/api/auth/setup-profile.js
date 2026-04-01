@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import { secureJson, validateInput } from '../_shared/security.js';
+import { secureJson } from '../_shared/security.js';
+import { extractBearerToken } from '../_shared/auth.js';
+import { checkRateLimitGlobal, getClientIp } from '../_shared/rate-limit.js';
 
 const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -15,10 +17,22 @@ export default async function handler(req, res) {
     return json(res, 500, { error: 'Supabase environment not configured' });
   }
 
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token || !validateInput(token, 2000)) {
+  const token = extractBearerToken(req);
+  if (!token) {
     return json(res, 401, { error: 'Unauthorized' });
+  }
+
+  const clientIp = getClientIp(req);
+  const limit = await checkRateLimitGlobal({
+    key: `setup-profile:${clientIp}`,
+    limit: 30,
+    windowMs: 60 * 1000,
+  });
+  if (!limit.allowed) {
+    return json(res, 429, {
+      error: 'Too many requests',
+      retry_after_seconds: limit.retryAfterSeconds,
+    });
   }
 
   const authClient = createClient(url, anonKey, {

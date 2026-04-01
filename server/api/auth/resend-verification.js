@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimitGlobal, getClientIp } from '../_shared/rate-limit.js';
 import { secureJson, validateEmail } from '../_shared/security.js';
+import { resolveAuthRedirectOrigin } from '../_shared/auth.js';
 
 const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -42,7 +43,8 @@ export default async function handler(req, res) {
   // Parse request body
   let email;
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const raw = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : req.body;
+    const body = typeof raw === 'string' ? JSON.parse(raw) : raw;
     email = body?.email;
   } catch {
     return json(res, 400, { error: 'Invalid request body' });
@@ -52,17 +54,33 @@ export default async function handler(req, res) {
   if (!email || !validateEmail(email)) {
     return json(res, 400, { error: 'Invalid email format' });
   }
+  const normalizedEmail = String(email).trim().toLowerCase();
+
+  // Rate limiting: 2 requests per 15 minutes per email
+  const emailLimit = await checkRateLimitGlobal({
+    key: `resend-verification-email:${normalizedEmail}`,
+    limit: 2,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!emailLimit.allowed) {
+    return json(res, 429, {
+      error: `Too many resend requests. Please wait ${emailLimit.retryAfterSeconds} seconds before trying again.`,
+      retryAfter: emailLimit.retryAfterSeconds,
+    });
+  }
 
   // Create Supabase client
   const supabase = createClient(url, anonKey);
+  const redirectOrigin = resolveAuthRedirectOrigin(req);
+  const emailRedirectTo = redirectOrigin ? `${redirectOrigin}/auth/callback` : undefined;
 
   try {
     // Resend confirmation email
     const { error } = await supabase.auth.resend({
       type: 'signup',
-      email: email,
+      email: normalizedEmail,
       options: {
-        emailRedirectTo: `${process.env.VITE_AUTH_REDIRECT_ORIGIN || 'http://localhost:5173'}/auth/callback`,
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
       },
     });
 

@@ -26,7 +26,10 @@ type CacheEntry<T> = { ts: number; data: T };
 const jobsListCache = new Map<string, CacheEntry<JobsListResponse>>();
 const dashboardCache = new Map<string, CacheEntry<DashboardStatsResponse>>();
 const profileSetupInflight = new Map<string, Promise<boolean>>();
-const profileSetupResultByToken = new Map<string, boolean>();
+type ProfileSetupCacheEntry = { ok: boolean; ts: number };
+const profileSetupResultByToken = new Map<string, ProfileSetupCacheEntry>();
+const PROFILE_SETUP_OK_TTL_MS = 10 * 60 * 1000;
+const PROFILE_SETUP_FAIL_TTL_MS = 20 * 1000;
 let usersTableUnavailable = false;
 let freelancerProfilesTableUnavailable = false;
 
@@ -258,6 +261,21 @@ const normalizeDbError = (error: unknown): DbErrorLike => {
 
 const getTokenCacheKey = (accessToken: string): string => accessToken.slice(-24);
 
+const readProfileSetupCache = (cacheKey: string): boolean | null => {
+  const entry = profileSetupResultByToken.get(cacheKey);
+  if (!entry) return null;
+  const ttl = entry.ok ? PROFILE_SETUP_OK_TTL_MS : PROFILE_SETUP_FAIL_TTL_MS;
+  if (Date.now() - entry.ts > ttl) {
+    profileSetupResultByToken.delete(cacheKey);
+    return null;
+  }
+  return entry.ok;
+};
+
+const writeProfileSetupCache = (cacheKey: string, ok: boolean): void => {
+  profileSetupResultByToken.set(cacheKey, { ok, ts: Date.now() });
+};
+
 const getStoredJobs = (): Job[] => {
   const raw = localStorage.getItem(JOBS_STORAGE_KEY);
   if (!raw) return [];
@@ -327,7 +345,8 @@ const getSupabaseToken = async (): Promise<string | null> => {
 const ensureProfileSetup = async (accessToken: string | null): Promise<boolean> => {
   if (!accessToken) return false;
   const cacheKey = getTokenCacheKey(accessToken);
-  if (profileSetupResultByToken.has(cacheKey)) return profileSetupResultByToken.get(cacheKey) === true;
+  const cached = readProfileSetupCache(cacheKey);
+  if (cached != null) return cached;
   const inflight = profileSetupInflight.get(cacheKey);
   if (inflight) return inflight;
 
@@ -342,16 +361,16 @@ const ensureProfileSetup = async (accessToken: string | null): Promise<boolean> 
       PROFILE_SETUP_TIMEOUT_MS
     );
     if (!response.ok) {
-      profileSetupResultByToken.set(cacheKey, false);
+      writeProfileSetupCache(cacheKey, false);
       return false;
     }
     const body = await parseJsonSafe<{ success?: boolean; account_ready?: boolean }>(response);
     const ok = !body ? true : Boolean(body.success !== false && body.account_ready !== false);
-    profileSetupResultByToken.set(cacheKey, ok);
+    writeProfileSetupCache(cacheKey, ok);
     return ok;
   } catch {
     // Trigger-based creation is primary; API setup is best-effort fallback.
-    profileSetupResultByToken.set(cacheKey, false);
+    writeProfileSetupCache(cacheKey, false);
     return false;
   } finally {
     profileSetupInflight.delete(cacheKey);
@@ -688,7 +707,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
 };
 
 export const getCurrentUserFromSession = async (): Promise<User | null> => {
-  return null;
+  return await getCurrentUser();
 };
 
 export const onAuthStateChanged = (listener: AuthStateListener): (() => void) => {
