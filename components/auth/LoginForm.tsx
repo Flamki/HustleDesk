@@ -19,14 +19,22 @@ export const LoginForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
-    const code = searchParams.get('error');
+  const getFriendlyAuthError = (code: string | null): string | null => {
     if (code === 'oauth_failed') {
-      setError('Google login could not be completed. Please try again.');
-      return;
+      return 'Google login could not be completed. Please try again.';
     }
     if (code === 'no_account') {
-      setError('No account exists for this Google profile. Please sign up first.');
+      return 'No account exists for this login. Please sign up first.';
+    }
+    return null;
+  };
+
+  React.useEffect(() => {
+    const codeFromUrl = searchParams.get('error');
+    const codeFromStorage = codeFromUrl ? null : authService.consumePendingOAuthErrorCode();
+    const nextError = getFriendlyAuthError(codeFromUrl || codeFromStorage);
+    if (nextError) {
+      setError(nextError);
     }
   }, [searchParams]);
 
