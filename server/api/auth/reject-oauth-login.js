@@ -10,10 +10,28 @@ const SUPABASE_SERVICE_ROLE_KEY =
 
 const json = secureJson;
 const MAX_ACCOUNT_AGE_MS = 5 * 60 * 1000;
+const LOGIN_START_GRACE_MS = 60 * 1000;
 
 const getUserCreatedAt = (user) => {
   const ts = new Date(String(user?.created_at || '')).getTime();
   return Number.isFinite(ts) ? ts : 0;
+};
+
+const parseBodyJson = (req) => {
+  try {
+    if (!req || req.body == null) return null;
+    if (typeof req.body === 'object') return req.body;
+    if (Buffer.isBuffer(req.body)) {
+      const raw = req.body.toString('utf8');
+      return raw ? JSON.parse(raw) : null;
+    }
+    if (typeof req.body === 'string') {
+      return req.body.trim() ? JSON.parse(req.body) : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 };
 
 export default async function handler(req, res) {
@@ -49,9 +67,18 @@ export default async function handler(req, res) {
   } = await authClient.auth.getUser();
   if (userError || !user) return json(res, 401, { error: 'Unauthorized' });
 
+  const body = parseBodyJson(req);
+  const loginStartedAtMs = Number(body?.login_started_at_ms || 0);
   const createdAt = getUserCreatedAt(user);
   if (!createdAt) return json(res, 400, { error: 'Unable to verify account age' });
-  if (Date.now() - createdAt > MAX_ACCOUNT_AGE_MS) {
+
+  if (loginStartedAtMs > 0) {
+    if (createdAt < loginStartedAtMs - LOGIN_START_GRACE_MS) {
+      return json(res, 409, {
+        error: 'Account already existed before this login attempt',
+      });
+    }
+  } else if (Date.now() - createdAt > MAX_ACCOUNT_AGE_MS) {
     return json(res, 409, { error: 'Account is not eligible for login rejection cleanup' });
   }
 

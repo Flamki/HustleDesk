@@ -19,7 +19,6 @@ const JOBS_STORAGE_KEY = 'jobs_store_v1';
 const OAUTH_INTENT_STORAGE_KEY = 'oauth_intent_v1';
 const OAUTH_ERROR_STORAGE_KEY = 'oauth_error_v1';
 const OAUTH_INTENT_TTL_MS = 10 * 60 * 1000;
-const OAUTH_NEW_ACCOUNT_WINDOW_MS = 3 * 60 * 1000;
 const JOBS_LIST_CACHE_TTL_MS = 15_000;
 const DASHBOARD_CACHE_TTL_MS = 10_000;
 const AUTH_USE_DB_PROFILE_LOOKUP =
@@ -303,6 +302,24 @@ const getPendingOAuthIntent = (): OAuthIntent | null => {
   }
 };
 
+const getPendingOAuthIntentTimestamp = (): number | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(OAUTH_INTENT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { ts?: number };
+    const ts = Number(parsed?.ts || 0);
+    if (!ts || Date.now() - ts > OAUTH_INTENT_TTL_MS) {
+      clearOAuthIntent();
+      return null;
+    }
+    return ts;
+  } catch {
+    clearOAuthIntent();
+    return null;
+  }
+};
+
 const setOAuthErrorCode = (code: string): void => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(OAUTH_ERROR_STORAGE_KEY, code);
@@ -313,13 +330,6 @@ export const consumePendingOAuthErrorCode = (): string | null => {
   const code = window.localStorage.getItem(OAUTH_ERROR_STORAGE_KEY);
   if (code) window.localStorage.removeItem(OAUTH_ERROR_STORAGE_KEY);
   return code;
-};
-
-const isLikelyFreshAuthUser = (createdAt?: string): boolean => {
-  if (!createdAt) return false;
-  const ts = new Date(createdAt).getTime();
-  if (!Number.isFinite(ts)) return false;
-  return Date.now() - ts <= OAUTH_NEW_ACCOUNT_WINDOW_MS;
 };
 
 const getProfileSetupCacheKey = (userId: string): string => userId || 'unknown-user';
@@ -458,19 +468,33 @@ const fetchWithTimeout = async (
   }
 };
 
-const rejectOAuthLoginOnlyAccount = async (accessToken: string | null): Promise<void> => {
-  if (!accessToken) return;
+type OAuthLoginRejectResult = 'deleted' | 'not_eligible' | 'error' | 'skipped';
+
+const rejectOAuthLoginOnlyAccount = async (
+  accessToken: string | null,
+  loginStartedAtMs: number | null
+): Promise<OAuthLoginRejectResult> => {
+  if (!accessToken) return 'skipped';
   try {
-    await fetchWithTimeout(
+    const response = await fetchWithTimeout(
       '/api/auth/reject-oauth-login',
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          login_started_at_ms: loginStartedAtMs && Number.isFinite(loginStartedAtMs) ? loginStartedAtMs : null,
+        }),
       },
       4000
     );
+    if (response.ok) return 'deleted';
+    if (response.status === 409) return 'not_eligible';
+    return 'error';
   } catch {
-    // Best effort cleanup; login rejection still proceeds locally.
+    return 'error';
   }
 };
 
@@ -481,15 +505,19 @@ const resolveUserAfterAuth = async (
   createdAt?: string
 ): Promise<User | null> => {
   const oauthIntent = getPendingOAuthIntent();
-  if (oauthIntent === 'login' && isLikelyFreshAuthUser(createdAt)) {
-    // Strict login behavior: do not silently create a new OAuth account from Login flow.
-    await rejectOAuthLoginOnlyAccount(accessToken);
-    clearOAuthIntent();
-    setOAuthErrorCode('no_account');
-    if (supabase) {
-      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+  if (oauthIntent === 'login') {
+    // Strict login behavior: a Login flow must only continue for accounts
+    // that existed before this login attempt.
+    const loginStartedAtMs = getPendingOAuthIntentTimestamp();
+    const cleanupResult = await rejectOAuthLoginOnlyAccount(accessToken, loginStartedAtMs);
+    if (cleanupResult === 'deleted' || cleanupResult === 'error') {
+      clearOAuthIntent();
+      setOAuthErrorCode(cleanupResult === 'deleted' ? 'no_account' : 'oauth_failed');
+      if (supabase) {
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+      }
+      return null;
     }
-    return null;
   }
 
   if (oauthIntent) {
