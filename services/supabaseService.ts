@@ -27,7 +27,7 @@ const jobsListCache = new Map<string, CacheEntry<JobsListResponse>>();
 const dashboardCache = new Map<string, CacheEntry<DashboardStatsResponse>>();
 const profileSetupInflight = new Map<string, Promise<boolean>>();
 type ProfileSetupCacheEntry = { ok: boolean; ts: number };
-const profileSetupResultByToken = new Map<string, ProfileSetupCacheEntry>();
+const profileSetupResultByUser = new Map<string, ProfileSetupCacheEntry>();
 const PROFILE_SETUP_OK_TTL_MS = 10 * 60 * 1000;
 const PROFILE_SETUP_FAIL_TTL_MS = 20 * 1000;
 let usersTableUnavailable = false;
@@ -259,21 +259,21 @@ const normalizeDbError = (error: unknown): DbErrorLike => {
   return { message: obj.message, code: obj.code };
 };
 
-const getTokenCacheKey = (accessToken: string): string => accessToken.slice(-24);
+const getProfileSetupCacheKey = (userId: string): string => userId || 'unknown-user';
 
 const readProfileSetupCache = (cacheKey: string): boolean | null => {
-  const entry = profileSetupResultByToken.get(cacheKey);
+  const entry = profileSetupResultByUser.get(cacheKey);
   if (!entry) return null;
   const ttl = entry.ok ? PROFILE_SETUP_OK_TTL_MS : PROFILE_SETUP_FAIL_TTL_MS;
   if (Date.now() - entry.ts > ttl) {
-    profileSetupResultByToken.delete(cacheKey);
+    profileSetupResultByUser.delete(cacheKey);
     return null;
   }
   return entry.ok;
 };
 
 const writeProfileSetupCache = (cacheKey: string, ok: boolean): void => {
-  profileSetupResultByToken.set(cacheKey, { ok, ts: Date.now() });
+  profileSetupResultByUser.set(cacheKey, { ok, ts: Date.now() });
 };
 
 const getStoredJobs = (): Job[] => {
@@ -342,39 +342,39 @@ const getSupabaseToken = async (): Promise<string | null> => {
   return data.session?.access_token ?? null;
 };
 
-const ensureProfileSetup = async (accessToken: string | null): Promise<boolean> => {
+const ensureProfileSetup = async (userId: string, accessToken: string | null): Promise<boolean> => {
   if (!accessToken) return false;
-  const cacheKey = getTokenCacheKey(accessToken);
+  const cacheKey = getProfileSetupCacheKey(userId);
   const cached = readProfileSetupCache(cacheKey);
   if (cached != null) return cached;
   const inflight = profileSetupInflight.get(cacheKey);
   if (inflight) return inflight;
 
   const setupPromise = (async () => {
-  try {
-    const response = await fetchWithTimeout(
-      '/api/auth/setup-profile',
-      {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      },
-      PROFILE_SETUP_TIMEOUT_MS
-    );
-    if (!response.ok) {
+    try {
+      const response = await fetchWithTimeout(
+        '/api/auth/setup-profile',
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        },
+        PROFILE_SETUP_TIMEOUT_MS
+      );
+      if (!response.ok) {
+        writeProfileSetupCache(cacheKey, false);
+        return false;
+      }
+      const body = await parseJsonSafe<{ success?: boolean; account_ready?: boolean }>(response);
+      const ok = !body ? true : Boolean(body.success !== false && body.account_ready !== false);
+      writeProfileSetupCache(cacheKey, ok);
+      return ok;
+    } catch {
+      // Trigger-based creation is primary; API setup is best-effort fallback.
       writeProfileSetupCache(cacheKey, false);
       return false;
+    } finally {
+      profileSetupInflight.delete(cacheKey);
     }
-    const body = await parseJsonSafe<{ success?: boolean; account_ready?: boolean }>(response);
-    const ok = !body ? true : Boolean(body.success !== false && body.account_ready !== false);
-    writeProfileSetupCache(cacheKey, ok);
-    return ok;
-  } catch {
-    // Trigger-based creation is primary; API setup is best-effort fallback.
-    writeProfileSetupCache(cacheKey, false);
-    return false;
-  } finally {
-    profileSetupInflight.delete(cacheKey);
-  }
   })();
 
   profileSetupInflight.set(cacheKey, setupPromise);
@@ -403,7 +403,7 @@ const resolveUserAfterAuth = async (
 ): Promise<User | null> => {
   if (accessToken) {
     // Non-blocking bootstrap keeps login fast and avoids auth stalls when API route is slow.
-    void ensureProfileSetup(accessToken);
+    void ensureProfileSetup(userId, accessToken);
   }
 
   const user = await loadUserFromUsersTable(userId, email);

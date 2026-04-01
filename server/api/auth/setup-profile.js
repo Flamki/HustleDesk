@@ -102,9 +102,9 @@ export default async function handler(req, res) {
 
   return json(res, 200, {
     success: true,
-    account_ready: true,
+    account_ready: usersRowReady,
     users_row_ready: usersRowReady,
     freelancer_profile_ready: freelancerProfileReady,
-    message: 'Account is ready',
+    message: usersRowReady ? 'Account is ready' : 'Account bootstrap partially completed',
   });
 }
