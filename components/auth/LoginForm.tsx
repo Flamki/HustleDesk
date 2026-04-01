@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { Input } from '../ui/Input';
 import { useAuth } from '../../context/AuthContext';
 import { EMAIL_REGEX } from '../../constants';
@@ -9,6 +9,7 @@ import * as authService from '../../services/supabaseService';
 
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { signIn } = useAuth();
   
@@ -54,7 +55,9 @@ export const LoginForm: React.FC = () => {
       if (authError) {
         setError(authError.message);
       } else if (user) {
-        navigate('/app/dashboard');
+        const destination =
+          (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/app/dashboard';
+        navigate(destination, { replace: true });
       } else {
         setError('Login did not complete. Please try again.');
       }

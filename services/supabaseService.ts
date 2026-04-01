@@ -417,6 +417,7 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
 
 const AUTH_CALL_TIMEOUT_MS = 15000;
 const SESSION_SETUP_TIMEOUT_MS = 8000;
+const SESSION_VALIDATE_TIMEOUT_MS = 6500;
 const OAUTH_QUERY_KEYS = [
   'code',
   'state',
@@ -647,13 +648,39 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
   try {
     const { data: sessionData } = await supabase.auth.getSession();
-    const sessionUser = sessionData.session?.user;
+    const session = sessionData.session;
+    const sessionUser = session?.user;
     if (!sessionUser) return null;
+
+    let resolvedUser = sessionUser;
+    try {
+      const userResult = await withTimeout(
+        Promise.resolve(supabase.auth.getUser()),
+        SESSION_VALIDATE_TIMEOUT_MS,
+        'Session validation timed out'
+      );
+      if (userResult.error) {
+        const msg = String(userResult.error.message || '').toLowerCase();
+        if (
+          msg.includes('jwt') ||
+          msg.includes('expired') ||
+          msg.includes('invalid') ||
+          msg.includes('unauthorized')
+        ) {
+          return null;
+        }
+      } else if (userResult.data?.user) {
+        resolvedUser = userResult.data.user;
+      }
+    } catch {
+      // Keep using session user as best effort when validation endpoint is temporarily slow.
+    }
+
     return await resolveUserAfterAuth(
-      sessionUser.id,
-      sessionUser.email ?? '',
-      sessionData.session?.access_token ?? null,
-      (sessionUser as { created_at?: string }).created_at
+      resolvedUser.id,
+      resolvedUser.email ?? '',
+      session?.access_token ?? null,
+      (resolvedUser as { created_at?: string }).created_at
     );
   } catch {
     return null;
@@ -695,13 +722,30 @@ export const resendConfirmationEmail = async (email: string): Promise<{ error: E
     return { error: null };
   }
 
-  const { error } = await supabase.auth.resend({
-    type: 'signup',
-    email,
-    options: { emailRedirectTo: `${getAuthBaseUrl()}/auth/callback` },
-  });
-
-  return { error: error ?? null };
+  try {
+    const response = await fetchWithTimeout(
+      '/api/auth/resend-verification',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      },
+      7000
+    );
+    const body = await parseJsonSafe<{ error?: string }>(response);
+    if (!response.ok) {
+      return { error: new Error(body?.error || 'Failed to resend verification email') };
+    }
+    return { error: null };
+  } catch {
+    // Fallback to direct client resend for local/dev resilience.
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${getAuthBaseUrl()}/auth/callback` },
+    });
+    return { error: error ?? null };
+  }
 };
 
 export const getJobs = async (): Promise<{ data: Job[]; error: Error | null }> => {

@@ -7,6 +7,12 @@ import SEO from '../components/SEO';
 export const AuthCallbackPage: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [allowFailureRedirect, setAllowFailureRedirect] = React.useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setAllowFailureRedirect(true), 6500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -14,8 +20,9 @@ export const AuthCallbackPage: React.FC = () => {
       navigate('/app/dashboard', { replace: true });
       return;
     }
+    if (!allowFailureRedirect) return;
     navigate('/login?error=oauth_failed', { replace: true });
-  }, [loading, navigate, user]);
+  }, [allowFailureRedirect, loading, navigate, user]);
 
   return (
     <>

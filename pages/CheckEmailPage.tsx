@@ -1,16 +1,26 @@
 import React from 'react';
 import { MailCheck, Sun, Moon } from 'lucide-react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useSearchParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import * as authService from '../services/supabaseService';
 import SEO from '../components/SEO';
 
 export const CheckEmailPage: React.FC = () => {
   const location = useLocation();
-  const email = location.state?.email || 'your email';
+  const [searchParams] = useSearchParams();
+  const stateEmail = location.state?.email;
+  const queryEmail = searchParams.get('email');
+  const storedEmail =
+    typeof window !== 'undefined' ? window.localStorage.getItem('last_signup_email') : null;
+  const email = stateEmail || queryEmail || storedEmail || 'your email';
   const { theme, toggleTheme } = useTheme();
   const [loading, setLoading] = React.useState(false);
   const [message, setMessage] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!email || email === 'your email' || typeof window === 'undefined') return;
+    window.localStorage.setItem('last_signup_email', email);
+  }, [email]);
 
   const handleResend = async () => {
     if (!email || email === 'your email') {

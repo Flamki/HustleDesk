@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AuthResponse, User } from '../types';
 import * as authService from '../services/supabaseService';
 
@@ -13,6 +13,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTH_CACHE_KEY = 'user_session';
 
+const readCachedUser = (): User | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(AUTH_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as User;
+    if (!parsed?.id || !parsed?.email) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
 const writeCachedUser = (user: User | null): void => {
   if (typeof window === 'undefined') return;
   if (!user) {
@@ -23,8 +36,9 @@ const writeCachedUser = (user: User | null): void => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => readCachedUser());
   const [loading, setLoading] = useState<boolean>(true);
+  const bootstrappedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -39,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const currentUser = await authService.getCurrentUser();
       if (!mounted) return;
 
+      bootstrappedRef.current = true;
       setUser(currentUser);
       writeCachedUser(currentUser);
       setLoading(false);
@@ -48,6 +63,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubscribe = authService.onAuthStateChanged((nextUser) => {
       if (!mounted) return;
+      // Ignore early null emissions before URL/session bootstrap completes.
+      if (!bootstrappedRef.current && !nextUser) return;
+      bootstrappedRef.current = true;
       setUser(nextUser);
       writeCachedUser(nextUser);
       setLoading(false);

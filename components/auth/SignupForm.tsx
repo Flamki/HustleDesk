@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { PasswordStrength } from './PasswordStrength';
-import { AuthError, PasswordRequirement } from '../../types';
+import { AuthError } from '../../types';
 import { EMAIL_REGEX, PASSWORD_REQUIREMENTS } from '../../constants';
 import * as authService from '../../services/supabaseService';
 import { useNavigate, Link } from 'react-router-dom';
@@ -125,16 +125,18 @@ export const SignupForm: React.FC = () => {
     setErrors({}); // Clear general errors
 
     try {
-      const { error } = await signUp(email, password);
+      const { user, error } = await signUp(email, password);
       
       if (error) {
         const friendly = getFriendlySignupError(error.message);
         if (friendly.retryAfter > 0) setRetryAfterSeconds(friendly.retryAfter);
         setErrors((prev) => ({ ...prev, general: friendly.text }));
+      } else if (user) {
+        navigate('/app/dashboard', { replace: true });
       } else {
-        navigate('/auth/check-email', { state: { email } });
+        navigate(`/auth/check-email?email=${encodeURIComponent(email)}`, { state: { email } });
       }
-    } catch (err) {
+    } catch {
       setErrors((prev) => ({ ...prev, general: 'An unexpected error occurred. Please try again.' }));
     } finally {
       setLoading(false);
