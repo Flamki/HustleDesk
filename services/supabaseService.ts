@@ -20,12 +20,15 @@ const JOBS_LIST_CACHE_TTL_MS = 15_000;
 const DASHBOARD_CACHE_TTL_MS = 10_000;
 const AUTH_USE_DB_PROFILE_LOOKUP =
   String(import.meta.env.VITE_AUTH_USE_DB_PROFILE_LOOKUP || '').toLowerCase() === 'true';
-const AUTH_REQUIRE_ACCOUNT_READY =
-  String(import.meta.env.VITE_AUTH_REQUIRE_ACCOUNT_READY || '').toLowerCase() === 'true';
+const PROFILE_SETUP_TIMEOUT_MS = 3500;
 
 type CacheEntry<T> = { ts: number; data: T };
 const jobsListCache = new Map<string, CacheEntry<JobsListResponse>>();
 const dashboardCache = new Map<string, CacheEntry<DashboardStatsResponse>>();
+const profileSetupInflight = new Map<string, Promise<boolean>>();
+const profileSetupResultByToken = new Map<string, boolean>();
+let usersTableUnavailable = false;
+let freelancerProfilesTableUnavailable = false;
 
 const readFreshCache = <T>(entry: CacheEntry<T> | undefined, ttlMs: number): T | null => {
   if (!entry) return null;
@@ -232,6 +235,29 @@ const buildFallbackUser = (id: string, email: string, createdAt?: string): User 
   createdAt: createdAt || new Date().toISOString(),
 });
 
+type DbErrorLike = { message?: string; code?: string } | null | undefined;
+
+const isSchemaOrRelationError = (error: DbErrorLike): boolean => {
+  const message = String(error?.message || '').toLowerCase();
+  const code = String(error?.code || '').toUpperCase();
+  if (code === 'PGRST205' || code === 'PGRST204' || code === '42P01' || code === '42703') return true;
+  return (
+    message.includes('does not exist') ||
+    message.includes('schema cache') ||
+    message.includes('could not find') ||
+    message.includes('relation') ||
+    message.includes('column')
+  );
+};
+
+const normalizeDbError = (error: unknown): DbErrorLike => {
+  if (!error || typeof error !== 'object') return null;
+  const obj = error as { message?: string; code?: string };
+  return { message: obj.message, code: obj.code };
+};
+
+const getTokenCacheKey = (accessToken: string): string => accessToken.slice(-24);
+
 const getStoredJobs = (): Job[] => {
   const raw = localStorage.getItem(JOBS_STORAGE_KEY);
   if (!raw) return [];
@@ -250,7 +276,7 @@ const saveJobs = (jobs: Job[]) => {
 const loadUserFromUsersTable = async (id: string, email: string): Promise<User | null> => {
   // Default auth mode does not depend on public.users to avoid login breakage
   // when schema drift/migrations are incomplete in production.
-  if (!supabase || !AUTH_USE_DB_PROFILE_LOOKUP) {
+  if (!supabase || !AUTH_USE_DB_PROFILE_LOOKUP || usersTableUnavailable) {
     return null;
   }
 
@@ -270,7 +296,11 @@ const loadUserFromUsersTable = async (id: string, email: string): Promise<User |
       error?: { message?: string } | null;
     };
 
-    if (result.error || !result.data) return null;
+    if (result.error) {
+      if (isSchemaOrRelationError(result.error)) usersTableUnavailable = true;
+      return null;
+    }
+    if (!result.data) return null;
 
     const data: DbUserRow = {
       id: String(result.data.id || id),
@@ -282,7 +312,8 @@ const loadUserFromUsersTable = async (id: string, email: string): Promise<User |
       created_at: String(result.data.created_at || new Date().toISOString()),
     };
     return mapDbUserToAppUser(data);
-  } catch {
+  } catch (error) {
+    if (isSchemaOrRelationError(normalizeDbError(error))) usersTableUnavailable = true;
     return null;
   }
 };
@@ -295,6 +326,12 @@ const getSupabaseToken = async (): Promise<string | null> => {
 
 const ensureProfileSetup = async (accessToken: string | null): Promise<boolean> => {
   if (!accessToken) return false;
+  const cacheKey = getTokenCacheKey(accessToken);
+  if (profileSetupResultByToken.has(cacheKey)) return profileSetupResultByToken.get(cacheKey) === true;
+  const inflight = profileSetupInflight.get(cacheKey);
+  if (inflight) return inflight;
+
+  const setupPromise = (async () => {
   try {
     const response = await fetchWithTimeout(
       '/api/auth/setup-profile',
@@ -302,16 +339,27 @@ const ensureProfileSetup = async (accessToken: string | null): Promise<boolean> 
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
       },
-      4500
+      PROFILE_SETUP_TIMEOUT_MS
     );
-    if (!response.ok) return false;
+    if (!response.ok) {
+      profileSetupResultByToken.set(cacheKey, false);
+      return false;
+    }
     const body = await parseJsonSafe<{ success?: boolean; account_ready?: boolean }>(response);
-    if (!body) return true;
-    return Boolean(body.success !== false && body.account_ready !== false);
+    const ok = !body ? true : Boolean(body.success !== false && body.account_ready !== false);
+    profileSetupResultByToken.set(cacheKey, ok);
+    return ok;
   } catch {
     // Trigger-based creation is primary; API setup is best-effort fallback.
+    profileSetupResultByToken.set(cacheKey, false);
     return false;
+  } finally {
+    profileSetupInflight.delete(cacheKey);
   }
+  })();
+
+  profileSetupInflight.set(cacheKey, setupPromise);
+  return setupPromise;
 };
 
 const fetchWithTimeout = async (
@@ -334,10 +382,11 @@ const resolveUserAfterAuth = async (
   accessToken: string | null,
   createdAt?: string
 ): Promise<User | null> => {
-  const accountReady = await ensureProfileSetup(accessToken);
-  if (AUTH_REQUIRE_ACCOUNT_READY && accessToken && !accountReady) {
-    return null;
+  if (accessToken) {
+    // Non-blocking bootstrap keeps login fast and avoids auth stalls when API route is slow.
+    void ensureProfileSetup(accessToken);
   }
+
   const user = await loadUserFromUsersTable(userId, email);
   if (user) return user;
   return buildFallbackUser(userId, email, createdAt);
@@ -432,6 +481,12 @@ const applySessionWithRetry = async (accessToken: string, refreshToken: string):
   }
 };
 
+const hasActiveSession = async (): Promise<boolean> => {
+  if (!supabase) return false;
+  const { data } = await supabase.auth.getSession();
+  return Boolean(data.session?.user);
+};
+
 export const hasSupabaseAuth = (): boolean => hasSupabase;
 
 export const hydrateSessionFromUrl = async (): Promise<void> => {
@@ -464,12 +519,25 @@ export const hydrateSessionFromUrl = async (): Promise<void> => {
   const authCode = url.searchParams.get('code');
   if (authCode) {
     try {
-      const { error } = await withTimeout(
-        supabase.auth.exchangeCodeForSession(authCode),
-        AUTH_CALL_TIMEOUT_MS,
-        'OAuth session exchange timed out. Please try login again.'
-      );
-      if (error) throw error;
+      let exchangeError: Error | null = null;
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        const { error } = await withTimeout(
+          supabase.auth.exchangeCodeForSession(authCode),
+          AUTH_CALL_TIMEOUT_MS,
+          'OAuth session exchange timed out. Please try login again.'
+        );
+        if (!error) {
+          exchangeError = null;
+          break;
+        }
+        exchangeError = error;
+        if (attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 300));
+      }
+
+      if (exchangeError) {
+        if (await hasActiveSession()) return;
+        throw exchangeError;
+      }
     } finally {
       clearOAuthArtifactsFromUrl();
     }
@@ -1096,6 +1164,10 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
     const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
     return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
   }
+  if (freelancerProfilesTableUnavailable) {
+    const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+    return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
+  }
 
   const {
     data: { user },
@@ -1122,7 +1194,7 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
 
   try {
     let data: DbFreelancerProfile | null = null;
-    let error: { message?: string } | null = null;
+    let error: DbErrorLike = null;
 
     // Query all available columns to avoid 400 errors from schema drift
     // (missing columns in explicit select lists).
@@ -1132,7 +1204,7 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
       .eq('user_id', user.id)
       .maybeSingle();
     data = (primaryResult.data as DbFreelancerProfile | null) || null;
-    error = (primaryResult.error as { message?: string } | null) || null;
+    error = normalizeDbError(primaryResult.error);
 
     // Compatibility fallback for schemas using `id` instead of `user_id`.
     if (error && /column .*user_id.* does not exist|Could not find.*user_id/i.test(error.message || '')) {
@@ -1142,11 +1214,12 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
         .eq('id', user.id)
         .maybeSingle();
       data = (idResult.data as DbFreelancerProfile | null) || null;
-      error = (idResult.error as { message?: string } | null) || null;
+      error = normalizeDbError(idResult.error);
     }
 
     if (error) {
-      if (/relation .*freelancer_profiles.* does not exist/i.test(error.message || '')) {
+      if (isSchemaOrRelationError(error)) {
+        freelancerProfilesTableUnavailable = true;
         const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
         return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
       }
@@ -1179,7 +1252,10 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
 
     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
     return { data: profile, error: null };
-  } catch {
+  } catch (error) {
+    if (isSchemaOrRelationError(normalizeDbError(error))) {
+      freelancerProfilesTableUnavailable = true;
+    }
     const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
     return { data: saved ? (JSON.parse(saved) as FreelancerProfile) : null, error: null };
   }
@@ -1192,6 +1268,9 @@ export const updateProfile = async (
 
   if (!supabase) {
     await new Promise((resolve) => setTimeout(resolve, 300));
+    return { data: profile, error: null };
+  }
+  if (freelancerProfilesTableUnavailable) {
     return { data: profile, error: null };
   }
 
@@ -1237,7 +1316,8 @@ export const updateProfile = async (
     }
 
     if (error) {
-      if (/relation .*freelancer_profiles.* does not exist/i.test(error.message || '')) {
+      if (isSchemaOrRelationError(normalizeDbError(error))) {
+        freelancerProfilesTableUnavailable = true;
         return { data: profile, error: null };
       }
       return { data: profile, error };

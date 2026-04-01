@@ -6,6 +6,8 @@ const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 
 const json = secureJson;
+const isSchemaCompatibilityError = (message = '') =>
+  /relation .* does not exist|column .* does not exist|Could not find .* in the schema cache/i.test(message);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
@@ -38,12 +40,17 @@ export default async function handler(req, res) {
     skills: [],
   };
 
+  let usersRowReady = true;
   const { error: usersUpsertError } = await adminClient
     .from('users')
     .upsert(userPayload, { onConflict: 'id' });
 
   if (usersUpsertError) {
-    return json(res, 500, { error: usersUpsertError.message });
+    if (isSchemaCompatibilityError(usersUpsertError.message || '')) {
+      usersRowReady = false;
+    } else {
+      return json(res, 500, { error: usersUpsertError.message });
+    }
   }
 
   // Best-effort upsert for freelancer profile. Keep this non-fatal for older schemas.
@@ -82,7 +89,7 @@ export default async function handler(req, res) {
   return json(res, 200, {
     success: true,
     account_ready: true,
-    users_row_ready: true,
+    users_row_ready: usersRowReady,
     freelancer_profile_ready: freelancerProfileReady,
     message: 'Account is ready',
   });
