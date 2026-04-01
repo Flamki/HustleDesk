@@ -10,8 +10,11 @@ const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
 const supabaseUrlFromEnv = trimTrailingSlash(sanitizeEnvValue(import.meta.env.VITE_SUPABASE_URL));
 const supabaseAnonKey = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
+const proxyModeSetting = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_PROXY_MODE).toLowerCase();
 const supabaseProxyMode =
-  sanitizeEnvValue(import.meta.env.VITE_SUPABASE_PROXY_MODE).toLowerCase() === 'true';
+  proxyModeSetting
+    ? proxyModeSetting === 'true'
+    : Boolean(import.meta.env.PROD);
 
 type SupabaseBrowserClient = SupabaseClient<any, 'public', any>;
 
