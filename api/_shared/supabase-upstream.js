@@ -7,6 +7,7 @@ const trimOuterQuotes = (value) => value.replace(/^['"]+|['"]+$/g, '');
 const stripEscapedTrailingNewlines = (value) => value.replace(/(?:\\r\\n|\\n|\\r)+$/g, '');
 const normalizeValue = (value) => trimOuterQuotes(stripEscapedTrailingNewlines(String(value || '').trim()));
 const normalizeBaseUrl = (value) => normalizeValue(value).replace(/\/+$/, '');
+const SUPABASE_ENDPOINT_PATH_RE = /^\/(rest|auth|storage)\/v1(?:\/.*)?$/i;
 
 const splitCandidateList = (value) =>
   normalizeValue(value)
@@ -38,7 +39,18 @@ const toUsableUrl = (value) => {
   if (!normalized) return null;
   if (!isValidHttpUrl(normalized)) return null;
   if (isProxyLoopUrl(normalized)) return null;
-  return normalized;
+
+  try {
+    const parsed = new URL(normalized);
+    const pathname = parsed.pathname.replace(/\/+$/, '');
+    if (SUPABASE_ENDPOINT_PATH_RE.test(pathname)) {
+      // Accept common misconfiguration where env is set to .../rest/v1 or .../auth/v1.
+      return `${parsed.protocol}//${parsed.host}`;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
 };
 
 const unique = (items) => {
@@ -128,4 +140,9 @@ export const ensureSupabaseRuntimeEnv = async (env = process.env) => {
     checked,
     reason: selected ? null : 'No candidate host was DNS-reachable; defaulting to first configured URL.',
   };
+};
+
+export const __private = {
+  toUsableUrl,
+  isProxyLoopUrl,
 };

@@ -40,6 +40,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapsed = false, onToggleCollapse }) => {
+  const SHOW_WEBSITE_SECTION = false;
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -424,7 +425,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
 
                 <SectionLabel label="Marketing" />
                 <NavItem to="/app/marketing" icon={Mail} label="Email Marketing" />
-                <WebsiteGroup />
+                {SHOW_WEBSITE_SECTION && <WebsiteGroup />}
             </div>
         )}
       </div>
@@ -538,7 +539,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
             </div>
         </div>
       </div>
-      <WebsiteMenu />
+      {SHOW_WEBSITE_SECTION && <WebsiteMenu />}
     </aside>
   );
 };
