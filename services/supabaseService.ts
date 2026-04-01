@@ -458,6 +458,22 @@ const fetchWithTimeout = async (
   }
 };
 
+const rejectOAuthLoginOnlyAccount = async (accessToken: string | null): Promise<void> => {
+  if (!accessToken) return;
+  try {
+    await fetchWithTimeout(
+      '/api/auth/reject-oauth-login',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+      4000
+    );
+  } catch {
+    // Best effort cleanup; login rejection still proceeds locally.
+  }
+};
+
 const resolveUserAfterAuth = async (
   userId: string,
   email: string,
@@ -467,6 +483,7 @@ const resolveUserAfterAuth = async (
   const oauthIntent = getPendingOAuthIntent();
   if (oauthIntent === 'login' && isLikelyFreshAuthUser(createdAt)) {
     // Strict login behavior: do not silently create a new OAuth account from Login flow.
+    await rejectOAuthLoginOnlyAccount(accessToken);
     clearOAuthIntent();
     setOAuthErrorCode('no_account');
     if (supabase) {
