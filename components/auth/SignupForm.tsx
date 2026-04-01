@@ -145,7 +145,7 @@ export const SignupForm: React.FC = () => {
 
   const handleGoogleSignup = async () => {
       setLoading(true);
-      const { error } = await authService.signInWithGoogle();
+      const { error } = await authService.signInWithGoogle('signup');
       if (error) {
         setErrors((prev) => ({ ...prev, general: getFriendlyOAuthError(error.message) }));
       }

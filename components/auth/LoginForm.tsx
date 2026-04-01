@@ -20,8 +20,13 @@ export const LoginForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   React.useEffect(() => {
-    if (searchParams.get('error') === 'oauth_failed') {
+    const code = searchParams.get('error');
+    if (code === 'oauth_failed') {
       setError('Google login could not be completed. Please try again.');
+      return;
+    }
+    if (code === 'no_account') {
+      setError('No account exists for this Google profile. Please sign up first.');
     }
   }, [searchParams]);
 
@@ -71,7 +76,7 @@ export const LoginForm: React.FC = () => {
   const handleGoogleLogin = async () => {
       setError(null);
       setLoading(true);
-      const { error: oauthError } = await authService.signInWithGoogle();
+      const { error: oauthError } = await authService.signInWithGoogle('login');
       if (oauthError) {
         setError(getFriendlyOAuthError(oauthError.message));
       }

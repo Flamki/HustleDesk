@@ -16,6 +16,10 @@ import { getAuthBaseUrl, hasSupabase, supabase } from './supabaseClient';
 const AUTH_STORAGE_KEY = 'user_session';
 const PROFILE_STORAGE_KEY = 'freelancer_profile';
 const JOBS_STORAGE_KEY = 'jobs_store_v1';
+const OAUTH_INTENT_STORAGE_KEY = 'oauth_intent_v1';
+const OAUTH_ERROR_STORAGE_KEY = 'oauth_error_v1';
+const OAUTH_INTENT_TTL_MS = 10 * 60 * 1000;
+const OAUTH_NEW_ACCOUNT_WINDOW_MS = 3 * 60 * 1000;
 const JOBS_LIST_CACHE_TTL_MS = 15_000;
 const DASHBOARD_CACHE_TTL_MS = 10_000;
 const AUTH_USE_DB_PROFILE_LOOKUP =
@@ -79,6 +83,7 @@ type DbJobRow = {
 };
 
 type AuthStateListener = (user: User | null) => void;
+type OAuthIntent = 'login' | 'signup';
 
 const platformToDb = (platform: string): DbPlatform => {
   const normalized = platform.toLowerCase();
@@ -259,6 +264,64 @@ const normalizeDbError = (error: unknown): DbErrorLike => {
   return { message: obj.message, code: obj.code };
 };
 
+const clearOAuthIntent = (): void => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(OAUTH_INTENT_STORAGE_KEY);
+};
+
+const setOAuthIntent = (intent: OAuthIntent): void => {
+  if (typeof window === 'undefined') return;
+  const payload = { intent, ts: Date.now() };
+  window.localStorage.setItem(OAUTH_INTENT_STORAGE_KEY, JSON.stringify(payload));
+};
+
+const getPendingOAuthIntent = (): OAuthIntent | null => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const urlIntent = new URLSearchParams(window.location.search).get('intent');
+    if (urlIntent === 'login' || urlIntent === 'signup') return urlIntent;
+  } catch {
+    // Ignore URL parsing issues.
+  }
+
+  try {
+    const raw = window.localStorage.getItem(OAUTH_INTENT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { intent?: OAuthIntent; ts?: number };
+    const intent = parsed?.intent;
+    const ts = Number(parsed?.ts || 0);
+    if (!(intent === 'login' || intent === 'signup')) return null;
+    if (!ts || Date.now() - ts > OAUTH_INTENT_TTL_MS) {
+      clearOAuthIntent();
+      return null;
+    }
+    return intent;
+  } catch {
+    clearOAuthIntent();
+    return null;
+  }
+};
+
+const setOAuthErrorCode = (code: string): void => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(OAUTH_ERROR_STORAGE_KEY, code);
+};
+
+export const consumePendingOAuthErrorCode = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const code = window.localStorage.getItem(OAUTH_ERROR_STORAGE_KEY);
+  if (code) window.localStorage.removeItem(OAUTH_ERROR_STORAGE_KEY);
+  return code;
+};
+
+const isLikelyFreshAuthUser = (createdAt?: string): boolean => {
+  if (!createdAt) return false;
+  const ts = new Date(createdAt).getTime();
+  if (!Number.isFinite(ts)) return false;
+  return Date.now() - ts <= OAUTH_NEW_ACCOUNT_WINDOW_MS;
+};
+
 const getProfileSetupCacheKey = (userId: string): string => userId || 'unknown-user';
 
 const readProfileSetupCache = (cacheKey: string): boolean | null => {
@@ -401,6 +464,21 @@ const resolveUserAfterAuth = async (
   accessToken: string | null,
   createdAt?: string
 ): Promise<User | null> => {
+  const oauthIntent = getPendingOAuthIntent();
+  if (oauthIntent === 'login' && isLikelyFreshAuthUser(createdAt)) {
+    // Strict login behavior: do not silently create a new OAuth account from Login flow.
+    clearOAuthIntent();
+    setOAuthErrorCode('no_account');
+    if (supabase) {
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    }
+    return null;
+  }
+
+  if (oauthIntent) {
+    clearOAuthIntent();
+  }
+
   if (accessToken) {
     // Non-blocking bootstrap keeps login fast and avoids auth stalls when API route is slow.
     void ensureProfileSetup(userId, accessToken);
@@ -631,15 +709,16 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
   }
 };
 
-export const signInWithGoogle = async (): Promise<AuthResponse> => {
+export const signInWithGoogle = async (intent: OAuthIntent = 'login'): Promise<AuthResponse> => {
   if (!supabase) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return { user: null, error: null };
   }
 
+  setOAuthIntent(intent);
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${getAuthBaseUrl()}/auth/callback` },
+    options: { redirectTo: `${getAuthBaseUrl()}/auth/callback?intent=${intent}` },
   });
 
   return { user: null, error: error ?? null };
@@ -647,6 +726,8 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
 export const signOut = async (): Promise<void> => {
   localStorage.removeItem(AUTH_STORAGE_KEY);
+  clearOAuthIntent();
+  consumePendingOAuthErrorCode();
   clearOAuthArtifactsFromUrl();
   if (!supabase) return;
 
