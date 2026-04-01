@@ -114,7 +114,7 @@ const TemplateStudio: React.FC<{ data: PublicData }> = ({ data }) => {
       }}
     >
       <Background styleName={site.background_style} />
-      <div className="absolute inset-0 opacity-20 [background-image:url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      <div className="absolute inset-0 opacity-20 [background-image:url('/noise.svg')]" />
 
       {showEditButton && (
         <div className="fixed top-4 right-4 z-50">

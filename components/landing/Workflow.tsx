@@ -7,7 +7,7 @@ export const Workflow: React.FC = () => {
     <section id="workflow" className="py-32 bg-slate-950 text-white relative overflow-hidden">
       
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+      <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-10"></div>
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
       <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
       

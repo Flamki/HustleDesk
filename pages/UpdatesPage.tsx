@@ -191,7 +191,7 @@ export const UpdatesPage: React.FC = () => {
                                         {/* Featured Image Placeholder */}
                                         {update.featured && (
                                             <div className="mb-6 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 aspect-video bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-slate-900 dark:to-indigo-950/20 flex items-center justify-center relative group/image">
-                                                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                                                <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-20"></div>
                                                 <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-white/50 dark:border-slate-700 flex flex-col items-center gap-3 transform group-hover/image:scale-105 transition-transform duration-500">
                                                     <div className="flex gap-2">
                                                         <div className="w-2 h-2 rounded-full bg-red-400"></div>

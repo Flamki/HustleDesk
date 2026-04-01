@@ -21,8 +21,8 @@ const OAUTH_ERROR_STORAGE_KEY = 'oauth_error_v1';
 const OAUTH_INTENT_TTL_MS = 10 * 60 * 1000;
 const JOBS_LIST_CACHE_TTL_MS = 15_000;
 const DASHBOARD_CACHE_TTL_MS = 10_000;
-const AUTH_USE_DB_PROFILE_LOOKUP =
-  String(import.meta.env.VITE_AUTH_USE_DB_PROFILE_LOOKUP || '').toLowerCase() === 'true';
+const authLookupSetting = String(import.meta.env.VITE_AUTH_USE_DB_PROFILE_LOOKUP || '').toLowerCase().trim();
+const AUTH_USE_DB_PROFILE_LOOKUP = authLookupSetting ? authLookupSetting !== 'false' : true;
 const PROFILE_SETUP_TIMEOUT_MS = 3500;
 
 type CacheEntry<T> = { ts: number; data: T };
@@ -35,6 +35,7 @@ const PROFILE_SETUP_OK_TTL_MS = 10 * 60 * 1000;
 const PROFILE_SETUP_FAIL_TTL_MS = 20 * 1000;
 let usersTableUnavailable = false;
 let freelancerProfilesTableUnavailable = false;
+let freelancerProfileKeyPreference: 'user_id' | 'id' | null = null;
 
 const readFreshCache = <T>(entry: CacheEntry<T> | undefined, ttlMs: number): T | null => {
   if (!entry) return null;
@@ -83,6 +84,8 @@ type DbJobRow = {
 
 type AuthStateListener = (user: User | null) => void;
 type OAuthIntent = 'login' | 'signup';
+type AuthResolutionContext = 'signup' | 'login' | 'session';
+type ProfileBootstrapMode = 'ensure' | 'check';
 
 const platformToDb = (platform: string): DbPlatform => {
   const normalized = platform.toLowerCase();
@@ -332,7 +335,8 @@ export const consumePendingOAuthErrorCode = (): string | null => {
   return code;
 };
 
-const getProfileSetupCacheKey = (userId: string): string => userId || 'unknown-user';
+const getProfileSetupCacheKey = (userId: string, mode: ProfileBootstrapMode): string =>
+  `${userId || 'unknown-user'}:${mode}`;
 
 const readProfileSetupCache = (cacheKey: string): boolean | null => {
   const entry = profileSetupResultByUser.get(cacheKey);
@@ -415,9 +419,13 @@ const getSupabaseToken = async (): Promise<string | null> => {
   return data.session?.access_token ?? null;
 };
 
-const ensureProfileSetup = async (userId: string, accessToken: string | null): Promise<boolean> => {
+const ensureProfileSetup = async (
+  userId: string,
+  accessToken: string | null,
+  mode: ProfileBootstrapMode = 'ensure'
+): Promise<boolean> => {
   if (!accessToken) return false;
-  const cacheKey = getProfileSetupCacheKey(userId);
+  const cacheKey = getProfileSetupCacheKey(userId, mode);
   const cached = readProfileSetupCache(cacheKey);
   if (cached != null) return cached;
   const inflight = profileSetupInflight.get(cacheKey);
@@ -429,7 +437,11 @@ const ensureProfileSetup = async (userId: string, accessToken: string | null): P
         '/api/auth/setup-profile',
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ mode }),
         },
         PROFILE_SETUP_TIMEOUT_MS
       );
@@ -502,7 +514,8 @@ const resolveUserAfterAuth = async (
   userId: string,
   email: string,
   accessToken: string | null,
-  createdAt?: string
+  createdAt?: string,
+  context: AuthResolutionContext = 'session'
 ): Promise<User | null> => {
   const oauthIntent = getPendingOAuthIntent();
   if (oauthIntent === 'login') {
@@ -524,14 +537,38 @@ const resolveUserAfterAuth = async (
     clearOAuthIntent();
   }
 
+  const shouldBootstrap =
+    context === 'signup' || oauthIntent === 'signup';
+  let verifiedAccountReady = false;
   if (accessToken) {
-    // Non-blocking bootstrap keeps login fast and avoids auth stalls when API route is slow.
-    void ensureProfileSetup(userId, accessToken);
+    if (shouldBootstrap) {
+      await ensureProfileSetup(userId, accessToken, 'ensure');
+    } else {
+      const accountReady = await ensureProfileSetup(userId, accessToken, 'check');
+      if (!accountReady) {
+        setOAuthErrorCode('no_account');
+        if (supabase) {
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+        }
+        return null;
+      }
+      verifiedAccountReady = true;
+    }
   }
 
   const user = await loadUserFromUsersTable(userId, email);
   if (user) return user;
-  return buildFallbackUser(userId, email, createdAt);
+  if (!shouldBootstrap && verifiedAccountReady) {
+    return buildFallbackUser(userId, email, createdAt);
+  }
+  if (shouldBootstrap) {
+    return buildFallbackUser(userId, email, createdAt);
+  }
+  setOAuthErrorCode('no_account');
+  if (supabase) {
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+  }
+  return null;
 };
 
 const parseJsonSafe = async <T = any>(response: Response): Promise<T | null> => {
@@ -713,7 +750,8 @@ export const signUp = async (email: string, password: string): Promise<AuthRespo
       data.user.id,
       data.user.email ?? email,
       data.session.access_token,
-      (data.user as { created_at?: string }).created_at
+      (data.user as { created_at?: string }).created_at,
+      'signup'
     );
     return { user, error: null };
   } catch (err) {
@@ -743,7 +781,8 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
       data.user.id,
       data.user.email ?? email,
       data.session?.access_token ?? null,
-      (data.user as { created_at?: string }).created_at
+      (data.user as { created_at?: string }).created_at,
+      'login'
     );
     return { user, error: null };
   } catch (err) {
@@ -825,7 +864,8 @@ export const getCurrentUser = async (): Promise<User | null> => {
       resolvedUser.id,
       resolvedUser.email ?? '',
       session?.access_token ?? null,
-      (resolvedUser as { created_at?: string }).created_at
+      (resolvedUser as { created_at?: string }).created_at,
+      'session'
     );
   } catch {
     return null;
@@ -850,7 +890,8 @@ export const onAuthStateChanged = (listener: AuthStateListener): (() => void) =>
         session.user.id,
         session.user.email ?? '',
         session.access_token ?? null,
-        (session.user as { created_at?: string }).created_at
+        (session.user as { created_at?: string }).created_at,
+        'session'
       );
     } catch {
       user = null;
@@ -1385,25 +1426,32 @@ export const getProfile = async (): Promise<{ data: FreelancerProfile | null; er
     let data: DbFreelancerProfile | null = null;
     let error: DbErrorLike = null;
 
-    // Query all available columns to avoid 400 errors from schema drift
-    // (missing columns in explicit select lists).
-    const primaryResult = await supabase
-      .from('freelancer_profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    data = (primaryResult.data as DbFreelancerProfile | null) || null;
-    error = normalizeDbError(primaryResult.error);
+    const keyCandidates: Array<'user_id' | 'id'> = freelancerProfileKeyPreference
+      ? [freelancerProfileKeyPreference, freelancerProfileKeyPreference === 'user_id' ? 'id' : 'user_id']
+      : ['user_id', 'id'];
 
-    // Compatibility fallback for schemas using `id` instead of `user_id`.
-    if (error && /column .*user_id.* does not exist|Could not find.*user_id/i.test(error.message || '')) {
-      const idResult = await supabase
+    for (const key of keyCandidates) {
+      const result = await supabase
         .from('freelancer_profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq(key, user.id)
         .maybeSingle();
-      data = (idResult.data as DbFreelancerProfile | null) || null;
-      error = normalizeDbError(idResult.error);
+      const resultError = normalizeDbError(result.error);
+      if (!resultError) {
+        data = (result.data as DbFreelancerProfile | null) || null;
+        error = null;
+        freelancerProfileKeyPreference = key;
+        break;
+      }
+
+      // Try fallback key only when this key is missing in current schema.
+      if (/column .* does not exist|Could not find .* in the schema cache/i.test(resultError.message || '')) {
+        error = resultError;
+        continue;
+      }
+
+      error = resultError;
+      break;
     }
 
     if (error) {
