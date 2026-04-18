@@ -1037,9 +1037,11 @@ export const getJobsList = async (query: JobsListQuery = {}): Promise<{ data: Jo
     dataQuery = dataQuery.eq('platform', query.platform);
   }
   if (query.search && query.search.trim()) {
-    const s = query.search.trim();
-    countQuery = countQuery.or(`title.ilike.%${s}%,job_description.ilike.%${s}%`);
-    dataQuery = dataQuery.or(`title.ilike.%${s}%,job_description.ilike.%${s}%`);
+    const s = sanitizeSearchTermForPostgrest(query.search);
+    if (s) {
+      countQuery = countQuery.or(`title.ilike.%${s}%,job_description.ilike.%${s}%`);
+      dataQuery = dataQuery.or(`title.ilike.%${s}%,job_description.ilike.%${s}%`);
+    }
   }
 
   const { count, error: countError } = await countQuery;
@@ -1185,11 +1187,37 @@ export const createJob = async (
       if (response.ok) {
         const body = await parseJsonSafe<{ job_id: string }>(response);
         if (!body?.job_id) throw new Error('Invalid create-job response');
-        const result = await getJobById(body.job_id);
-        if (!result.error) invalidateJobsAndDashboardCache();
-        return result;
+        const nowIso = new Date().toISOString();
+        const created: Job = {
+          id: body.job_id,
+          userId: payload.userId || '',
+          title: payload.title.trim(),
+          company: payload.company?.trim() || undefined,
+          platform: payload.platform,
+          description: payload.description.trim(),
+          budgetMin: payload.budgetMin,
+          budgetMax: payload.budgetMax,
+          currency: payload.currency || 'INR',
+          proposedPrice: payload.proposedPrice,
+          status: payload.status,
+          createdAt: nowIso,
+          notes: payload.notes || undefined,
+          proposal: payload.proposal || undefined,
+        };
+        invalidateJobsAndDashboardCache();
+        return { data: created, error: null };
       }
+
+      // If API route is reachable and explicitly rejected, return server error as-is.
+      const apiError = await parseJsonSafe<{ error?: string }>(response);
+      return {
+        data: null,
+        error: new Error(apiError?.error || 'Failed to save job'),
+      };
     } catch {
+      if (!import.meta.env.DEV) {
+        return { data: null, error: new Error('Failed to save job') };
+      }
       // Fallback to direct client insert for local Vite development without serverless runtime.
     }
   }
@@ -1339,6 +1367,34 @@ export type ProfileAssistantResult = {
   profilePatch: Partial<FreelancerProfile>;
 };
 
+const KNOWN_SKILLS = [
+  'react',
+  'typescript',
+  'next.js',
+  'node.js',
+  'supabase',
+  'tailwind',
+  'figma',
+  'python',
+  'aws',
+  'seo',
+  'design',
+  'marketing',
+  'sql',
+  'javascript',
+  'webflow',
+  'wordpress',
+  'shopify',
+  'postgresql',
+];
+
+const sanitizeSearchTermForPostgrest = (value: string): string =>
+  String(value || '')
+    .replace(/[(),]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+
 const deriveExperienceLevelFromYears = (
   years: number
 ): FreelancerProfile['experienceLevel'] => {
@@ -1346,6 +1402,59 @@ const deriveExperienceLevelFromYears = (
   if (years >= 3) return 'Intermediate';
   return 'Entry';
 };
+
+const looksLikeGibberish = (text: string): boolean => {
+  const normalized = String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .trim();
+  if (!normalized) return true;
+  if (normalized.length <= 2) return true;
+
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+
+  const longToken = tokens.find((token) => token.length >= 12 && /^([a-z])\1+$/i.test(token));
+  if (longToken) return true;
+
+  const uniqueTokens = new Set(tokens);
+  const diversity = uniqueTokens.size / tokens.length;
+  if (tokens.length >= 3 && diversity < 0.4) return true;
+
+  return false;
+};
+
+const extractSkillsFromText = (text: string): string[] => {
+  const lower = String(text || '').toLowerCase();
+  const fromKnown = KNOWN_SKILLS.filter((skill) => lower.includes(skill)).map((skill) =>
+    skill
+      .split('.')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('.')
+  );
+
+  const phraseMatches = String(text || '').match(/[a-zA-Z][a-zA-Z0-9+.#/-]{2,20}/g) || [];
+  const fromPhrases = phraseMatches
+    .map((token) => token.trim())
+    .filter((token) => /^[a-z0-9+.#/-]+$/i.test(token))
+    .map((token) => token.replace(/\.$/, ''))
+    .filter((token) => token.length >= 3 && token.length <= 20)
+    .filter((token) => !/^(and|the|for|with|from|this|that|have|just|like|many|none|nope|n\/a)$/i.test(token))
+    .slice(0, 8)
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1));
+
+  return [...new Set([...fromKnown, ...fromPhrases])].slice(0, 12);
+};
+
+const inferTechnologies = (text: string): string[] =>
+  KNOWN_SKILLS.filter((skill) => new RegExp(`\\b${skill.replace('.', '\\.')}\\b`, 'i').test(text))
+    .slice(0, 8)
+    .map((skill) =>
+      skill
+        .split('.')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('.')
+    );
 
 const buildFallbackProposal = (
   settings: ProposalSettings,
@@ -1407,45 +1516,10 @@ const buildLocalProfileAssistantFallback = (
   const patch: Partial<FreelancerProfile> = {};
   const text = message.trim();
   const lower = text.toLowerCase();
-
-  const skillsPool = [
-    'react',
-    'typescript',
-    'next.js',
-    'node.js',
-    'supabase',
-    'tailwind',
-    'figma',
-    'python',
-    'aws',
-    'seo',
-    'design',
-    'marketing',
-    'sql',
-  ];
-  const discoveredSkills = skillsPool
-    .filter((skill) => lower.includes(skill))
-    .map((skill) =>
-      skill
-        .split('.')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join('.')
-    );
-  if (discoveredSkills.length > 0) {
-    patch.skills = [...new Set([...profile.skills, ...discoveredSkills])].slice(0, 20);
-  }
-
-  const yearsMatch = text.match(/(\d{1,2})\s*(?:\+?\s*)?(?:years?|yrs?)/i);
-  if (yearsMatch) {
-    const years = Math.max(0, Math.min(60, Number(yearsMatch[1])));
-    patch.yearsExperience = years;
-    patch.experienceLevel = deriveExperienceLevelFromYears(years);
-  }
-
-  const rateMatch = text.match(/\$?\s*(\d{2,4})(?:\s*\/?\s*(?:hr|hour))/i);
-  if (rateMatch) {
-    patch.hourlyRate = Math.max(0, Math.min(10000, Number(rateMatch[1])));
-  }
+  const stepId = String(context?.currentStepId || '').toLowerCase();
+  const nextPrompt = context?.nextStepPrompt ? ` ${context.nextStepPrompt}` : '';
+  const wantsSkip = /^(skip|none|n\/a|na|nope|no)$/i.test(text);
+  const gibberish = looksLikeGibberish(text);
 
   const urls = text.match(/https?:\/\/[^\s)]+/gi) || [];
   if (urls.length > 0) {
@@ -1457,20 +1531,101 @@ const buildLocalProfileAssistantFallback = (
     }
   }
 
-  if ((lower.includes('bio') || lower.length > 60) && !patch.bio) {
+  const yearsMatch = text.match(/(\d{1,2})\s*(?:\+?\s*)?(?:years?|yrs?)/i) || text.match(/^(\d{1,2})$/);
+  if (yearsMatch) {
+    const years = Math.max(0, Math.min(60, Number(yearsMatch[1])));
+    patch.yearsExperience = years;
+    patch.experienceLevel = deriveExperienceLevelFromYears(years);
+  }
+
+  const rateMatch =
+    text.match(/\$?\s*(\d{2,4})(?:\s*\/?\s*(?:hr|hour))/i) ||
+    (stepId === 'rate' ? text.match(/\b(\d{2,4})\b/) : null);
+  if (rateMatch) {
+    patch.hourlyRate = Math.max(0, Math.min(10000, Number(rateMatch[1])));
+  }
+
+  if ((stepId === 'intro' || lower.includes('skill') || lower.includes('service')) && !gibberish) {
+    const discoveredSkills = extractSkillsFromText(text);
+    if (discoveredSkills.length > 0) {
+      patch.skills = [...new Set([...(profile.skills || []), ...discoveredSkills])].slice(0, 24);
+    }
+  }
+
+  if ((stepId === 'project' || lower.includes('project') || lower.length > 80) && !gibberish && !wantsSkip) {
+    const technologies = inferTechnologies(text);
+    const nameFromPrefix = text.match(/(?:project|built|created)\s*[:-]?\s*([^.:\n]{4,80})/i)?.[1]?.trim();
+    patch.pastProjects = [
+      {
+        id: `generated-${Date.now()}`,
+        name: nameFromPrefix || 'Client Project',
+        description: text.slice(0, 500),
+        technologies,
+      },
+    ];
+  }
+
+  if ((stepId === 'bio' || lower.includes('bio') || text.length >= 80) && !gibberish && !wantsSkip) {
     patch.bio = text.slice(0, 600);
   }
 
-  const stepHint = context?.nextStepPrompt ? ` ${context.nextStepPrompt}` : '';
-  if (Object.keys(patch).length > 0) {
+  const hasUsefulPatch = Object.keys(patch).length > 0;
+  if (hasUsefulPatch) {
     return {
-      reply: `I updated your profile with what I could confidently extract.${stepHint}`.trim(),
+      reply: `I updated your profile with what I could confidently extract.${nextPrompt}`.trim(),
       profilePatch: patch,
     };
   }
 
+  if (wantsSkip) {
+    return {
+      reply: `No problem, I can skip this part.${nextPrompt}`.trim(),
+      profilePatch: {},
+    };
+  }
+
+  if (stepId === 'intro') {
+    return {
+      reply:
+        'Tell me your main services as a short list, like "React development, UI design, API integrations".',
+      profilePatch: {},
+    };
+  }
+  if (stepId === 'experience') {
+    return {
+      reply: 'Please share your years of experience as a number, like "4 years".',
+      profilePatch: {},
+    };
+  }
+  if (stepId === 'portfolio') {
+    return {
+      reply: 'Please paste your portfolio/GitHub/LinkedIn URL, or say "skip".',
+      profilePatch: {},
+    };
+  }
+  if (stepId === 'project') {
+    return {
+      reply:
+        'Share one project with what you built and tech used. Example: "Built an e-commerce dashboard in React + Supabase for a retail client."',
+      profilePatch: {},
+    };
+  }
+  if (stepId === 'rate') {
+    return {
+      reply: 'What is your target hourly rate in USD? Example: "$35/hr".',
+      profilePatch: {},
+    };
+  }
+  if (stepId === 'bio') {
+    return {
+      reply:
+        'Write 2-3 lines about your strengths and client outcomes. I will turn it into a polished bio.',
+      profilePatch: {},
+    };
+  }
+
   return {
-    reply: `I captured that context. Share specifics like skills, years, hourly rate, bio, or links and I will update them.${stepHint}`.trim(),
+    reply: `I captured that context. Share specifics like skills, years, hourly rate, bio, or links and I will update them.${nextPrompt}`.trim(),
     profilePatch: {},
   };
 };
@@ -1564,10 +1719,12 @@ export const generateProfileAssistantReply = async (
     const body = await parseJsonSafe<{ reply?: string; profilePatch?: Partial<FreelancerProfile>; error?: string }>(response);
     if (!response.ok) {
       const errorMessage = body?.error || 'Failed to process profile assistant request';
-      if (/fireworks/i.test(errorMessage)) {
-        throw new Error(errorMessage);
-      }
-      return fallback;
+      return {
+        reply: /fireworks/i.test(errorMessage)
+          ? `${fallback.reply} (AI provider temporarily unavailable, using local assistant mode.)`
+          : fallback.reply,
+        profilePatch: fallback.profilePatch,
+      };
     }
 
     const reply = String(body?.reply || '').trim();
@@ -1582,10 +1739,7 @@ export const generateProfileAssistantReply = async (
       reply: reply || fallback.reply,
       profilePatch,
     };
-  } catch (error) {
-    if (error instanceof Error && /fireworks/i.test(error.message)) {
-      throw error;
-    }
+  } catch {
     return fallback;
   }
 };

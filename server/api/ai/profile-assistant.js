@@ -129,9 +129,12 @@ const deriveExperienceLevel = (years) => {
   return 'Entry';
 };
 
-const buildFallback = (message, profile) => {
+const buildFallback = (message, profile, context) => {
   const patch = {};
   const replyParts = [];
+  const stepId = String(context?.currentStepId || '').toLowerCase();
+  const nextPrompt = context?.nextStepPrompt ? ` ${context.nextStepPrompt}` : '';
+  const wantsSkip = /^(skip|none|n\/a|na|nope|no)$/i.test(String(message || '').trim());
 
   const urls = String(message).match(/https?:\/\/[^\s)]+/gi) || [];
   for (const rawUrl of urls) {
@@ -168,15 +171,57 @@ const buildFallback = (message, profile) => {
     patch.skills = [...new Set([...(profile?.skills || []), ...matchedSkills])].slice(0, 20);
   }
 
+  if (stepId === 'project' && String(message || '').trim().length >= 40) {
+    patch.pastProjects = [
+      {
+        name: 'Client Project',
+        description: String(message).slice(0, 500),
+        technologies: matchedSkills.slice(0, 8),
+      },
+    ];
+  }
+
   if (Object.keys(patch).length > 0) {
-    replyParts.push('I updated your profile with what I could confidently extract.');
-  } else {
-    replyParts.push('I captured that context. Tell me a specific field to update, like skills, hourly rate, years of experience, bio, or portfolio link.');
+    replyParts.push(`I updated your profile with what I could confidently extract.${nextPrompt}`.trim());
+    return {
+      reply: replyParts.join(' '),
+      profilePatch: patch,
+    };
+  }
+
+  if (wantsSkip) return { reply: `No problem, I can skip this part.${nextPrompt}`.trim(), profilePatch: {} };
+
+  if (stepId === 'intro') {
+    return {
+      reply: 'Tell me your services as a short list, for example: React development, UI design, API integrations.',
+      profilePatch: {},
+    };
+  }
+  if (stepId === 'experience') {
+    return { reply: 'Please share years of experience as a number, like 4 years.', profilePatch: {} };
+  }
+  if (stepId === 'portfolio') {
+    return { reply: 'Please share your portfolio/GitHub/LinkedIn URL, or say skip.', profilePatch: {} };
+  }
+  if (stepId === 'project') {
+    return {
+      reply: 'Share one project with what you built and the tech stack you used.',
+      profilePatch: {},
+    };
+  }
+  if (stepId === 'rate') {
+    return { reply: 'What is your target hourly rate in USD? Example: $35/hr.', profilePatch: {} };
+  }
+  if (stepId === 'bio') {
+    return {
+      reply: 'Write 2-3 lines about your strengths and the outcomes you deliver for clients.',
+      profilePatch: {},
+    };
   }
 
   return {
-    reply: replyParts.join(' '),
-    profilePatch: patch,
+    reply: 'I captured that context. Tell me a specific field to update, like skills, hourly rate, years of experience, bio, or portfolio link.',
+    profilePatch: {},
   };
 };
 
@@ -289,7 +334,7 @@ ${message}
 
     const parsed = extractJsonObject(completion.content);
     if (!parsed || typeof parsed !== 'object') {
-      const fallback = buildFallback(message, profile);
+      const fallback = buildFallback(message, profile, context);
       return secureJson(res, 200, { ...fallback, provider: 'fireworks-fallback' });
     }
 
