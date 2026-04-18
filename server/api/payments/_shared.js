@@ -1,10 +1,11 @@
-import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '';
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
+const razorpayWebhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
 
 export const json = (res, status, payload) => {
   res.statusCode = status;
@@ -12,9 +13,42 @@ export const json = (res, status, payload) => {
   res.end(JSON.stringify(payload));
 };
 
-export const getStripe = () => {
-  if (!stripeSecretKey) throw new Error('Missing STRIPE_SECRET_KEY');
-  return new Stripe(stripeSecretKey);
+export const getRazorpayConfig = () => {
+  if (!razorpayKeyId || !razorpayKeySecret) {
+    throw new Error('Missing RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET');
+  }
+  return {
+    keyId: razorpayKeyId,
+    keySecret: razorpayKeySecret,
+    webhookSecret: razorpayWebhookSecret,
+    currency: String(process.env.RAZORPAY_CURRENCY || 'USD').trim().toUpperCase() || 'USD',
+    planName: String(process.env.RAZORPAY_PRO_PLAN_NAME || 'GetSoloDesk Pro').trim() || 'GetSoloDesk Pro',
+    amountMinor: Number.parseInt(process.env.RAZORPAY_PRO_AMOUNT_MINOR || '900', 10) || 900,
+  };
+};
+
+export const callRazorpayApi = async (endpoint, options = {}) => {
+  const config = getRazorpayConfig();
+  const method = options.method || 'GET';
+  const headers = {
+    Authorization: `Basic ${Buffer.from(`${config.keyId}:${config.keySecret}`).toString('base64')}`,
+    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+  };
+
+  const response = await fetch(`https://api.razorpay.com/v1${endpoint}`, {
+    method,
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message =
+      body?.error?.description || body?.error?.reason || body?.error || 'Razorpay API request failed';
+    throw new Error(message);
+  }
+
+  return body;
 };
 
 export const getSupabaseAdmin = () => {

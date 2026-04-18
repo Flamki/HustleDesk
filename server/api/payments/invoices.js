@@ -1,11 +1,12 @@
-import { getAuthedUser, getStripe, getSupabaseAdmin, json } from './_shared.js';
+import { callRazorpayApi, getAuthedUser, json } from './_shared.js';
 
 const normalizeStatus = (status) => {
   if (!status) return 'Open';
-  if (status === 'paid') return 'Paid';
-  if (status === 'open') return 'Open';
-  if (status === 'void') return 'Void';
-  if (status === 'uncollectible') return 'Failed';
+  if (status === 'captured') return 'Paid';
+  if (status === 'created') return 'Open';
+  if (status === 'authorized') return 'Authorized';
+  if (status === 'refunded') return 'Refunded';
+  if (status === 'failed') return 'Failed';
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
@@ -26,32 +27,26 @@ export default async function handler(req, res) {
     const { user, error: authError } = await getAuthedUser(req);
     if (authError || !user) return json(res, 401, { error: 'Unauthorized' });
 
-    const supabase = getSupabaseAdmin();
-    const stripe = getStripe();
+    const list = await callRazorpayApi('/payments?count=100');
+    const allPayments = Array.isArray(list?.items) ? list.items : [];
+    const email = String(user.email || '').toLowerCase();
 
-    const { data: profile } = await supabase
-      .from('users')
-      .select('stripe_customer_id')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!profile?.stripe_customer_id) {
-      return json(res, 200, { invoices: [] });
-    }
-
-    const list = await stripe.invoices.list({
-      customer: profile.stripe_customer_id,
-      limit: 30,
-    });
-
-    const invoices = list.data.map((inv) => ({
-      id: inv.number || inv.id,
-      plan: inv.lines?.data?.[0]?.description || 'Subscription',
-      date: formatDate(inv.created),
-      amount: formatAmount(inv.amount_paid || inv.amount_due, inv.currency),
-      status: normalizeStatus(inv.status),
-      hosted_invoice_url: inv.hosted_invoice_url || null,
-      invoice_pdf: inv.invoice_pdf || null,
+    const invoices = allPayments
+      .filter((payment) => {
+        const userIdNote = String(payment?.notes?.user_id || '');
+        const paymentEmail = String(payment?.email || '').toLowerCase();
+        return userIdNote === user.id || (email && paymentEmail === email);
+      })
+      .sort((a, b) => Number(b?.created_at || 0) - Number(a?.created_at || 0))
+      .slice(0, 30)
+      .map((payment) => ({
+        id: payment.id,
+        plan: String(payment?.notes?.plan || '').toLowerCase() === 'pro' ? 'Pro Plan' : 'Payment',
+        date: formatDate(payment.created_at),
+        amount: formatAmount(payment.amount, payment.currency),
+        status: normalizeStatus(payment.status),
+        hosted_invoice_url: null,
+        invoice_pdf: null,
     }));
 
     return json(res, 200, { invoices });

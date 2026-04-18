@@ -89,6 +89,32 @@ const mergeProfilePatch = (
   return next;
 };
 
+const loadRazorpayScript = async (): Promise<boolean> => {
+  if (typeof window === 'undefined') return false;
+  if (window.Razorpay) return true;
+
+  const existing = document.querySelector('script[data-razorpay-checkout="1"]');
+  if (existing) {
+    await new Promise((resolve) => {
+      const done = () => resolve(true);
+      existing.addEventListener('load', done, { once: true });
+      existing.addEventListener('error', done, { once: true });
+      setTimeout(done, 3000);
+    });
+    return Boolean(window.Razorpay);
+  }
+
+  return await new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.setAttribute('data-razorpay-checkout', '1');
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export const SettingsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as SettingsTab) || 'profile';
@@ -249,25 +275,74 @@ export const SettingsPage: React.FC = () => {
   const openCheckout = async () => {
     setBillingLoading(true);
     setBillingError(null);
-    const { url, error } = await authService.createStripeCheckoutSession();
-    setBillingLoading(false);
-    if (error || !url) {
+    const { url, razorpayOrder, error } = await authService.createStripeCheckoutSession();
+    if (error) {
+      setBillingLoading(false);
       setBillingError(error?.message || 'Failed to start checkout');
       return;
     }
-    window.location.href = url;
+    if (url) {
+      setBillingLoading(false);
+      window.location.href = url;
+      return;
+    }
+    if (!razorpayOrder) {
+      setBillingLoading(false);
+      setBillingError('Checkout session missing');
+      return;
+    }
+
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded || !window.Razorpay) {
+      setBillingLoading(false);
+      setBillingError('Unable to load payment gateway. Please refresh and try again.');
+      return;
+    }
+
+    const razorpay = new window.Razorpay({
+      key: razorpayOrder.keyId,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      name: razorpayOrder.name,
+      description: razorpayOrder.description,
+      order_id: razorpayOrder.orderId,
+      prefill: razorpayOrder.prefill,
+      theme: { color: '#4F46E5' },
+      handler: async (response) => {
+        setBillingLoading(true);
+        const result = await authService.verifyRazorpayPayment(response);
+        setBillingLoading(false);
+        if (result.error || !result.success) {
+          setBillingError(result.error?.message || 'Payment verification failed');
+          return;
+        }
+
+        const { data, error: invoiceError } = await authService.getStripeInvoices();
+        if (!invoiceError) setInvoices(data);
+
+        window.location.href = razorpayOrder.successUrl || '/app/settings?tab=billing&checkout=success';
+      },
+    });
+
+    razorpay.on('payment.failed', (eventData) => {
+      const payload =
+        eventData && typeof eventData === 'object' ? (eventData as { error?: { description?: string } }) : null;
+      const message = payload?.error?.description || 'Payment failed. Please try another card or bank.';
+      setBillingError(message);
+      setBillingLoading(false);
+    });
+
+    setBillingLoading(false);
+    razorpay.open();
   };
 
   const openPortal = async () => {
-    setBillingLoading(true);
-    setBillingError(null);
-    const { url, error } = await authService.createStripePortalSession();
-    setBillingLoading(false);
-    if (error || !url) {
-      setBillingError(error?.message || 'Failed to open billing portal');
-      return;
+    if (typeof window !== 'undefined' && window.location.pathname.includes('/app/settings')) {
+      document.getElementById('invoice-history')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      const { url } = await authService.createStripePortalSession();
+      if (url) window.location.href = url;
     }
-    window.location.href = url;
   };
 
   if (!profile) return <div className="p-8 flex justify-center"><RefreshCw className="animate-spin text-slate-400" /></div>;
@@ -441,7 +516,7 @@ export const SettingsPage: React.FC = () => {
                 <div className="p-8 max-w-5xl mx-auto space-y-12">
                     
                     {/* Tone Section */}
-                    <div>
+                    <div id="invoice-history">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                             <Zap size={20} className="text-amber-500" /> Default Tone
                         </h3>
@@ -613,7 +688,7 @@ export const SettingsPage: React.FC = () => {
                                   disabled={billingLoading}
                                   className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold text-sm hover:bg-slate-100 transition-colors shadow-lg disabled:opacity-60"
                                 >
-                                    {billingLoading ? 'Opening...' : user?.plan === 'pro' ? 'Manage Subscription' : 'Upgrade to Pro'}
+                                    {billingLoading ? 'Opening...' : user?.plan === 'pro' ? 'View Billing History' : 'Upgrade to Pro'}
                                 </button>
                                 <button
                                   onClick={() => {

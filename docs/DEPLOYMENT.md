@@ -10,7 +10,7 @@ Project includes:
 
 ## 1. Prerequisites
 - Supabase project created
-- Stripe account configured (optional but required for billing features)
+- Razorpay account configured (optional but required for billing features)
 - Resend account configured (optional but required for campaign sending)
 - Upstash Redis configured (recommended for strict global rate limiting)
 
@@ -28,9 +28,11 @@ Core:
 
 Billing:
 - `APP_BASE_URL`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_ID_PRO_MONTHLY`
+- `RAZORPAY_KEY_ID`
+- `RAZORPAY_KEY_SECRET`
+- `RAZORPAY_WEBHOOK_SECRET`
+- `RAZORPAY_CURRENCY`
+- `RAZORPAY_PRO_AMOUNT_MINOR`
 
 Marketing:
 - `PUBLIC_APP_URL`
@@ -68,7 +70,7 @@ Run:
 - key dashboard and jobs pages
 - public site load and signup flow
 - verify `sitemap.xml` and `robots.txt` in production
-- Stripe checkout + webhook in test mode
+- Razorpay checkout + webhook in test mode
 
 ## 6. Caching and Cost Notes
 - Static assets are immutable-cached by Vercel.

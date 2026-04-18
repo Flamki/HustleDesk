@@ -20,7 +20,8 @@ const hasTemplatePlaceholder = (value: string): boolean => {
     v.includes('YOUR_PROJECT') ||
     v.includes('YOUR_SUPABASE') ||
     v.includes('SET_A_LONG_RANDOM_TOKEN') ||
-    v.includes('PRICE_...')
+    v.includes('PRICE_...') ||
+    v.includes('RZP_TEST_...')
   );
 };
 
@@ -47,13 +48,13 @@ export const validateEnvironment = (): EnvValidationResult => {
   const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
   const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
   const redirectOrigin = (import.meta.env.VITE_AUTH_REDIRECT_ORIGIN || '').trim();
-  const hasStripePrice = Boolean((import.meta.env.VITE_STRIPE_PRICE_ID_PRO_MONTHLY || '').trim());
+  const hasRazorpayKeyId = Boolean((import.meta.env.VITE_RAZORPAY_KEY_ID || '').trim());
 
   // Critical checks
   checks.supabaseUrl = Boolean(supabaseUrl);
   checks.supabaseAnonKey = Boolean(supabaseAnonKey);
   checks.redirectOrigin = Boolean(redirectOrigin);
-  checks.stripePrice = hasStripePrice;
+  checks.razorpayKeyId = hasRazorpayKeyId;
 
   if (!supabaseUrl) {
     errors.push(
@@ -85,9 +86,9 @@ export const validateEnvironment = (): EnvValidationResult => {
     errors.push('VITE_AUTH_REDIRECT_ORIGIN must be a valid URL (http://localhost:5173 or your production domain).');
   }
 
-  if (!hasStripePrice) {
+  if (!hasRazorpayKeyId) {
     warnings.push(
-      'VITE_STRIPE_PRICE_ID_PRO_MONTHLY is not set (optional on client). Billing UI will rely on server env only.'
+      'VITE_RAZORPAY_KEY_ID is not set (optional on client). Billing UI will rely on server env only.'
     );
   }
 

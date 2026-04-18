@@ -55,14 +55,14 @@ export const validateServerEnvironment = () => {
   }
 
   // Billing configuration (optional but required for billing features)
-  checks.stripe = {
-    secretKey: validatePresence(process.env.STRIPE_SECRET_KEY),
-    webhookSecret: validatePresence(process.env.STRIPE_WEBHOOK_SECRET),
-    priceId: validatePresence(process.env.STRIPE_PRICE_ID_PRO_MONTHLY),
+  checks.razorpay = {
+    keyId: validatePresence(process.env.RAZORPAY_KEY_ID),
+    keySecret: validatePresence(process.env.RAZORPAY_KEY_SECRET),
+    webhookSecret: validatePresence(process.env.RAZORPAY_WEBHOOK_SECRET),
   };
 
-  if (!checks.stripe.secretKey || !checks.stripe.webhookSecret) {
-    warnings.push('Stripe configuration incomplete - billing features will be disabled');
+  if (!checks.razorpay.keyId || !checks.razorpay.keySecret) {
+    warnings.push('Razorpay configuration incomplete - billing features will be disabled');
   }
 
   // Email configuration (optional but required for email features)
@@ -148,7 +148,7 @@ export const getEnvInfo = () => {
   return {
     nodeEnv: process.env.NODE_ENV || 'development',
     hasSupabase: Boolean(process.env.SUPABASE_URL),
-    hasStripe: Boolean(process.env.STRIPE_SECRET_KEY),
+    hasRazorpay: Boolean(process.env.RAZORPAY_KEY_ID),
     hasResend: Boolean(process.env.RESEND_API_KEY),
     hasRedis: Boolean(process.env.UPSTASH_REDIS_REST_URL),
     hasFireworks: Boolean(process.env.FIREWORKS_API_KEY),

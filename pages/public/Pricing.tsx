@@ -4,7 +4,7 @@ import { PublicPageTemplate } from './PublicPageTemplate';
 export const Pricing: React.FC = () => (
   <PublicPageTemplate
     title="Pricing"
-    description="Simple GetSoloDesk pricing for freelancers with Stripe billing and subscription management."
+    description="Simple GetSoloDesk pricing for freelancers with Razorpay billing and international checkout."
     path="/pricing"
     keywords={[
       'freelancer crm pricing',
@@ -15,7 +15,7 @@ export const Pricing: React.FC = () => (
     intro="Start free, then upgrade when you need advanced operations, billing, and automation."
     bullets={[
       'Single subscription for complete freelancer toolkit',
-      'Stripe checkout and billing portal included',
+      'Razorpay checkout with international card support',
       'No hidden setup or migration fees',
       'Upgrade/downgrade any time',
     ]}

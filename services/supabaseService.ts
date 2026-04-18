@@ -2001,10 +2001,33 @@ export const updateClientSegmentationWeights = async (
   }
 };
 
-export const createStripeCheckoutSession = async (): Promise<{ url: string | null; error: Error | null }> => {
-  if (!supabase) return { url: null, error: new Error('Supabase not configured') };
+export type RazorpayCheckoutOrder = {
+  provider: 'razorpay';
+  keyId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  prefill?: {
+    email?: string;
+    name?: string;
+    contact?: string;
+  };
+  successUrl?: string;
+  cancelUrl?: string;
+};
+
+export type BillingCheckoutSession = {
+  url: string | null;
+  razorpayOrder: RazorpayCheckoutOrder | null;
+  error: Error | null;
+};
+
+export const createStripeCheckoutSession = async (): Promise<BillingCheckoutSession> => {
+  if (!supabase) return { url: null, razorpayOrder: null, error: new Error('Supabase not configured') };
   const token = await getSupabaseToken();
-  if (!token) return { url: null, error: new Error('Unauthorized') };
+  if (!token) return { url: null, razorpayOrder: null, error: new Error('Unauthorized') };
 
   try {
     const response = await fetchWithTimeout('/api/payments/create-checkout-session', {
@@ -2014,11 +2037,31 @@ export const createStripeCheckoutSession = async (): Promise<{ url: string | nul
       },
     }, 15000);
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) return { url: null, error: new Error(body.error || 'Failed to start checkout') };
-    if (!body.url) return { url: null, error: new Error('Checkout URL missing') };
-    return { url: body.url, error: null };
+    if (!response.ok) return { url: null, razorpayOrder: null, error: new Error(body.error || 'Failed to start checkout') };
+
+    if (body?.provider === 'razorpay' && body?.orderId && body?.keyId) {
+      return {
+        url: null,
+        razorpayOrder: {
+          provider: 'razorpay',
+          keyId: String(body.keyId),
+          orderId: String(body.orderId),
+          amount: Number(body.amount || 0),
+          currency: String(body.currency || 'USD'),
+          name: String(body.name || 'GetSoloDesk'),
+          description: String(body.description || 'GetSoloDesk Pro'),
+          prefill: body.prefill && typeof body.prefill === 'object' ? body.prefill : undefined,
+          successUrl: body.successUrl ? String(body.successUrl) : undefined,
+          cancelUrl: body.cancelUrl ? String(body.cancelUrl) : undefined,
+        },
+        error: null,
+      };
+    }
+
+    if (!body.url) return { url: null, razorpayOrder: null, error: new Error('Checkout session missing') };
+    return { url: body.url, razorpayOrder: null, error: null };
   } catch {
-    return { url: null, error: new Error('Failed to start checkout') };
+    return { url: null, razorpayOrder: null, error: new Error('Failed to start checkout') };
   }
 };
 
@@ -2136,6 +2179,40 @@ export const updateNotificationSettings = async (
     return { data: (body.settings || null) as NotificationSettingsDto | null, error: null };
   } catch {
     return { data: null, error: new Error('Failed to update notification settings') };
+  }
+};
+
+export const verifyRazorpayPayment = async (
+  payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }
+): Promise<{ success: boolean; status?: string; error: Error | null }> => {
+  if (!supabase) return { success: false, error: new Error('Supabase not configured') };
+  const token = await getSupabaseToken();
+  if (!token) return { success: false, error: new Error('Unauthorized') };
+
+  try {
+    const response = await fetchWithTimeout('/api/payments/verify-payment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    }, 15000);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { success: false, error: new Error(body.error || 'Failed to verify payment') };
+    }
+    return {
+      success: Boolean(body.success),
+      status: body.status ? String(body.status) : undefined,
+      error: null,
+    };
+  } catch {
+    return { success: false, error: new Error('Failed to verify payment') };
   }
 };
 
