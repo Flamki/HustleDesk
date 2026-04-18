@@ -1318,40 +1318,85 @@ export const deleteJob = async (id: string): Promise<{ error: Error | null }> =>
   return { error: error ?? null };
 };
 
-export const getJobById = async (id: string): Promise<{ data: Job | null; error: Error | null }> => {
-  if (!supabase) {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    const localJob = getStoredJobs().find((job) => job.id === id);
-    if (localJob) return { data: localJob, error: null };
-  } else {
-    const { data, error } = await supabase.from('jobs').select('*').eq('id', id).maybeSingle();
-    if (error) return { data: null, error };
-    if (data) return { data: mapDbJobToAppJob(data as DbJobRow), error: null };
+const normalizeJobId = (rawId: string): string => {
+  const raw = String(rawId || '');
+  if (!raw) return '';
+
+  let decoded = raw;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    decoded = raw;
   }
 
-  const mockJob: Job = {
-    id,
-    title: 'Senior React Developer Needed for SaaS Dashboard',
-    company: 'TechFlow Inc.',
-    platform: 'Upwork',
-    description: `We are looking for an experienced React developer to build a modern dashboard for our SaaS product.
-    
-Requirements:
-- Strong proficiency in React, TypeScript, and Tailwind CSS.
-- Experience with charting libraries (Recharts, Chart.js).
-- Ability to write clean, reusable components.
-- Familiarity with Supabase is a plus.`,
-    budgetMin: 50,
-    budgetMax: 80,
-    currency: 'USD',
-    proposedPrice: 75,
-    status: 'Saved',
-    createdAt: new Date().toISOString(),
-    notes: 'Client seems to prefer fast turnaround. Mention Figma experience.',
-    userId: 'user_existing_123',
-  };
+  return decoded
+    .trim()
+    .replace(/^"+|"+$/g, '')
+    .replace(/\/+$/g, '')
+    .split(/[?#]/, 1)[0]
+    .trim();
+};
 
-  return { data: mockJob, error: null };
+const findJobInLocalSources = (rawId: string): Job | null => {
+  const targetId = normalizeJobId(rawId);
+  if (!targetId) return null;
+
+  const fromStored = getStoredJobs().find((job) => normalizeJobId(job.id) === targetId);
+  if (fromStored) return fromStored;
+
+  for (const cacheEntry of jobsListCache.values()) {
+    const cachedJobs = cacheEntry?.data?.jobs;
+    if (!Array.isArray(cachedJobs)) continue;
+    const found = cachedJobs.find((job) => normalizeJobId(job.id) === targetId);
+    if (found) return found;
+  }
+
+  return null;
+};
+
+export const getJobById = async (id: string): Promise<{ data: Job | null; error: Error | null }> => {
+  const normalizedId = normalizeJobId(id);
+  if (!normalizedId) return { data: null, error: new Error('Invalid job ID') };
+
+  const fallbackLocal = findJobInLocalSources(normalizedId);
+
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    if (fallbackLocal) return { data: fallbackLocal, error: null };
+    return { data: null, error: new Error('Job not found') };
+  }
+
+  const { data, error } = await supabase.from('jobs').select('*').eq('id', normalizedId).maybeSingle();
+  if (!error && data) return { data: mapDbJobToAppJob(data as DbJobRow), error: null };
+
+  if (error) {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (!userError && user) {
+      const { data: rows, error: listError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      if (!listError && Array.isArray(rows)) {
+        const recovered = (rows as DbJobRow[]).find((row) => normalizeJobId(String(row.id)) === normalizedId);
+        if (recovered) return { data: mapDbJobToAppJob(recovered), error: null };
+      }
+    }
+
+    if (fallbackLocal) return { data: fallbackLocal, error: null };
+    return { data: null, error };
+  }
+
+  if (data) return { data: mapDbJobToAppJob(data as DbJobRow), error: null };
+  if (fallbackLocal) return { data: fallbackLocal, error: null };
+
+  return { data: null, error: new Error('Job not found') };
 };
 
 export type ProposalSettings = {

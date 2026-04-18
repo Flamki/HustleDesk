@@ -627,7 +627,10 @@ export const JobsPage: React.FC = () => {
             setJobToDelete(selectedJob);
             setSelectedJob(null);
           }}
-          onGenerateProposal={(jobId) => navigate(`/app/proposals/generate/${jobId}`)}
+          onGenerateProposal={(jobId) => {
+            const safeJobId = encodeURIComponent(String(jobId || '').trim());
+            navigate(`/app/proposals/generate/${safeJobId}`);
+          }}
         />
       )}
 

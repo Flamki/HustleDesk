@@ -62,9 +62,11 @@ export const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ jobId }) =
   // Load Job
   useEffect(() => {
     const loadData = async () => {
+      setLoadingJob(true);
+      setError(null);
       try {
         const { data, error } = await authService.getJobById(jobId);
-        if (error || !data) throw new Error('Failed to load job');
+        if (!data) throw new Error(error?.message || 'Failed to load job');
         setJob(data);
         if (data.proposal) {
             setProposal(data.proposal);
@@ -76,7 +78,7 @@ export const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ jobId }) =
             setCreditsRemaining(user.aiCreditsLimit - user.aiCreditsUsed);
         }
       } catch (err) {
-        setError('Could not load job details');
+        setError(err instanceof Error ? err.message : 'Could not load job details');
       } finally {
         setLoadingJob(false);
       }
@@ -193,6 +195,7 @@ export const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ jobId }) =
       return (
           <div className="p-8 text-center">
               <h2 className="text-xl font-bold">Job not found</h2>
+              {error && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{error}</p>}
               <button onClick={() => navigate('/app/jobs')} className="text-indigo-600 mt-4">Back to Jobs</button>
           </div>
       );

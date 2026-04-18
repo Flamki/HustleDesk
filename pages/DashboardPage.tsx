@@ -234,7 +234,7 @@ export const DashboardPage: React.FC = () => {
                       {job.platform} - {sinceApplied} day{sinceApplied !== 1 ? 's' : ''} since applied
                     </p>
                     <Link
-                      to={`/app/proposals/generate/${job.id}`}
+                      to={`/app/proposals/generate/${encodeURIComponent(String(job.id || '').trim())}`}
                       className="inline-flex mt-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
                     >
                       Send Follow-Up

@@ -242,7 +242,8 @@ export const AddJobForm: React.FC = () => {
     if (action === 'save') {
         navigate('/app/jobs');
     } else {
-        navigate(`/app/proposals/generate/${newJob.id}`);
+        const safeJobId = encodeURIComponent(String(newJob.id || '').trim());
+        navigate(`/app/proposals/generate/${safeJobId}`);
     }
   };
 
