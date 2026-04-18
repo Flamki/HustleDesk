@@ -6,6 +6,8 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const APP_BASE_URL = (process.env.APP_BASE_URL || process.env.PUBLIC_APP_URL || '').replace(/\/+$/, '');
 const FROM_EMAIL = process.env.MARKETING_FROM_EMAIL || '';
 const FROM_NAME = process.env.MARKETING_FROM_NAME || 'GetSoloDesk';
+const isSchemaCompatibilityError = (message = '') =>
+  /relation .* does not exist|column .* does not exist|Could not find .* in the schema cache/i.test(message);
 
 const json = (res, status, body) => {
   res.statusCode = status;
@@ -32,6 +34,35 @@ const parseBody = (req) => {
 };
 
 const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+
+const resolveUserEmail = async (supabase, userId) => {
+  let email = '';
+
+  try {
+    const { data: userRow, error: userError } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userError && !isSchemaCompatibilityError(userError.message || '')) {
+      throw new Error(userError.message);
+    }
+    email = userRow?.email || '';
+  } catch (err) {
+    throw err instanceof Error ? err : new Error('Failed to resolve destination user email');
+  }
+
+  if (isEmail(email)) return email;
+
+  try {
+    const { data, error } = await supabase.auth.admin.getUserById(userId);
+    if (error) return email;
+    return data?.user?.email || email;
+  } catch {
+    return email;
+  }
+};
 
 const isAuthorizedCall = (req) => {
   const expected = process.env.CRON_SECRET || process.env.HEALTHCHECK_TOKEN || '';
@@ -117,13 +148,11 @@ export default async function handler(req, res) {
 
   let targetEmail = emailOverride;
   if (!targetEmail) {
-    const { data: userRow, error: userError } = await supabase
-      .from('users')
-      .select('email')
-      .eq('id', job.user_id)
-      .maybeSingle();
-    if (userError) return json(res, 500, { error: userError.message });
-    targetEmail = userRow?.email || '';
+    try {
+      targetEmail = await resolveUserEmail(supabase, job.user_id);
+    } catch (err) {
+      return json(res, 500, { error: err instanceof Error ? err.message : 'Failed to resolve destination email' });
+    }
   }
 
   if (!isEmail(targetEmail)) {

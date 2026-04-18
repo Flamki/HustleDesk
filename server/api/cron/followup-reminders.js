@@ -6,6 +6,8 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const APP_BASE_URL = (process.env.APP_BASE_URL || process.env.PUBLIC_APP_URL || '').replace(/\/+$/, '');
 const FROM_EMAIL = process.env.MARKETING_FROM_EMAIL || '';
 const FROM_NAME = process.env.MARKETING_FROM_NAME || 'GetSoloDesk';
+const isSchemaCompatibilityError = (message = '') =>
+  /relation .* does not exist|column .* does not exist|Could not find .* in the schema cache/i.test(message);
 
 const json = (res, status, body) => {
   res.statusCode = status;
@@ -20,6 +22,28 @@ const getHeader = (req, name) => {
 };
 
 const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+
+const fetchAuthEmails = async (supabase, userIds, knownEmails) => {
+  const missingUserIds = userIds.filter((userId) => !isEmail(knownEmails.get(userId)));
+  if (missingUserIds.length === 0) return new Map();
+
+  const resolved = new Map();
+
+  await Promise.all(
+    missingUserIds.map(async (userId) => {
+      try {
+        const { data, error } = await supabase.auth.admin.getUserById(userId);
+        if (error) return;
+        const email = data?.user?.email || '';
+        if (isEmail(email)) resolved.set(userId, email);
+      } catch {
+        // Best-effort fallback only.
+      }
+    })
+  );
+
+  return resolved;
+};
 
 const renderReminderText = ({ title, company, platform, followupAt }) => {
   const dueLabel = followupAt ? new Date(followupAt).toLocaleString() : 'now';
@@ -121,22 +145,38 @@ export default async function handler(req, res) {
     supabase.from('notification_settings').select('user_id,followup_reminders').in('user_id', userIds),
   ]);
 
-  if (usersError) return json(res, 500, { error: usersError.message });
-  if (settingsError) return json(res, 500, { error: settingsError.message });
+  if (usersError && !isSchemaCompatibilityError(usersError.message || '')) {
+    return json(res, 500, { error: usersError.message });
+  }
+  if (settingsError && !isSchemaCompatibilityError(settingsError.message || '')) {
+    return json(res, 500, { error: settingsError.message });
+  }
 
   const userEmailById = new Map((users || []).map((u) => [u.id, u.email]));
+  const fallbackAuthEmails = await fetchAuthEmails(supabase, userIds, userEmailById);
+  fallbackAuthEmails.forEach((email, userId) => userEmailById.set(userId, email));
+
   const reminderPrefByUser = new Map((settingsRows || []).map((s) => [s.user_id, Boolean(s.followup_reminders)]));
 
   let sent = 0;
   let skipped = 0;
+  let skippedNoEmail = 0;
+  let skippedDisabled = 0;
   let failed = 0;
 
   for (const job of candidates) {
     const userEmail = userEmailById.get(job.user_id);
     const remindersEnabled = reminderPrefByUser.has(job.user_id) ? reminderPrefByUser.get(job.user_id) : true;
 
-    if (!remindersEnabled || !isEmail(userEmail)) {
+    if (!remindersEnabled) {
       skipped += 1;
+      skippedDisabled += 1;
+      continue;
+    }
+
+    if (!isEmail(userEmail)) {
+      skipped += 1;
+      skippedNoEmail += 1;
       continue;
     }
 
@@ -176,6 +216,8 @@ export default async function handler(req, res) {
     due: candidates.length,
     sent,
     skipped,
+    skipped_no_email: skippedNoEmail,
+    skipped_disabled: skippedDisabled,
     failed,
     timestamp: nowIso,
   });
