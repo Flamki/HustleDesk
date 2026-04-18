@@ -592,7 +592,7 @@ export const EmailMarketingPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">From email</label>
-                <input value={composeFromEmail} onChange={(e) => setComposeFromEmail(e.target.value)} placeholder="onboarding@yourdomain.com" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/30 text-slate-900 dark:text-white text-sm" />
+                <input value={composeFromEmail} onChange={(e) => setComposeFromEmail(e.target.value)} placeholder="getsolodesk@gmail.com" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/30 text-slate-900 dark:text-white text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">Reply-To (optional)</label>

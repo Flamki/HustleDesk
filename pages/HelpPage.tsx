@@ -333,7 +333,7 @@ export const HelpPage: React.FC = () => {
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-8 pt-4">
                             <div className="text-center">
                                 <div className="text-xs font-bold uppercase tracking-wider text-indigo-300 mb-1">Email Support</div>
-                                <div className="font-mono bg-black/20 px-3 py-1 rounded text-sm">support@clientpilot.app</div>
+                                <div className="font-mono bg-black/20 px-3 py-1 rounded text-sm">getsolodesk@gmail.com</div>
                             </div>
                             <div className="hidden sm:block w-px h-12 bg-indigo-800"></div>
                              <div className="text-center">
