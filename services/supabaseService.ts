@@ -1688,7 +1688,7 @@ export const generateProposal = async (
   jobId: string,
   settings: ProposalSettings,
   profile?: FreelancerProfile | null
-): Promise<{ proposal: string; creditsRemaining: number }> => {
+): Promise<{ proposal: string; creditsRemaining: number; provider?: string; warning?: string | null }> => {
   if (!supabase) {
     await new Promise((resolve) => setTimeout(resolve, 1200));
     return { proposal: buildFallbackProposal(settings, profile), creditsRemaining: 2 };
@@ -1716,7 +1716,13 @@ export const generateProposal = async (
     25000
   );
 
-  const body = await parseJsonSafe<{ proposal?: string; creditsRemaining?: number; error?: string }>(response);
+  const body = await parseJsonSafe<{
+    proposal?: string;
+    creditsRemaining?: number;
+    error?: string;
+    provider?: string;
+    warning?: string | null;
+  }>(response);
   if (!response.ok) {
     throw new Error(body?.error || 'Failed to generate proposal');
   }
@@ -1731,6 +1737,8 @@ export const generateProposal = async (
     creditsRemaining: Number.isFinite(Number(body?.creditsRemaining))
       ? Number(body?.creditsRemaining)
       : 0,
+    provider: typeof body?.provider === 'string' ? String(body.provider) : undefined,
+    warning: typeof body?.warning === 'string' ? String(body.warning) : null,
   };
 };
 

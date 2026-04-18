@@ -8,6 +8,25 @@ const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_
 const ALLOWED_TONES = new Set(['professional', 'friendly', 'confident']);
 const ALLOWED_LENGTHS = new Set(['concise', 'standard', 'detailed']);
 
+const normalizeJobId = (raw) => {
+  const value = String(raw || '');
+  if (!value) return '';
+  let decoded = value;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    decoded = value;
+  }
+  return decoded
+    .trim()
+    .replace(/^"+|"+$/g, '')
+    .replace(/\/+$/g, '')
+    .split(/[?#]/, 1)[0]
+    .trim();
+};
+
+const truncate = (value, max = 1200) => String(value || '').slice(0, Math.max(0, max)).trim();
+
 const parseBody = (req) => {
   if (!req?.body) return {};
   if (typeof req.body === 'string') {
@@ -64,7 +83,9 @@ const buildProposalPrompt = ({ job, profile, tone, length, highlights }) => {
   const lengthGuide = normalizeLengthGuidance(length);
   const safeProfile = profile && typeof profile === 'object' ? profile : {};
   const portfolio = safeProfile.portfolioUrl || safeProfile.linkedinUrl || 'Not provided';
-  const topSkills = Array.isArray(safeProfile.skills) ? safeProfile.skills.slice(0, 8) : [];
+  const topSkills = Array.isArray(safeProfile.skills)
+    ? safeProfile.skills.map((s) => truncate(s, 40)).filter(Boolean).slice(0, 8)
+    : [];
   const projects = Array.isArray(safeProfile.pastProjects) ? safeProfile.pastProjects.slice(0, 2) : [];
 
   return `
@@ -82,24 +103,53 @@ Job Context:
 - Company: ${job.company || 'Not specified'}
 - Platform: ${job.platform}
 - Budget: ${job.currency || 'USD'} ${job.budget_min ?? 'N/A'} - ${job.budget_max ?? 'N/A'}
-- Description: ${job.job_description || 'N/A'}
-- Client Notes: ${job.notes || 'N/A'}
+- Description: ${truncate(job.job_description, 3000) || 'N/A'}
+- Client Notes: ${truncate(job.notes, 800) || 'N/A'}
 
 Freelancer Profile:
 - Years Experience: ${safeProfile.yearsExperience ?? 0}
 - Hourly Rate: ${safeProfile.hourlyRate ?? 'N/A'}
 - Skills: ${topSkills.length ? topSkills.join(', ') : 'Not provided'}
-- Bio: ${safeProfile.bio || 'Not provided'}
+- Bio: ${truncate(safeProfile.bio, 900) || 'Not provided'}
 - Portfolio/LinkedIn: ${portfolio}
 - Past Projects: ${
     projects.length
       ? projects
-          .map((p, idx) => `${idx + 1}. ${p.name || 'Project'} | ${(p.technologies || []).join(', ')} | ${p.description || ''}`)
+          .map((p, idx) => {
+            const tech = Array.isArray(p.technologies)
+              ? p.technologies.map((t) => truncate(t, 24)).filter(Boolean).slice(0, 8).join(', ')
+              : '';
+            return `${idx + 1}. ${truncate(p.name, 80) || 'Project'} | ${tech || 'N/A'} | ${truncate(p.description, 260)}`;
+          })
           .join('\n')
       : 'Not provided'
   }
 - Requested Highlights: ${highlights.length ? highlights.join(', ') : 'None'}
 `.trim();
+};
+
+const buildFallbackProposal = ({ job, profile, tone, length }) => {
+  const safeProfile = profile && typeof profile === 'object' ? profile : {};
+  const skills = Array.isArray(safeProfile.skills) ? safeProfile.skills.filter(Boolean).slice(0, 4) : [];
+  const introByTone = {
+    professional: `Hi ${job.company || 'there'},`,
+    friendly: `Hello ${job.company || 'there'},`,
+    confident: `Hi ${job.company || 'there'} -`,
+  };
+  const sizeByLength = {
+    concise: 2,
+    standard: 3,
+    detailed: 4,
+  };
+  const lines = [
+    `${introByTone[tone] || introByTone.professional} I can help with your ${job.title} project and deliver a polished outcome quickly.`,
+    `I have ${safeProfile.yearsExperience || 'relevant'} years of experience${
+      skills.length ? ` with ${skills.join(', ')}` : ''
+    } and can align the solution to your ${job.platform} requirements.`,
+    `Based on your brief, I would focus on clean execution, clear communication, and measurable delivery milestones so you can review progress with confidence.`,
+    `If this sounds good, I can start immediately and share a clear execution plan in the first update.`,
+  ];
+  return lines.slice(0, sizeByLength[length] || 3).join('\n\n');
 };
 
 export default async function handler(req, res) {
@@ -113,7 +163,7 @@ export default async function handler(req, res) {
     if (error) return secureJson(res, status, { error });
 
     const body = parseBody(req);
-    const jobId = String(body.jobId || '').trim();
+    const jobId = normalizeJobId(body.jobId);
     if (!jobId) return secureJson(res, 400, { error: 'jobId is required' });
 
     const tone = ALLOWED_TONES.has(String(body?.settings?.tone || ''))
@@ -139,21 +189,30 @@ export default async function handler(req, res) {
 
     const lengthGuide = normalizeLengthGuidance(length);
     const prompt = buildProposalPrompt({ job, profile, tone, length, highlights });
-    const completion = await callFireworksChat({
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an elite freelancer proposal strategist. Write practical, personalized proposals that win client replies.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.45,
-      maxTokens: lengthGuide.maxTokens,
-    });
+    let proposal = '';
+    let provider = 'fireworks';
+    let warning = null;
+    try {
+      const completion = await callFireworksChat({
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are an elite freelancer proposal strategist. Write practical, personalized proposals that win client replies.',
+          },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.45,
+        maxTokens: lengthGuide.maxTokens,
+      });
 
-    const proposal = sanitizeProposal(completion.content);
-    if (!proposal) return secureJson(res, 502, { error: 'AI returned an empty proposal' });
+      proposal = sanitizeProposal(completion.content);
+      if (!proposal) throw new Error('AI returned an empty proposal');
+    } catch (generationError) {
+      provider = 'fallback';
+      warning = `Fireworks generation failed: ${sanitizeError(generationError)}`;
+      proposal = buildFallbackProposal({ job, profile, tone, length });
+    }
 
     let creditsRemaining = 0;
     const { data: usageRow } = await supabase
@@ -171,7 +230,8 @@ export default async function handler(req, res) {
     return secureJson(res, 200, {
       proposal,
       creditsRemaining,
-      provider: 'fireworks',
+      provider,
+      warning,
     });
   } catch (error) {
     return secureJson(res, 500, { error: sanitizeError(error) });

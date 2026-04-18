@@ -51,6 +51,7 @@ export const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ jobId }) =
   const [generationStep, setGenerationStep] = useState(0);
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [generationNotice, setGenerationNotice] = useState<string | null>(null);
   
   // UI State
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
@@ -127,6 +128,7 @@ export const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ jobId }) =
 
     setIsGenerating(true);
     setError(null);
+    setGenerationNotice(null);
 
     try {
       const result = await authService.generateProposal(job.id, {
@@ -136,6 +138,11 @@ export const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ jobId }) =
       }, profile);
       setProposal(result.proposal);
       setCreditsRemaining(result.creditsRemaining);
+      if (result.warning) {
+        setGenerationNotice('Generated with backup mode. Fireworks will be retried automatically on next generation.');
+      } else if (result.provider === 'fireworks') {
+        setGenerationNotice('Generated with Fireworks AI.');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate proposal. Please try again.');
     } finally {
@@ -349,6 +356,16 @@ export const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ jobId }) =
 
          {/* Content Area */}
          <div className="flex-1 p-6 lg:p-12 flex flex-col max-w-4xl mx-auto w-full">
+             {error && (
+                 <div className="mb-4 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                     {error}
+                 </div>
+             )}
+             {!error && generationNotice && (
+                 <div className="mb-4 rounded-xl border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-3 text-sm text-indigo-700 dark:text-indigo-300">
+                     {generationNotice}
+                 </div>
+             )}
              {!proposal && !isGenerating ? (
                  <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 opacity-70">
                      <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/20 rounded-full flex items-center justify-center">
