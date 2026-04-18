@@ -103,14 +103,20 @@ if (env.warnings.length > 0) {
 }
 
 const RootLayout: React.FC = () => {
+  const shouldRedirectLegacyHost =
+    typeof window !== 'undefined' &&
+    String(window.location.hostname || '').toLowerCase() === 'hustle-desk-flamkis-projects.vercel.app';
+
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const host = String(window.location.hostname || '').toLowerCase();
-    if (host !== 'hustle-desk-flamkis-projects.vercel.app') return;
+    if (!shouldRedirectLegacyHost) return;
 
     const target = `https://getsolodesk.com${window.location.pathname}${window.location.search}${window.location.hash}`;
     window.location.replace(target);
-  }, []);
+  }, [shouldRedirectLegacyHost]);
+
+  if (shouldRedirectLegacyHost) {
+    return <RouteLoader label="Redirecting..." />;
+  }
 
   if (!env.ok) {
     return <StartupEnvGuard errors={env.errors} warnings={env.warnings} />;

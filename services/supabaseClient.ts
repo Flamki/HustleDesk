@@ -14,7 +14,15 @@ const proxyModeSetting = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_PROXY_MO
 const supabaseProxyMode =
   proxyModeSetting
     ? proxyModeSetting === 'true'
-    : Boolean(import.meta.env.PROD);
+    : false;
+
+const proxyAllowedHostsFromEnv = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_PROXY_ALLOWED_HOSTS);
+const proxyAllowedHosts = proxyAllowedHostsFromEnv
+  ? proxyAllowedHostsFromEnv
+      .split(',')
+      .map((value: string) => value.trim().toLowerCase())
+      .filter(Boolean)
+  : ['getsolodesk.com', 'www.getsolodesk.com'];
 
 type SupabaseBrowserClient = SupabaseClient<any, 'public', any>;
 
@@ -29,14 +37,22 @@ const isLocalHost = (host: string): boolean => {
   return h === 'localhost' || h === '127.0.0.1' || h === '::1';
 };
 
+const isProxyAllowedHost = (host: string): boolean => {
+  const h = (host || '').toLowerCase();
+  if (!h) return false;
+  if (h.endsWith('.vercel.app')) return false;
+  return proxyAllowedHosts.includes(h);
+};
+
 const resolveSupabaseUrl = (): string => {
   // Default to direct Supabase to keep auth/session stable.
-  // Enable first-party proxy only when VITE_SUPABASE_PROXY_MODE=true.
+  // Enable first-party proxy only when explicitly enabled and on approved hosts.
   if (
     typeof window !== 'undefined' &&
     import.meta.env.PROD &&
     supabaseProxyMode &&
-    !isLocalHost(window.location.hostname)
+    !isLocalHost(window.location.hostname) &&
+    isProxyAllowedHost(window.location.hostname)
   ) {
     return `${trimTrailingSlash(window.location.origin)}/api/sb`;
   }
@@ -49,14 +65,51 @@ export const hasSupabase = Boolean(getSupabaseBaseUrl() && supabaseAnonKey);
 const createSupabaseClient = (): SupabaseBrowserClient | null => {
   const baseUrl = getSupabaseBaseUrl();
   if (!hasSupabase) return null;
-  return createClient(baseUrl as string, supabaseAnonKey as string, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: false,
-      flowType: 'pkce',
-    },
-  });
+
+  const buildClient = (): SupabaseBrowserClient =>
+    createClient(baseUrl as string, supabaseAnonKey as string, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        flowType: 'pkce',
+      },
+    });
+
+  const isStorageJsonParseError = (error: unknown): boolean => {
+    const message = String((error as { message?: string } | null)?.message ?? error ?? '').toLowerCase();
+    return message.includes('not valid json') || message.includes('unexpected token');
+  };
+
+  const clearLikelyCorruptedAuthStorage = (): void => {
+    if (typeof window === 'undefined') return;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (!key) continue;
+      if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+  };
+
+  try {
+    return buildClient();
+  } catch (error) {
+    if (typeof window !== 'undefined' && isStorageJsonParseError(error)) {
+      try {
+        clearLikelyCorruptedAuthStorage();
+        return buildClient();
+      } catch (retryError) {
+        console.error('Supabase client init failed after auth storage cleanup:', retryError);
+        return null;
+      }
+    }
+
+    console.error('Supabase client init failed:', error);
+    return null;
+  }
 };
 
 export const supabase =

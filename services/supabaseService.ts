@@ -23,7 +23,7 @@ const JOBS_LIST_CACHE_TTL_MS = 15_000;
 const DASHBOARD_CACHE_TTL_MS = 10_000;
 const authLookupSetting = String(import.meta.env.VITE_AUTH_USE_DB_PROFILE_LOOKUP || '').toLowerCase().trim();
 const AUTH_USE_DB_PROFILE_LOOKUP = authLookupSetting ? authLookupSetting !== 'false' : true;
-const PROFILE_SETUP_TIMEOUT_MS = 3500;
+const PROFILE_SETUP_TIMEOUT_MS = 1800;
 
 type CacheEntry<T> = { ts: number; data: T };
 const jobsListCache = new Map<string, CacheEntry<JobsListResponse>>();
@@ -384,7 +384,7 @@ const loadUserFromUsersTable = async (id: string, email: string): Promise<User |
           .eq('id', id)
           .maybeSingle()
       ),
-      3500,
+      1800,
       'Profile lookup timed out'
     ) as {
       data: Partial<DbUserRow> | null;
@@ -543,7 +543,9 @@ const resolveUserAfterAuth = async (
   if (accessToken) {
     if (shouldBootstrap) {
       await ensureProfileSetup(userId, accessToken, 'ensure');
-    } else {
+    } else if (oauthIntent === 'login') {
+      // Keep strict account checks for OAuth-login intent, but do not
+      // block password-based login/session restores on this endpoint.
       const accountReady = await ensureProfileSetup(userId, accessToken, 'check');
       if (!accountReady) {
         setOAuthErrorCode('no_account');
@@ -553,6 +555,9 @@ const resolveUserAfterAuth = async (
         return null;
       }
       verifiedAccountReady = true;
+    } else {
+      verifiedAccountReady = true;
+      void ensureProfileSetup(userId, accessToken, 'check');
     }
   }
   const user = await loadUserFromUsersTable(userId, email);
@@ -593,9 +598,9 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
   });
 };
 
-const AUTH_CALL_TIMEOUT_MS = 15000;
-const SESSION_SETUP_TIMEOUT_MS = 8000;
-const SESSION_VALIDATE_TIMEOUT_MS = 6500;
+const AUTH_CALL_TIMEOUT_MS = 9000;
+const SESSION_SETUP_TIMEOUT_MS = 5000;
+const SESSION_VALIDATE_TIMEOUT_MS = 2500;
 const OAUTH_QUERY_KEYS = [
   'code',
   'state',
