@@ -14,10 +14,26 @@ import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import * as authService from '../services/supabaseService';
 import type { BillingInvoice } from '../services/supabaseService';
+import type { FollowupReminderSweepResult } from '../services/supabaseService';
 import type { NotificationSettingsDto } from '../services/supabaseService';
 import type { FreelancerProfile } from '../types';
 
 type SettingsTab = 'profile' | 'account' | 'billing' | 'notifications' | 'ai' | 'danger';
+
+const parseCsvSet = (value: string | undefined): Set<string> =>
+  new Set(
+    String(value || '')
+      .split(',')
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+const FOLLOWUP_SWEEP_ADMIN_EMAILS = parseCsvSet(
+  import.meta.env.VITE_FOLLOWUP_REMINDER_TRIGGER_ADMIN_EMAILS || import.meta.env.VITE_ADMIN_EMAILS
+);
+const FOLLOWUP_SWEEP_ADMIN_IDS = parseCsvSet(
+  import.meta.env.VITE_FOLLOWUP_REMINDER_TRIGGER_ADMIN_IDS || import.meta.env.VITE_ADMIN_USER_IDS
+);
 
 const deriveExperienceLevel = (years: number): FreelancerProfile['experienceLevel'] => {
   if (years >= 8) return 'Expert';
@@ -102,6 +118,15 @@ export const SettingsPage: React.FC = () => {
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifSaving, setNotifSaving] = useState(false);
   const [notifError, setNotifError] = useState<string | null>(null);
+  const [runSweepLoading, setRunSweepLoading] = useState(false);
+  const [runSweepError, setRunSweepError] = useState<string | null>(null);
+  const [runSweepResult, setRunSweepResult] = useState<FollowupReminderSweepResult | null>(null);
+
+  const userEmail = String(user?.email || '').trim().toLowerCase();
+  const userId = String(user?.id || '').trim().toLowerCase();
+  const isFollowupSweepAdmin =
+    (FOLLOWUP_SWEEP_ADMIN_EMAILS.size > 0 || FOLLOWUP_SWEEP_ADMIN_IDS.size > 0) &&
+    (FOLLOWUP_SWEEP_ADMIN_EMAILS.has(userEmail) || FOLLOWUP_SWEEP_ADMIN_IDS.has(userId));
 
   // Auto-scroll chat
   useEffect(() => {
@@ -165,6 +190,19 @@ export const SettingsPage: React.FC = () => {
     const { error } = await authService.updateNotificationSettings(next);
     setNotifSaving(false);
     if (error) setNotifError(error.message);
+  };
+
+  const runFollowupSweep = async () => {
+    setRunSweepLoading(true);
+    setRunSweepError(null);
+    const { data, error } = await authService.runFollowupReminderSweepNow();
+    setRunSweepLoading(false);
+    if (error || !data) {
+      setRunSweepResult(null);
+      setRunSweepError(error?.message || 'Failed to run follow-up sweep');
+      return;
+    }
+    setRunSweepResult(data);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -883,6 +921,42 @@ export const SettingsPage: React.FC = () => {
                                 </div>
                               </div>
                             ))}
+                            {isFollowupSweepAdmin && (
+                              <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                  <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-lg">
+                                      <Zap size={18} />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-slate-900 dark:text-white text-sm">Admin Follow-up Sweep</h4>
+                                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        Manually trigger due follow-up reminder emails right now.
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => void runFollowupSweep()}
+                                    disabled={runSweepLoading}
+                                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-colors"
+                                  >
+                                    {runSweepLoading ? <RefreshCw size={14} className="animate-spin" /> : <Rocket size={14} />}
+                                    {runSweepLoading ? 'Running...' : 'Run Sweep Now'}
+                                  </button>
+                                </div>
+                                {runSweepError && (
+                                  <div className="text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg px-3 py-2">
+                                    {runSweepError}
+                                  </div>
+                                )}
+                                {runSweepResult && (
+                                  <div className="text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-3">
+                                    Sweep complete: scanned {runSweepResult.scanned}, due {runSweepResult.due}, sent {runSweepResult.sent}, failed {runSweepResult.failed}, skipped {runSweepResult.skipped}.
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             <div className="px-6 py-4 text-xs text-slate-500 border-t border-slate-100 dark:border-slate-800">
                               {notifSaving ? 'Saving...' : 'Changes save automatically.'}
                             </div>

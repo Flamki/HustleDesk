@@ -1925,6 +1925,19 @@ export type NotificationSettingsDto = {
   weekly_summary: boolean;
 };
 
+export type FollowupReminderSweepResult = {
+  success: boolean;
+  triggered_by?: 'secret' | 'admin_user';
+  scanned: number;
+  due: number;
+  sent: number;
+  skipped: number;
+  skipped_no_email: number;
+  skipped_disabled: number;
+  failed: number;
+  timestamp: string;
+};
+
 export const getNotificationSettings = async (): Promise<{
   data: NotificationSettingsDto | null;
   error: Error | null;
@@ -1969,5 +1982,29 @@ export const updateNotificationSettings = async (
     return { data: (body.settings || null) as NotificationSettingsDto | null, error: null };
   } catch {
     return { data: null, error: new Error('Failed to update notification settings') };
+  }
+};
+
+export const runFollowupReminderSweepNow = async (): Promise<{
+  data: FollowupReminderSweepResult | null;
+  error: Error | null;
+}> => {
+  if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+  const token = await getSupabaseToken();
+  if (!token) return { data: null, error: new Error('Unauthorized') };
+
+  try {
+    const response = await fetchWithTimeout('/api/cron/followup-reminders-run-now', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }, 45000);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) return { data: null, error: new Error(body.error || 'Failed to run follow-up sweep') };
+    if (!body.success) return { data: null, error: new Error(body.error || 'Follow-up sweep did not complete') };
+    return { data: body as FollowupReminderSweepResult, error: null };
+  } catch {
+    return { data: null, error: new Error('Failed to run follow-up sweep') };
   }
 };
