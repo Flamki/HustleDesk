@@ -16,6 +16,13 @@ export const CheckEmailPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const [loading, setLoading] = React.useState(false);
   const [message, setMessage] = React.useState<string | null>(null);
+  const returnTo = searchParams.get('returnTo');
+  const signupBackPath = returnTo
+    ? `/signup?returnTo=${encodeURIComponent(returnTo)}`
+    : '/signup';
+  const loginPath = returnTo
+    ? `/login?returnTo=${encodeURIComponent(returnTo)}`
+    : '/login';
 
   React.useEffect(() => {
     if (!email || email === 'your email' || typeof window === 'undefined') return;
@@ -92,7 +99,13 @@ export const CheckEmailPage: React.FC = () => {
 
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
             <Link
-              to="/signup"
+              to={loginPath}
+              className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors flex items-center justify-center gap-1 mb-3 font-medium"
+            >
+              Already verified? Go to login
+            </Link>
+            <Link
+              to={signupBackPath}
               className="text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex items-center justify-center gap-1"
             >
               {'<-'} Back to sign up

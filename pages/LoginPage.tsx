@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { LoginForm } from '../components/auth/LoginForm';
 import { Sun, Moon, ArrowLeft, ShieldCheck, Quote } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
@@ -13,8 +13,22 @@ export const LoginPage: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const sanitizeReturnTo = React.useCallback((value: string | null | undefined): string | null => {
+    if (!value) return null;
+    const trimmed = String(value).trim();
+    if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return null;
+    if (trimmed.startsWith('/login') || trimmed.startsWith('/signup') || trimmed.startsWith('/auth/callback')) {
+      return null;
+    }
+    return trimmed;
+  }, []);
 
   const redirectPath = React.useMemo(() => {
+    const fromQuery = sanitizeReturnTo(searchParams.get('returnTo'));
+    if (fromQuery) return fromQuery;
+
     const state = location.state as
       | {
           from?: {
@@ -29,8 +43,8 @@ export const LoginPage: React.FC = () => {
     if (from.pathname === '/login' || from.pathname === '/signup' || from.pathname === '/auth/callback') {
       return '/app/dashboard';
     }
-    return `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`;
-  }, [location.state]);
+    return sanitizeReturnTo(`${from.pathname}${from.search ?? ''}${from.hash ?? ''}`) || '/app/dashboard';
+  }, [location.state, sanitizeReturnTo, searchParams]);
 
   useEffect(() => {
     void import('./DashboardPage');

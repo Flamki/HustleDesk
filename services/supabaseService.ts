@@ -792,16 +792,25 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
   }
 };
 
-export const signInWithGoogle = async (intent: OAuthIntent = 'login'): Promise<AuthResponse> => {
+export const signInWithGoogle = async (
+  intent: OAuthIntent = 'login',
+  returnTo?: string | null
+): Promise<AuthResponse> => {
   if (!supabase) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return { user: null, error: null };
   }
 
+  const callback = new URL(`${getAuthBaseUrl()}/auth/callback`);
+  callback.searchParams.set('intent', intent);
+  if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+    callback.searchParams.set('returnTo', returnTo);
+  }
+
   setOAuthIntent(intent);
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${getAuthBaseUrl()}/auth/callback?intent=${intent}` },
+    options: { redirectTo: callback.toString() },
   });
 
   return { user: null, error: error ?? null };

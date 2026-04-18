@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, PlayCircle, ShieldCheck } from 'lucide-react';
 
 export const Hero: React.FC = () => {
+  const startFreePath = `/signup?returnTo=${encodeURIComponent('/app/dashboard?source=landing_hero')}`;
+
   return (
     <section className="relative pt-28 pb-20 lg:pt-40 lg:pb-32 overflow-hidden bg-slate-50 dark:bg-slate-950">
       
@@ -57,16 +59,16 @@ export const Hero: React.FC = () => {
         {/* CTA */}
         <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
           <Link
-            to="/signup"
+            to={startFreePath}
             className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold text-lg hover:scale-105 hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/30 flex items-center gap-2"
           >
             Start Free
             <ArrowRight size={20} />
           </Link>
-          <button className="px-8 py-4 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-full font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center gap-2">
+          <a href="#pricing" className="px-8 py-4 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-full font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center gap-2">
             <PlayCircle size={20} />
-            Watch Demo
-          </button>
+            See Pricing
+          </a>
         </div>
 
         {/* 3D Dashboard Mockup */}

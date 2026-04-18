@@ -7,6 +7,16 @@ import { useAuth } from '../../context/AuthContext';
 import { EMAIL_REGEX } from '../../constants';
 import * as authService from '../../services/supabaseService';
 
+const sanitizeReturnTo = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  const trimmed = String(value).trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return null;
+  if (trimmed.startsWith('/login') || trimmed.startsWith('/signup') || trimmed.startsWith('/auth/callback')) {
+    return null;
+  }
+  return trimmed;
+};
+
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,6 +40,9 @@ export const LoginForm: React.FC = () => {
   };
 
   const redirectPath = React.useMemo(() => {
+    const fromQuery = sanitizeReturnTo(searchParams.get('returnTo'));
+    if (fromQuery) return fromQuery;
+
     const state = location.state as
       | {
           from?: {
@@ -44,8 +57,8 @@ export const LoginForm: React.FC = () => {
     if (from.pathname === '/login' || from.pathname === '/signup' || from.pathname === '/auth/callback') {
       return '/app/dashboard';
     }
-    return `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`;
-  }, [location.state]);
+    return sanitizeReturnTo(`${from.pathname}${from.search ?? ''}${from.hash ?? ''}`) || '/app/dashboard';
+  }, [location.state, searchParams]);
 
   React.useEffect(() => {
     const codeFromUrl = searchParams.get('error');
@@ -104,12 +117,18 @@ export const LoginForm: React.FC = () => {
   const handleGoogleLogin = async () => {
       setError(null);
       setLoading(true);
-      const { error: oauthError } = await authService.signInWithGoogle('login');
+      const { error: oauthError } = await authService.signInWithGoogle('login', redirectPath);
       if (oauthError) {
         setError(getFriendlyOAuthError(oauthError.message));
       }
       setLoading(false);
   };
+
+  const signupPath = React.useMemo(() => {
+    const target = sanitizeReturnTo(redirectPath);
+    if (!target) return '/signup';
+    return `/signup?returnTo=${encodeURIComponent(target)}`;
+  }, [redirectPath]);
 
   return (
     <div className="w-full">
@@ -217,7 +236,7 @@ export const LoginForm: React.FC = () => {
 
         <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-8">
           Don't have an account?{' '}
-          <Link to="/signup" className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:underline transition-colors">
+          <Link to={signupPath} className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:underline transition-colors">
             Create an account
           </Link>
         </p>

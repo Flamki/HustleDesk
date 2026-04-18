@@ -1,14 +1,29 @@
 import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
 import { consumePendingOAuthErrorCode } from '../services/supabaseService';
 
+const sanitizeReturnTo = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  const trimmed = String(value).trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return null;
+  if (trimmed.startsWith('/login') || trimmed.startsWith('/signup') || trimmed.startsWith('/auth/callback')) {
+    return null;
+  }
+  return trimmed;
+};
+
 export const AuthCallbackPage: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [allowFailureRedirect, setAllowFailureRedirect] = React.useState(false);
+  const returnTo = React.useMemo(
+    () => sanitizeReturnTo(searchParams.get('returnTo')) || '/app/dashboard',
+    [searchParams]
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => setAllowFailureRedirect(true), 6500);
@@ -22,14 +37,17 @@ export const AuthCallbackPage: React.FC = () => {
   useEffect(() => {
     if (loading) return;
     if (user) {
-      navigate('/app/dashboard', { replace: true });
+      navigate(returnTo, { replace: true });
       return;
     }
     if (!allowFailureRedirect) return;
     const oauthError = consumePendingOAuthErrorCode();
     const errorCode = oauthError || 'oauth_failed';
-    navigate(`/login?error=${encodeURIComponent(errorCode)}`, { replace: true });
-  }, [allowFailureRedirect, loading, navigate, user]);
+    navigate(
+      `/login?error=${encodeURIComponent(errorCode)}&returnTo=${encodeURIComponent(returnTo)}`,
+      { replace: true }
+    );
+  }, [allowFailureRedirect, loading, navigate, returnTo, user]);
 
   return (
     <>

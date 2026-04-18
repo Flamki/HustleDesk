@@ -129,6 +129,7 @@ export const SettingsPage: React.FC = () => {
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const autoCheckoutTriggeredRef = useRef(false);
 
   // -- Mock Data for other tabs --
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
@@ -272,7 +273,7 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  const openCheckout = async () => {
+  const openCheckout = React.useCallback(async () => {
     setBillingLoading(true);
     setBillingError(null);
     const { url, razorpayOrder, error } = await authService.createStripeCheckoutSession();
@@ -334,16 +335,34 @@ export const SettingsPage: React.FC = () => {
 
     setBillingLoading(false);
     razorpay.open();
-  };
+  }, []);
 
-  const openPortal = async () => {
+  const openPortal = React.useCallback(async () => {
     if (typeof window !== 'undefined' && window.location.pathname.includes('/app/settings')) {
       document.getElementById('invoice-history')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       const { url } = await authService.createStripePortalSession();
       if (url) window.location.href = url;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'billing') return;
+    if (searchParams.get('action') !== 'checkout') return;
+    if (autoCheckoutTriggeredRef.current) return;
+    if (user?.plan === 'pro') return;
+
+    autoCheckoutTriggeredRef.current = true;
+    const timer = window.setTimeout(() => {
+      void openCheckout();
+    }, 250);
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('action');
+    window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+
+    return () => window.clearTimeout(timer);
+  }, [activeTab, openCheckout, searchParams, user?.plan]);
 
   if (!profile) return <div className="p-8 flex justify-center"><RefreshCw className="animate-spin text-slate-400" /></div>;
 

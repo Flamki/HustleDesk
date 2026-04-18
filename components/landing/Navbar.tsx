@@ -41,6 +41,8 @@ export const Navbar: React.FC = () => {
       { label: 'Pricing', id: 'pricing' },
       { label: 'FAQ', id: 'faq' },
   ];
+  const startFreePath = `/signup?returnTo=${encodeURIComponent('/app/dashboard?source=landing_nav')}`;
+  const proCheckoutPath = `/login?returnTo=${encodeURIComponent('/app/settings?tab=billing&action=checkout&source=landing_nav')}`;
 
   return (
     <>
@@ -93,13 +95,19 @@ export const Navbar: React.FC = () => {
                     Log in
                 </Link>
                 <Link
-                    to="/signup"
+                    to={startFreePath}
                     className="pl-4 pr-1 py-1.5 bg-indigo-600 text-white rounded-full text-sm font-bold hover:bg-indigo-500 transition-all flex items-center gap-2"
                 >
                     Start Free
                     <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white">
                         <ArrowRight size={12} />
                     </div>
+                </Link>
+                <Link
+                    to={proCheckoutPath}
+                    className="text-sm font-bold text-emerald-300 hover:text-emerald-200 transition-colors"
+                >
+                    Upgrade $9/mo
                 </Link>
             </div>
 
@@ -129,7 +137,8 @@ export const Navbar: React.FC = () => {
                     ))}
                     <hr className="border-slate-800" />
                     <Link to="/login" className="text-xl font-medium text-white">Log in</Link>
-                    <Link to="/signup" className="text-xl font-bold text-white bg-indigo-600 rounded-xl py-2.5 px-5">Start Free</Link>
+                    <Link to={startFreePath} className="text-xl font-bold text-white bg-indigo-600 rounded-xl py-2.5 px-5">Start Free</Link>
+                    <Link to={proCheckoutPath} className="text-xl font-bold text-emerald-300">Upgrade to Pro</Link>
                 </div>
             </div>
         )}

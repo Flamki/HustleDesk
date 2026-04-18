@@ -6,11 +6,22 @@ import { PasswordStrength } from './PasswordStrength';
 import { AuthError } from '../../types';
 import { EMAIL_REGEX, PASSWORD_REQUIREMENTS } from '../../constants';
 import * as authService from '../../services/supabaseService';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+
+const sanitizeReturnTo = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  const trimmed = String(value).trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return null;
+  if (trimmed.startsWith('/login') || trimmed.startsWith('/signup') || trimmed.startsWith('/auth/callback')) {
+    return null;
+  }
+  return trimmed;
+};
 
 export const SignupForm: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signUp } = useAuth();
   
   // State
@@ -22,6 +33,16 @@ export const SignupForm: React.FC = () => {
   const [isEmailTouched, setIsEmailTouched] = useState(false);
   const [isPasswordTouched, setIsPasswordTouched] = useState(false);
   const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
+
+  const returnTo = useMemo(
+    () => sanitizeReturnTo(searchParams.get('returnTo')) || '/app/dashboard',
+    [searchParams]
+  );
+
+  const loginPath = useMemo(
+    () => `/login?returnTo=${encodeURIComponent(returnTo)}`,
+    [returnTo]
+  );
 
   useEffect(() => {
     if (retryAfterSeconds <= 0) return;
@@ -132,9 +153,12 @@ export const SignupForm: React.FC = () => {
         if (friendly.retryAfter > 0) setRetryAfterSeconds(friendly.retryAfter);
         setErrors((prev) => ({ ...prev, general: friendly.text }));
       } else if (user) {
-        navigate('/app/dashboard', { replace: true });
+        navigate(returnTo, { replace: true });
       } else {
-        navigate(`/auth/check-email?email=${encodeURIComponent(email)}`, { state: { email } });
+        navigate(
+          `/auth/check-email?email=${encodeURIComponent(email)}&returnTo=${encodeURIComponent(returnTo)}`,
+          { state: { email } }
+        );
       }
     } catch {
       setErrors((prev) => ({ ...prev, general: 'An unexpected error occurred. Please try again.' }));
@@ -145,7 +169,7 @@ export const SignupForm: React.FC = () => {
 
   const handleGoogleSignup = async () => {
       setLoading(true);
-      const { error } = await authService.signInWithGoogle('signup');
+      const { error } = await authService.signInWithGoogle('signup', returnTo);
       if (error) {
         setErrors((prev) => ({ ...prev, general: getFriendlyOAuthError(error.message) }));
       }
@@ -165,6 +189,11 @@ export const SignupForm: React.FC = () => {
                 <Sparkles size={12} /> 5 AI Credits / mo
              </span>
           </div>
+          {returnTo.includes('/app/settings?tab=billing') && (
+            <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+              After signup, we will open secure Pro checkout automatically.
+            </p>
+          )}
         </div>
 
         {/* Global Error Message */}
@@ -284,7 +313,7 @@ export const SignupForm: React.FC = () => {
 
         <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-8">
           Already have an account?{' '}
-          <Link to="/login" className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:underline transition-colors">
+          <Link to={loginPath} className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:underline transition-colors">
             Log in
           </Link>
         </p>
