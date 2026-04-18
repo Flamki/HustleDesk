@@ -82,6 +82,13 @@ const normalizeLengthGuidance = (length) => {
 const buildProposalPrompt = ({ job, profile, tone, length, highlights }) => {
   const lengthGuide = normalizeLengthGuidance(length);
   const safeProfile = profile && typeof profile === 'object' ? profile : {};
+  const setup =
+    safeProfile.preferences &&
+    typeof safeProfile.preferences === 'object' &&
+    safeProfile.preferences.profileSetup &&
+    typeof safeProfile.preferences.profileSetup === 'object'
+      ? safeProfile.preferences.profileSetup
+      : null;
   const portfolio = safeProfile.portfolioUrl || safeProfile.linkedinUrl || 'Not provided';
   const topSkills = Array.isArray(safeProfile.skills)
     ? safeProfile.skills.map((s) => truncate(s, 40)).filter(Boolean).slice(0, 8)
@@ -107,10 +114,19 @@ Job Context:
 - Client Notes: ${truncate(job.notes, 800) || 'N/A'}
 
 Freelancer Profile:
+- Full Name: ${truncate(setup?.fullName, 80) || 'Not provided'}
+- Professional Status: ${truncate(setup?.professionalStatus, 60) || 'Not provided'}
+- Specialization: ${
+    setup?.freelancerSpecialization === 'other'
+      ? truncate(setup?.specializationOther, 80) || 'Other'
+      : truncate(setup?.freelancerSpecialization, 80) || 'Not provided'
+  }
+- Primary Services: ${truncate(setup?.primaryServices, 500) || 'Not provided'}
 - Years Experience: ${safeProfile.yearsExperience ?? 0}
 - Hourly Rate: ${safeProfile.hourlyRate ?? 'N/A'}
 - Skills: ${topSkills.length ? topSkills.join(', ') : 'Not provided'}
 - Bio: ${truncate(safeProfile.bio, 900) || 'Not provided'}
+- Communication Style: ${truncate(setup?.communicationStyle || safeProfile.communicationStyle, 80) || 'Professional'}
 - Portfolio/LinkedIn: ${portfolio}
 - Past Projects: ${
     projects.length
@@ -130,6 +146,13 @@ Freelancer Profile:
 
 const buildFallbackProposal = ({ job, profile, tone, length }) => {
   const safeProfile = profile && typeof profile === 'object' ? profile : {};
+  const setup =
+    safeProfile.preferences &&
+    typeof safeProfile.preferences === 'object' &&
+    safeProfile.preferences.profileSetup &&
+    typeof safeProfile.preferences.profileSetup === 'object'
+      ? safeProfile.preferences.profileSetup
+      : null;
   const skills = Array.isArray(safeProfile.skills) ? safeProfile.skills.filter(Boolean).slice(0, 4) : [];
   const introByTone = {
     professional: `Hi ${job.company || 'there'},`,
@@ -143,9 +166,12 @@ const buildFallbackProposal = ({ job, profile, tone, length }) => {
   };
   const lines = [
     `${introByTone[tone] || introByTone.professional} I can help with your ${job.title} project and deliver a polished outcome quickly.`,
-    `I have ${safeProfile.yearsExperience || 'relevant'} years of experience${
+    `I have ${safeProfile.yearsExperience || setup?.yearsExperience || 'relevant'} years of experience${
       skills.length ? ` with ${skills.join(', ')}` : ''
     } and can align the solution to your ${job.platform} requirements.`,
+    setup?.primaryServices
+      ? `My core services include ${truncate(setup.primaryServices, 220)}, and I tailor each proposal around client goals.`
+      : `I tailor each proposal around client goals and expected outcomes.`,
     `Based on your brief, I would focus on clean execution, clear communication, and measurable delivery milestones so you can review progress with confidence.`,
     `If this sounds good, I can start immediately and share a clear execution plan in the first update.`,
   ];

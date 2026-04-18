@@ -92,9 +92,45 @@ export interface Project {
   link?: string;
 }
 
+export type GenderIdentity = 'male' | 'female' | 'non_binary' | 'prefer_not_to_say';
+export type ProfessionalStatus = 'student' | 'graduate' | 'employee' | 'freelancer';
+export type FreelancerSpecialization =
+  | 'writer'
+  | 'copywriter'
+  | 'developer'
+  | 'mobile_developer'
+  | 'graphic_designer'
+  | 'ui_ux_designer'
+  | 'video_editor'
+  | 'social_media_manager'
+  | 'digital_marketer'
+  | 'seo_specialist'
+  | 'data_analyst'
+  | 'virtual_assistant'
+  | 'translator'
+  | 'animator'
+  | 'qa_tester'
+  | 'consultant'
+  | 'other';
+
+export interface ProfileSetupData {
+  fullName: string;
+  dateOfBirth: string;
+  gender: GenderIdentity;
+  professionalStatus: ProfessionalStatus;
+  freelancerSpecialization: FreelancerSpecialization;
+  specializationOther?: string;
+  primaryServices: string;
+  yearsExperience: number;
+  hourlyRateTarget: number;
+  communicationStyle: string;
+  setupCompletedAt: string;
+}
+
 export interface AiPreferences {
   defaultTone: 'professional' | 'friendly' | 'confident';
   defaultLength: 'concise' | 'standard' | 'detailed';
+  profileSetup?: ProfileSetupData;
 }
 
 export interface NotificationSettings {

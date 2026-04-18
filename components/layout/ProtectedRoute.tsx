@@ -8,10 +8,13 @@ import { AppErrorBoundary } from '../system/AppErrorBoundary';
 import { RouteLoader } from '../system/RouteLoader';
 import { BrandLogo } from '../brand/BrandLogo';
 import { useTheme } from '../../context/ThemeContext';
+import { useProfile } from '../../context/ProfileContext';
+import { FirstTimeSetupModal } from '../onboarding/FirstTimeSetupModal';
 
 export const ProtectedRoute: React.FC = () => {
   const { user, loading } = useAuth();
   const { theme } = useTheme();
+  const { profile, loading: profileLoading } = useProfile();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -99,6 +102,7 @@ export const ProtectedRoute: React.FC = () => {
              </div>
         </main>
       </div>
+      {!profileLoading && profile && !profile.completedOnboarding && <FirstTimeSetupModal />}
     </div>
   );
 };

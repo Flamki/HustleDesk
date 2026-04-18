@@ -1514,6 +1514,7 @@ const buildFallbackProposal = (
   settings: ProposalSettings,
   profile?: FreelancerProfile | null
 ): string => {
+  const setup = profile?.preferences?.profileSetup;
   const tones: Record<'professional' | 'friendly' | 'confident', string> = {
     professional: 'I am writing to express my strong interest in your project.',
     friendly: 'Hi there! I saw your project and got excited because it is a great fit for my background.',
@@ -1532,11 +1533,24 @@ const buildFallbackProposal = (
     } else if (selectedTone === 'confident') {
       intro = `With ${profile.yearsExperience} years of experience shipping production-grade ${profile.skills[0]} work, I am the right partner to deliver this project.`;
     }
+  } else if (setup?.freelancerSpecialization) {
+    const specialization =
+      setup.freelancerSpecialization === 'other'
+        ? setup.specializationOther || 'freelance'
+        : setup.freelancerSpecialization.replace(/_/g, ' ');
+    intro = `Hi there! I'm a ${specialization} professional and I'd love to help you with this project.`;
   }
 
+  const servicesFromSetup =
+    setup?.primaryServices
+      ?.split(/[,\n/]+/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(', ') || '';
   const skillsMention = profile?.skills?.length
     ? profile.skills.slice(0, 3).join(', ')
-    : 'React, TypeScript, and Tailwind CSS';
+    : servicesFromSetup || 'React, TypeScript, and Tailwind CSS';
   let body = `I have extensive experience with ${skillsMention}, which aligns closely with your requirements. I focus on clean architecture, maintainable code, and clear communication throughout delivery.`;
 
   if (profile && profile.pastProjects.length > 0) {
