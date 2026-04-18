@@ -96,9 +96,9 @@ export const validateServerEnvironment = () => {
   }
 
   // AI features (optional)
-  checks.geminiApiKey = validatePresence(process.env.GEMINI_API_KEY);
-  if (!checks.geminiApiKey) {
-    warnings.push('GEMINI_API_KEY not set - AI features will be disabled');
+  checks.fireworksApiKey = validatePresence(process.env.FIREWORKS_API_KEY);
+  if (!checks.fireworksApiKey) {
+    warnings.push('FIREWORKS_API_KEY not set - AI features will be disabled');
   }
 
   // Base URLs
@@ -151,6 +151,6 @@ export const getEnvInfo = () => {
     hasStripe: Boolean(process.env.STRIPE_SECRET_KEY),
     hasResend: Boolean(process.env.RESEND_API_KEY),
     hasRedis: Boolean(process.env.UPSTASH_REDIS_REST_URL),
-    hasGemini: Boolean(process.env.GEMINI_API_KEY),
+    hasFireworks: Boolean(process.env.FIREWORKS_API_KEY),
   };
 };

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -46,38 +46,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [websiteOpen, setWebsiteOpen] = useState(false);
-  const [websiteMenuPos, setWebsiteMenuPos] = useState<{ top: number; left: number } | null>(null);
-  const websiteButtonRef = useRef<HTMLButtonElement | null>(null);
-  const websiteMenuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!websiteOpen) return;
-
-    const closeMenu = () => setWebsiteOpen(false);
-    const onMouseDown = (e: MouseEvent) => {
-      const target = e.target as Node | null;
-      if (!target) return;
-      if (websiteMenuRef.current?.contains(target)) return;
-      if (websiteButtonRef.current?.contains(target)) return;
-      closeMenu();
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setWebsiteOpen(false);
-    };
-
-    document.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('resize', closeMenu);
-    window.addEventListener('scroll', closeMenu, true);
-    document.addEventListener('keydown', onKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('resize', closeMenu);
-      window.removeEventListener('scroll', closeMenu, true);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [websiteOpen]);
 
   const handleSignOut = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -175,126 +143,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
         
         {!isCollapsed && <span className="ml-1">{label}</span>}
       </Link>
-    );
-  };
-
-  const WebsiteGroup = () => {
-    const isWebsiteRoute = location.pathname.startsWith('/app/marketing/website');
-    const toggleWebsiteMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.stopPropagation();
-      if (websiteOpen) {
-        setWebsiteOpen(false);
-        return;
-      }
-      const rect = e.currentTarget.getBoundingClientRect();
-      const menuHeight = 92;
-      const viewportPadding = 12;
-      const top = Math.max(viewportPadding, Math.min(window.innerHeight - menuHeight - viewportPadding, rect.bottom - menuHeight));
-      const left = rect.right + 8;
-      setWebsiteMenuPos({ top, left });
-      setWebsiteOpen(true);
-    };
-
-    if (isCollapsed) {
-      return (
-        <div className="relative">
-          <button
-            ref={websiteButtonRef}
-            type="button"
-            onClick={toggleWebsiteMenu}
-            className={`w-full relative flex items-center justify-center rounded-xl text-sm font-medium transition-all duration-200 group p-2.5 ${
-              isWebsiteRoute
-                ? 'bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-            title="Website"
-            aria-label="Website"
-          >
-            <div
-              className={`relative flex items-center justify-center transition-colors ${
-                isWebsiteRoute ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
-              }`}
-            >
-              <Sparkles size={20} strokeWidth={isWebsiteRoute ? 2.5 : 2} />
-            </div>
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-1 relative">
-        <button
-          ref={websiteButtonRef}
-          type="button"
-          onClick={toggleWebsiteMenu}
-          className={`w-full relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 group px-3 py-2.5 ${
-            isWebsiteRoute
-              ? 'bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-        >
-          {isWebsiteRoute && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-500 rounded-r-full"></div>
-          )}
-          <div
-            className={`relative flex items-center justify-center transition-colors ${
-              isWebsiteRoute ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
-            }`}
-          >
-            <Sparkles size={20} strokeWidth={isWebsiteRoute ? 2.5 : 2} />
-          </div>
-          <div className="flex-1 flex justify-between items-center ml-1">
-            <span>Website</span>
-            <span className="text-xs">{websiteOpen ? '-' : '+'}</span>
-          </div>
-        </button>
-      </div>
-    );
-  };
-
-  const WebsiteMenu = () => {
-    if (!websiteOpen || !websiteMenuPos) return null;
-    const isPortfolio = location.pathname === '/app/marketing/website/portfolio';
-    const isLinkInBio = location.pathname === '/app/marketing/website/link-in-bio';
-
-    return (
-      <div
-        ref={websiteMenuRef}
-        className="fixed w-52 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900 p-1 z-[180] transition-all duration-150"
-        style={{ top: websiteMenuPos.top, left: websiteMenuPos.left }}
-        role="menu"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <Link
-          to="/app/marketing/website/portfolio"
-          onClick={() => {
-            setWebsiteOpen(false);
-            onClose?.();
-          }}
-          className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
-            isPortfolio
-              ? 'bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-          }`}
-        >
-          Build Portfolio
-        </Link>
-        <Link
-          to="/app/marketing/website/link-in-bio"
-          onClick={() => {
-            setWebsiteOpen(false);
-            onClose?.();
-          }}
-          className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
-            isLinkInBio
-              ? 'bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-          }`}
-        >
-          Build Link in Bio
-        </Link>
-      </div>
     );
   };
 
@@ -424,7 +272,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
 
                 <SectionLabel label="Marketing" />
                 <NavItem to="/app/marketing" icon={Mail} label="Email Marketing" />
-                <WebsiteGroup />
             </div>
         )}
       </div>
@@ -538,7 +385,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
             </div>
         </div>
       </div>
-      <WebsiteMenu />
     </aside>
   );
 };

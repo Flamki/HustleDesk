@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/auth/LoginForm';
 import { Sun, Moon, ArrowLeft, ShieldCheck, Quote } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
@@ -12,12 +12,35 @@ export const LoginPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectPath = React.useMemo(() => {
+    const state = location.state as
+      | {
+          from?: {
+            pathname?: string;
+            search?: string;
+            hash?: string;
+          };
+        }
+      | null;
+    const from = state?.from;
+    if (!from?.pathname) return '/app/dashboard';
+    if (from.pathname === '/login' || from.pathname === '/signup' || from.pathname === '/auth/callback') {
+      return '/app/dashboard';
+    }
+    return `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`;
+  }, [location.state]);
+
+  useEffect(() => {
+    void import('./DashboardPage');
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/app/dashboard', { replace: true });
+      navigate(redirectPath, { replace: true });
     }
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate, redirectPath]);
 
   return (
     <>

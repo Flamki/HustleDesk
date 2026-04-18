@@ -16,6 +16,10 @@ export const AuthCallbackPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    void import('./DashboardPage');
+  }, []);
+
+  useEffect(() => {
     if (loading) return;
     if (user) {
       navigate('/app/dashboard', { replace: true });

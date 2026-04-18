@@ -135,7 +135,7 @@ export const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ jobId }) =
       setProposal(result.proposal);
       setCreditsRemaining(result.creditsRemaining);
     } catch (err) {
-      setError('Failed to generate proposal. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to generate proposal. Please try again.');
     } finally {
       setIsGenerating(false);
     }

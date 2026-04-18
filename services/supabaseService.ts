@@ -555,7 +555,6 @@ const resolveUserAfterAuth = async (
       verifiedAccountReady = true;
     }
   }
-
   const user = await loadUserFromUsersTable(userId, email);
   if (user) return user;
   if (!shouldBootstrap && verifiedAccountReady) {
@@ -1318,32 +1317,64 @@ Requirements:
   return { data: mockJob, error: null };
 };
 
-export const generateProposal = async (
-  _jobId: string,
-  settings: any,
-  profile?: FreelancerProfile | null
-): Promise<{ proposal: string; creditsRemaining: number }> => {
-  await new Promise((resolve) => setTimeout(resolve, 4000));
+export type ProposalSettings = {
+  tone?: 'professional' | 'friendly' | 'confident';
+  length?: 'concise' | 'standard' | 'detailed';
+  highlights?: string[];
+};
 
-  const tones: Record<string, string> = {
-    professional: 'I am writing to express my strong interest in your project...',
-    friendly: 'Hi there! I saw your project and got excited because...',
-    confident: 'I am the expert you are looking for to deliver this project...',
+export type ProfileAssistantHistoryMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+export type ProfileAssistantContext = {
+  mode?: 'onboarding' | 'settings' | 'default';
+  currentStepId?: string;
+  nextStepPrompt?: string;
+};
+
+export type ProfileAssistantResult = {
+  reply: string;
+  profilePatch: Partial<FreelancerProfile>;
+};
+
+const deriveExperienceLevelFromYears = (
+  years: number
+): FreelancerProfile['experienceLevel'] => {
+  if (years >= 8) return 'Expert';
+  if (years >= 3) return 'Intermediate';
+  return 'Entry';
+};
+
+const buildFallbackProposal = (
+  settings: ProposalSettings,
+  profile?: FreelancerProfile | null
+): string => {
+  const tones: Record<'professional' | 'friendly' | 'confident', string> = {
+    professional: 'I am writing to express my strong interest in your project.',
+    friendly: 'Hi there! I saw your project and got excited because it is a great fit for my background.',
+    confident: 'I am the expert you are looking for to deliver this project successfully.',
   };
 
-  const selectedTone = settings.tone || 'professional';
-  let intro = tones[selectedTone] || tones.professional;
+  const selectedTone: 'professional' | 'friendly' | 'confident' =
+    settings.tone === 'friendly' || settings.tone === 'confident'
+      ? settings.tone
+      : 'professional';
+  let intro = tones[selectedTone];
 
   if (profile && profile.skills.length > 0) {
     if (selectedTone === 'friendly') {
       intro = `Hi there! I'm a ${profile.skills[0]} specialist with ${profile.yearsExperience} years of experience, and I'd love to help you with this project.`;
     } else if (selectedTone === 'confident') {
-      intro = `With ${profile.yearsExperience} years of experience shipping production-grade ${profile.skills[0]} applications, I am the exact partner you need for this.`;
+      intro = `With ${profile.yearsExperience} years of experience shipping production-grade ${profile.skills[0]} work, I am the right partner to deliver this project.`;
     }
   }
 
-  const skillsMention = profile ? profile.skills.slice(0, 3).join(', ') : 'React, TypeScript, and Tailwind CSS';
-  let body = `I have extensive experience with ${skillsMention}, which aligns perfectly with your requirements for the SaaS dashboard. I have previously built similar dashboards using Recharts and can ensure pixel-perfect implementation from your Figma designs.`;
+  const skillsMention = profile?.skills?.length
+    ? profile.skills.slice(0, 3).join(', ')
+    : 'React, TypeScript, and Tailwind CSS';
+  let body = `I have extensive experience with ${skillsMention}, which aligns closely with your requirements. I focus on clean architecture, maintainable code, and clear communication throughout delivery.`;
 
   if (profile && profile.pastProjects.length > 0) {
     const proj = profile.pastProjects[0];
@@ -1351,25 +1382,212 @@ export const generateProposal = async (
   }
 
   if (settings.highlights?.includes('fast_turnaround')) {
-    body += '\n\nI can start immediately and typically deliver initial screens within 48 hours.';
+    body += '\n\nI can start immediately and deliver a high-quality first draft quickly.';
   }
 
   if (settings.highlights?.includes('portfolio') && profile?.portfolioUrl) {
-    body += `\n\nYou can see more of my work here: ${profile.portfolioUrl}`;
+    body += `\n\nYou can see relevant samples here: ${profile.portfolioUrl}`;
   }
 
-  const proposalText = `${intro}
+  return `${intro}
 
 ${body}
 
-I understand you need clean, reusable code, and that is my standard practice. I'm also familiar with Supabase, which should smooth out the backend integration.
-
-Looking forward to discussing how we can bring this dashboard to life.
+I would love to discuss scope, timeline, and expected outcomes so we can begin with confidence.
 
 Best regards,
 [Your Name]`;
+};
 
-  return { proposal: proposalText, creditsRemaining: 2 };
+const buildLocalProfileAssistantFallback = (
+  message: string,
+  profile: FreelancerProfile,
+  context?: ProfileAssistantContext
+): ProfileAssistantResult => {
+  const patch: Partial<FreelancerProfile> = {};
+  const text = message.trim();
+  const lower = text.toLowerCase();
+
+  const skillsPool = [
+    'react',
+    'typescript',
+    'next.js',
+    'node.js',
+    'supabase',
+    'tailwind',
+    'figma',
+    'python',
+    'aws',
+    'seo',
+    'design',
+    'marketing',
+    'sql',
+  ];
+  const discoveredSkills = skillsPool
+    .filter((skill) => lower.includes(skill))
+    .map((skill) =>
+      skill
+        .split('.')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('.')
+    );
+  if (discoveredSkills.length > 0) {
+    patch.skills = [...new Set([...profile.skills, ...discoveredSkills])].slice(0, 20);
+  }
+
+  const yearsMatch = text.match(/(\d{1,2})\s*(?:\+?\s*)?(?:years?|yrs?)/i);
+  if (yearsMatch) {
+    const years = Math.max(0, Math.min(60, Number(yearsMatch[1])));
+    patch.yearsExperience = years;
+    patch.experienceLevel = deriveExperienceLevelFromYears(years);
+  }
+
+  const rateMatch = text.match(/\$?\s*(\d{2,4})(?:\s*\/?\s*(?:hr|hour))/i);
+  if (rateMatch) {
+    patch.hourlyRate = Math.max(0, Math.min(10000, Number(rateMatch[1])));
+  }
+
+  const urls = text.match(/https?:\/\/[^\s)]+/gi) || [];
+  if (urls.length > 0) {
+    const first = urls[0];
+    if (/linkedin\.com/i.test(first)) {
+      patch.linkedinUrl = first;
+    } else {
+      patch.portfolioUrl = first;
+    }
+  }
+
+  if ((lower.includes('bio') || lower.length > 60) && !patch.bio) {
+    patch.bio = text.slice(0, 600);
+  }
+
+  const stepHint = context?.nextStepPrompt ? ` ${context.nextStepPrompt}` : '';
+  if (Object.keys(patch).length > 0) {
+    return {
+      reply: `I updated your profile with what I could confidently extract.${stepHint}`.trim(),
+      profilePatch: patch,
+    };
+  }
+
+  return {
+    reply: `I captured that context. Share specifics like skills, years, hourly rate, bio, or links and I will update them.${stepHint}`.trim(),
+    profilePatch: {},
+  };
+};
+
+export const generateProposal = async (
+  jobId: string,
+  settings: ProposalSettings,
+  profile?: FreelancerProfile | null
+): Promise<{ proposal: string; creditsRemaining: number }> => {
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    return { proposal: buildFallbackProposal(settings, profile), creditsRemaining: 2 };
+  }
+
+  const token = await getSupabaseToken();
+  if (!token) {
+    throw new Error('Unauthorized');
+  }
+
+  const response = await fetchWithTimeout(
+    '/api/ai/proposal',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        jobId,
+        settings,
+        profile,
+      }),
+    },
+    25000
+  );
+
+  const body = await parseJsonSafe<{ proposal?: string; creditsRemaining?: number; error?: string }>(response);
+  if (!response.ok) {
+    throw new Error(body?.error || 'Failed to generate proposal');
+  }
+
+  const proposal = String(body?.proposal || '').trim();
+  if (!proposal) {
+    throw new Error('AI returned an empty proposal');
+  }
+
+  return {
+    proposal,
+    creditsRemaining: Number.isFinite(Number(body?.creditsRemaining))
+      ? Number(body?.creditsRemaining)
+      : 0,
+  };
+};
+
+export const generateProfileAssistantReply = async (
+  message: string,
+  profile: FreelancerProfile,
+  context?: ProfileAssistantContext,
+  history: ProfileAssistantHistoryMessage[] = []
+): Promise<ProfileAssistantResult> => {
+  const fallback = buildLocalProfileAssistantFallback(message, profile, context);
+
+  if (!supabase) {
+    return fallback;
+  }
+
+  const token = await getSupabaseToken();
+  if (!token) {
+    return fallback;
+  }
+
+  try {
+    const response = await fetchWithTimeout(
+      '/api/ai/profile-assistant',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message,
+          profile,
+          context,
+          history: history.slice(-12),
+        }),
+      },
+      20000
+    );
+
+    const body = await parseJsonSafe<{ reply?: string; profilePatch?: Partial<FreelancerProfile>; error?: string }>(response);
+    if (!response.ok) {
+      const errorMessage = body?.error || 'Failed to process profile assistant request';
+      if (/fireworks/i.test(errorMessage)) {
+        throw new Error(errorMessage);
+      }
+      return fallback;
+    }
+
+    const reply = String(body?.reply || '').trim();
+    const profilePatch =
+      body?.profilePatch && typeof body.profilePatch === 'object' ? body.profilePatch : {};
+
+    if (!reply && Object.keys(profilePatch).length === 0) {
+      return fallback;
+    }
+
+    return {
+      reply: reply || fallback.reply,
+      profilePatch,
+    };
+  } catch (error) {
+    if (error instanceof Error && /fireworks/i.test(error.message)) {
+      throw error;
+    }
+    return fallback;
+  }
 };
 
 export const updateJobStatus = async (

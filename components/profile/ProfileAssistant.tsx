@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User as UserIcon, CheckCircle2, Sparkles, RefreshCcw, Briefcase, Code, DollarSign, Globe, Paperclip, UploadCloud, Crown, Shield } from 'lucide-react';
 import { FreelancerProfile } from '../../types';
 import { useProfile } from '../../context/ProfileContext';
+import * as authService from '../../services/supabaseService';
 
 // ... (STEPS constant logic assumed)
 const STEPS = [
@@ -43,9 +44,71 @@ const STEPS = [
     }
 ];
 
+type ChatMessage = {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+};
+
+const deriveExperienceLevel = (years: number): FreelancerProfile['experienceLevel'] => {
+    if (years >= 8) return 'Expert';
+    if (years >= 3) return 'Intermediate';
+    return 'Entry';
+};
+
+const mergeProfilePatch = (
+    current: FreelancerProfile,
+    patch: Partial<FreelancerProfile>
+): FreelancerProfile => {
+    const next: FreelancerProfile = { ...current, ...patch };
+
+    if (Array.isArray(patch.skills)) {
+        const mergedSkills = [...new Set([...current.skills, ...patch.skills].map((s) => String(s || '').trim()).filter(Boolean))];
+        next.skills = mergedSkills.slice(0, 24);
+    }
+
+    if (typeof patch.yearsExperience === 'number' && !Number.isNaN(patch.yearsExperience)) {
+        const years = Math.max(0, Math.min(60, patch.yearsExperience));
+        next.yearsExperience = years;
+        if (!patch.experienceLevel) {
+            next.experienceLevel = deriveExperienceLevel(years);
+        }
+    }
+
+    if (typeof patch.hourlyRate === 'number' && !Number.isNaN(patch.hourlyRate)) {
+        next.hourlyRate = Math.max(0, Math.min(10000, patch.hourlyRate));
+    }
+
+    if (typeof patch.bio === 'string' && patch.bio.trim()) {
+        next.bio = patch.bio.trim();
+    }
+
+    if (typeof patch.portfolioUrl === 'string' && patch.portfolioUrl.trim()) {
+        next.portfolioUrl = patch.portfolioUrl.trim();
+    }
+
+    if (typeof patch.linkedinUrl === 'string' && patch.linkedinUrl.trim()) {
+        next.linkedinUrl = patch.linkedinUrl.trim();
+    }
+
+    if (Array.isArray(patch.pastProjects) && patch.pastProjects.length > 0) {
+        const existing = [...current.pastProjects];
+        const incoming = patch.pastProjects.map((project, idx) => ({
+            id: project.id || `generated-${Date.now()}-${idx}`,
+            name: project.name || 'Project',
+            description: project.description || '',
+            technologies: Array.isArray(project.technologies) ? project.technologies : [],
+            link: project.link,
+        }));
+        next.pastProjects = [...existing, ...incoming].slice(-12);
+    }
+
+    return next;
+};
+
 export const ProfileAssistant: React.FC = () => {
     const { profile, updateProfile } = useProfile();
-    const [messages, setMessages] = useState<any[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
@@ -68,7 +131,7 @@ export const ProfileAssistant: React.FC = () => {
         setTimeout(() => {
             setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: text }]);
             setIsTyping(false);
-        }, 1200);
+        }, 700);
     };
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -79,27 +142,59 @@ export const ProfileAssistant: React.FC = () => {
         setInput('');
         setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: userText }]);
         
-        // Basic mock processing
-        const newProfile = { ...profile };
         const step = STEPS[currentStepIndex];
-        
-        if (step.field === 'skills') {
-             const skills = userText.split(',').map(s => s.trim());
-             newProfile.skills = [...new Set([...newProfile.skills, ...skills])];
-        } else if (step.field === 'yearsExperience') {
-             newProfile.yearsExperience = parseInt(userText.replace(/\D/g, '')) || 0;
-        } else if (step.field === 'hourlyRate') {
-             newProfile.hourlyRate = parseInt(userText.replace(/\D/g, '')) || 0;
-        } else if (step.field === 'bio') {
-             newProfile.bio = userText;
-             newProfile.completedOnboarding = true;
-        }
-        
-        await updateProfile(newProfile);
+        const nextStep = currentStepIndex < STEPS.length - 1 ? STEPS[currentStepIndex + 1] : null;
 
-        if (currentStepIndex < STEPS.length - 1) {
-            setCurrentStepIndex(prev => prev + 1);
-            simulateAssistantMessage(STEPS[currentStepIndex + 1].message);
+        setIsTyping(true);
+        try {
+            const history = [...messages, { id: `temp-${Date.now()}`, role: 'user' as const, content: userText }]
+                .slice(-10)
+                .map((msg) => ({ role: msg.role, content: msg.content }));
+
+            const result = await authService.generateProfileAssistantReply(
+                userText,
+                profile,
+                {
+                    mode: 'onboarding',
+                    currentStepId: step.id,
+                    nextStepPrompt: nextStep?.message,
+                },
+                history
+            );
+
+            let mergedProfile = mergeProfilePatch(profile, result.profilePatch || {});
+            if (step.field === 'bio' || currentStepIndex >= STEPS.length - 2) {
+                mergedProfile = { ...mergedProfile, completedOnboarding: true };
+            }
+
+            await updateProfile(mergedProfile);
+
+            if (nextStep) {
+                setCurrentStepIndex((prev) => prev + 1);
+            }
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: `${Date.now()}-assistant`,
+                    role: 'assistant',
+                    content: result.reply || nextStep?.message || STEPS[STEPS.length - 1].message,
+                },
+            ]);
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'I could not update your profile just now. Please try again.';
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: `${Date.now()}-assistant-error`,
+                    role: 'assistant',
+                    content: message,
+                },
+            ]);
+        } finally {
+            setIsTyping(false);
         }
     };
 

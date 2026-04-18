@@ -76,6 +76,11 @@ Marketing:
 - `MARKETING_FROM_EMAIL`
 - `MARKETING_FROM_NAME`
 
+AI:
+- `FIREWORKS_API_KEY`
+- `FIREWORKS_MODEL` (optional override)
+- `FIREWORKS_BASE_URL` (optional override)
+
 Rate Limiting:
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`

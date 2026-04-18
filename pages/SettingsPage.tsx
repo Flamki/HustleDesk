@@ -15,8 +15,63 @@ import { Input } from '../components/ui/Input';
 import * as authService from '../services/supabaseService';
 import type { BillingInvoice } from '../services/supabaseService';
 import type { NotificationSettingsDto } from '../services/supabaseService';
+import type { FreelancerProfile } from '../types';
 
 type SettingsTab = 'profile' | 'account' | 'billing' | 'notifications' | 'ai' | 'danger';
+
+const deriveExperienceLevel = (years: number): FreelancerProfile['experienceLevel'] => {
+  if (years >= 8) return 'Expert';
+  if (years >= 3) return 'Intermediate';
+  return 'Entry';
+};
+
+const mergeProfilePatch = (
+  current: FreelancerProfile,
+  patch: Partial<FreelancerProfile>
+): FreelancerProfile => {
+  const next: FreelancerProfile = { ...current, ...patch };
+
+  if (Array.isArray(patch.skills)) {
+    next.skills = [...new Set([...current.skills, ...patch.skills].map((s) => String(s || '').trim()).filter(Boolean))].slice(0, 24);
+  }
+
+  if (typeof patch.yearsExperience === 'number' && !Number.isNaN(patch.yearsExperience)) {
+    const years = Math.max(0, Math.min(60, patch.yearsExperience));
+    next.yearsExperience = years;
+    if (!patch.experienceLevel) {
+      next.experienceLevel = deriveExperienceLevel(years);
+    }
+  }
+
+  if (typeof patch.hourlyRate === 'number' && !Number.isNaN(patch.hourlyRate)) {
+    next.hourlyRate = Math.max(0, Math.min(10000, patch.hourlyRate));
+  }
+
+  if (typeof patch.bio === 'string' && patch.bio.trim()) {
+    next.bio = patch.bio.trim();
+  }
+
+  if (typeof patch.portfolioUrl === 'string' && patch.portfolioUrl.trim()) {
+    next.portfolioUrl = patch.portfolioUrl.trim();
+  }
+
+  if (typeof patch.linkedinUrl === 'string' && patch.linkedinUrl.trim()) {
+    next.linkedinUrl = patch.linkedinUrl.trim();
+  }
+
+  if (Array.isArray(patch.pastProjects) && patch.pastProjects.length > 0) {
+    const additions = patch.pastProjects.map((project, idx) => ({
+      id: project.id || `generated-${Date.now()}-${idx}`,
+      name: project.name || 'Project',
+      description: project.description || '',
+      technologies: Array.isArray(project.technologies) ? project.technologies : [],
+      link: project.link,
+    }));
+    next.pastProjects = [...current.pastProjects, ...additions].slice(-12);
+  }
+
+  return next;
+};
 
 export const SettingsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -120,40 +175,37 @@ export const SettingsPage: React.FC = () => {
     setChatInput('');
     setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: userText }]);
     setIsTyping(true);
+    try {
+      const history = [...messages, { id: `temp-${Date.now()}`, role: 'user' as const, content: userText }]
+        .slice(-10)
+        .map((message) => ({ role: message.role, content: message.content }));
 
-    // Mock AI Processing Logic
-    setTimeout(async () => {
-        const newProfile = { ...profile };
-        let responseText = "Profile updated.";
+      const result = await authService.generateProfileAssistantReply(
+        userText,
+        profile,
+        { mode: 'settings' },
+        history
+      );
 
-        const lowerText = userText.toLowerCase();
-
-        if (lowerText.includes('skill') || lowerText.includes('add')) {
-            const potentialSkills = userText.split(' ').filter(w => ['python', 'react', 'node', 'design', 'seo', 'marketing', 'java', 'typescript', 'figma', 'sql', 'aws'].includes(w.toLowerCase()));
-            if (potentialSkills.length > 0) {
-                 const capitalizedSkills = potentialSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1));
-                 newProfile.skills = [...new Set([...newProfile.skills, ...capitalizedSkills])];
-                 responseText = `I've added ${capitalizedSkills.join(', ')} to your skill set.`;
-            } else {
-                 responseText = "I've noted that skill update.";
-            }
-        } else if (lowerText.includes('rate') || lowerText.includes('hourly')) {
-            const match = userText.match(/\d+/);
-            if (match) {
-                newProfile.hourlyRate = parseInt(match[0]);
-                responseText = `Updated your hourly rate to $${match[0]}/hr.`;
-            }
-        } else if (lowerText.includes('bio')) {
-            newProfile.bio = userText; 
-            responseText = "Your bio has been refreshed.";
-        } else {
-            responseText = "I've updated your profile context based on that information.";
-        }
-
-        await updateProfile(newProfile);
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: responseText }]);
-        setIsTyping(false);
-    }, 1200);
+      const newProfile = mergeProfilePatch(profile, result.profilePatch || {});
+      await updateProfile(newProfile);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-assistant`,
+          role: 'assistant',
+          content: result.reply || 'Profile updated.',
+        },
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not process your update right now.';
+      setMessages((prev) => [
+        ...prev,
+        { id: `${Date.now()}-assistant-error`, role: 'assistant', content: message },
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const openCheckout = async () => {

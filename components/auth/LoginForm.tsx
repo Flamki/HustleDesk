@@ -29,6 +29,24 @@ export const LoginForm: React.FC = () => {
     return null;
   };
 
+  const redirectPath = React.useMemo(() => {
+    const state = location.state as
+      | {
+          from?: {
+            pathname?: string;
+            search?: string;
+            hash?: string;
+          };
+        }
+      | null;
+    const from = state?.from;
+    if (!from?.pathname) return '/app/dashboard';
+    if (from.pathname === '/login' || from.pathname === '/signup' || from.pathname === '/auth/callback') {
+      return '/app/dashboard';
+    }
+    return `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`;
+  }, [location.state]);
+
   React.useEffect(() => {
     const codeFromUrl = searchParams.get('error');
     const codeFromStorage = codeFromUrl ? null : authService.consumePendingOAuthErrorCode();
@@ -37,6 +55,10 @@ export const LoginForm: React.FC = () => {
       setError(nextError);
     }
   }, [searchParams]);
+
+  React.useEffect(() => {
+    void import('../../pages/DashboardPage');
+  }, []);
 
   const getFriendlyOAuthError = (message: string) => {
     const normalized = message.toLowerCase();
@@ -68,9 +90,7 @@ export const LoginForm: React.FC = () => {
       if (authError) {
         setError(authError.message);
       } else if (user) {
-        const destination =
-          (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/app/dashboard';
-        navigate(destination, { replace: true });
+        navigate(redirectPath, { replace: true });
       } else {
         setError('Login did not complete. Please try again.');
       }
