@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import type { RouteRecord } from 'vite-react-ssg';
 import { Analytics } from '@vercel/analytics/react';
@@ -103,6 +103,15 @@ if (env.warnings.length > 0) {
 }
 
 const RootLayout: React.FC = () => {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const host = String(window.location.hostname || '').toLowerCase();
+    if (host !== 'hustle-desk-flamkis-projects.vercel.app') return;
+
+    const target = `https://getsolodesk.com${window.location.pathname}${window.location.search}${window.location.hash}`;
+    window.location.replace(target);
+  }, []);
+
   if (!env.ok) {
     return <StartupEnvGuard errors={env.errors} warnings={env.warnings} />;
   }

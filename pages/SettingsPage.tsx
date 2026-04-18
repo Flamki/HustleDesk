@@ -1003,7 +1003,7 @@ export const SettingsPage: React.FC = () => {
                                         <div>
                                             <div className="font-bold text-slate-900 dark:text-white text-sm">{session.device}</div>
                                             <div className="text-xs text-slate-500">
-                                                {session.location} • {session.active ? <span className="text-green-600 font-bold">Active Now</span> : session.lastActive}
+                                                {session.location} - {session.active ? <span className="text-green-600 font-bold">Active Now</span> : session.lastActive}
                                             </div>
                                         </div>
                                     </div>
