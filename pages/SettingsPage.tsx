@@ -130,6 +130,15 @@ export const SettingsPage: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const autoCheckoutTriggeredRef = useRef(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [checkoutPricingPreview, setCheckoutPricingPreview] = useState<{
+    baseAmountMinor: number;
+    discountAmountMinor: number;
+    finalAmountMinor: number;
+    promoCodeApplied: string | null;
+    promoDescription: string | null;
+    currency: string;
+  } | null>(null);
 
   // -- Mock Data for other tabs --
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
@@ -273,10 +282,25 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  const openCheckout = React.useCallback(async () => {
+  const formatMinorCurrency = React.useCallback((amountMinor: number, currency: string = 'USD') => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+      }).format((Number(amountMinor || 0) || 0) / 100);
+    } catch {
+      return `${currency} ${((Number(amountMinor || 0) || 0) / 100).toFixed(2)}`;
+    }
+  }, []);
+
+  const openCheckout = React.useCallback(async (promoCodeArg?: string) => {
     setBillingLoading(true);
     setBillingError(null);
-    const { url, razorpayOrder, error } = await authService.createStripeCheckoutSession();
+    const normalizedPromoCode = String(promoCodeArg || '').trim();
+    const { url, razorpayOrder, error } = await authService.createStripeCheckoutSession({
+      promoCode: normalizedPromoCode || undefined,
+    });
     if (error) {
       setBillingLoading(false);
       setBillingError(error?.message || 'Failed to start checkout');
@@ -292,6 +316,14 @@ export const SettingsPage: React.FC = () => {
       setBillingError('Checkout session missing');
       return;
     }
+    setCheckoutPricingPreview(
+      razorpayOrder.pricing
+        ? {
+            ...razorpayOrder.pricing,
+            currency: razorpayOrder.currency,
+          }
+        : null
+    );
 
     const scriptLoaded = await loadRazorpayScript();
     if (!scriptLoaded || !window.Razorpay) {
@@ -320,6 +352,7 @@ export const SettingsPage: React.FC = () => {
 
         const { data, error: invoiceError } = await authService.getStripeInvoices();
         if (!invoiceError) setInvoices(data);
+        setPromoCode('');
 
         window.location.href = razorpayOrder.successUrl || '/app/settings?tab=billing&checkout=success';
       },
@@ -702,7 +735,7 @@ export const SettingsPage: React.FC = () => {
                             <div className="relative z-10 flex gap-4">
                                 <button
                                   onClick={() => {
-                                    void (user?.plan === 'pro' ? openPortal() : openCheckout());
+                                    void (user?.plan === 'pro' ? openPortal() : openCheckout(promoCode));
                                   }}
                                   disabled={billingLoading}
                                   className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold text-sm hover:bg-slate-100 transition-colors shadow-lg disabled:opacity-60"
@@ -719,6 +752,46 @@ export const SettingsPage: React.FC = () => {
                                     View Invoices
                                 </button>
                             </div>
+
+                            {user?.plan !== 'pro' && (
+                              <div className="relative z-10 mt-5 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-sm p-4">
+                                <div className="text-xs uppercase tracking-wider font-semibold text-indigo-100 mb-2">
+                                  Promotion Code
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                  <input
+                                    value={promoCode}
+                                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                    placeholder="Enter promo code"
+                                    className="flex-1 px-3 py-2 rounded-lg bg-white/95 text-slate-900 text-sm outline-none border border-transparent focus:border-indigo-400"
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      void openCheckout(promoCode);
+                                    }}
+                                    disabled={billingLoading}
+                                    className="px-4 py-2 rounded-lg text-sm font-bold bg-indigo-500 hover:bg-indigo-400 text-white disabled:opacity-60"
+                                  >
+                                    Apply & Pay
+                                  </button>
+                                </div>
+                                <p className="text-xs text-indigo-100 mt-2">
+                                  Optional. If valid, discount is applied before payment opens.
+                                </p>
+                                {checkoutPricingPreview?.promoCodeApplied && (
+                                  <p className="text-xs text-emerald-200 mt-2">
+                                    Code {checkoutPricingPreview.promoCodeApplied} applied.
+                                    You save {formatMinorCurrency(
+                                      checkoutPricingPreview.discountAmountMinor,
+                                      checkoutPricingPreview.currency
+                                    )} and pay {formatMinorCurrency(
+                                      checkoutPricingPreview.finalAmountMinor,
+                                      checkoutPricingPreview.currency
+                                    )}.
+                                  </p>
+                                )}
+                              </div>
+                            )}
                         </div>
 
                         {/* 2. Usage Stats */}
@@ -741,7 +814,7 @@ export const SettingsPage: React.FC = () => {
                                     <div className="text-xs text-slate-500 mb-2">{user?.aiCreditsUsed ?? 0} / {user?.aiCreditsLimit ?? 0} used</div>
                                     <button
                                       onClick={() => {
-                                        void openCheckout();
+                                        void openCheckout(promoCode);
                                       }}
                                       disabled={billingLoading}
                                       className="text-xs font-bold text-indigo-600 hover:underline disabled:opacity-60"

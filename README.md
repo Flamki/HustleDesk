@@ -71,6 +71,7 @@ Billing:
 - `RAZORPAY_WEBHOOK_SECRET` (recommended for webhook sync)
 - `RAZORPAY_CURRENCY` (default `USD`)
 - `RAZORPAY_PRO_AMOUNT_MINOR` (default `900`)
+- `RAZORPAY_PROMO_CODES_JSON` (optional, JSON promo catalog)
 
 Marketing:
 - `PUBLIC_APP_URL`

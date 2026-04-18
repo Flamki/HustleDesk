@@ -2025,6 +2025,13 @@ export type RazorpayCheckoutOrder = {
   };
   successUrl?: string;
   cancelUrl?: string;
+  pricing?: {
+    baseAmountMinor: number;
+    discountAmountMinor: number;
+    finalAmountMinor: number;
+    promoCodeApplied: string | null;
+    promoDescription: string | null;
+  };
 };
 
 export type BillingCheckoutSession = {
@@ -2033,7 +2040,9 @@ export type BillingCheckoutSession = {
   error: Error | null;
 };
 
-export const createStripeCheckoutSession = async (): Promise<BillingCheckoutSession> => {
+export const createStripeCheckoutSession = async (
+  options?: { promoCode?: string | null }
+): Promise<BillingCheckoutSession> => {
   if (!supabase) return { url: null, razorpayOrder: null, error: new Error('Supabase not configured') };
   const token = await getSupabaseToken();
   if (!token) return { url: null, razorpayOrder: null, error: new Error('Unauthorized') };
@@ -2042,8 +2051,12 @@ export const createStripeCheckoutSession = async (): Promise<BillingCheckoutSess
     const response = await fetchWithTimeout('/api/payments/create-checkout-session', {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify({
+        promoCode: String(options?.promoCode || '').trim() || undefined,
+      }),
     }, 15000);
     const body = await response.json().catch(() => ({}));
     if (!response.ok) return { url: null, razorpayOrder: null, error: new Error(body.error || 'Failed to start checkout') };
@@ -2062,6 +2075,19 @@ export const createStripeCheckoutSession = async (): Promise<BillingCheckoutSess
           prefill: body.prefill && typeof body.prefill === 'object' ? body.prefill : undefined,
           successUrl: body.successUrl ? String(body.successUrl) : undefined,
           cancelUrl: body.cancelUrl ? String(body.cancelUrl) : undefined,
+          pricing: body.pricing && typeof body.pricing === 'object'
+            ? {
+                baseAmountMinor: Number(body.pricing.baseAmountMinor || 0),
+                discountAmountMinor: Number(body.pricing.discountAmountMinor || 0),
+                finalAmountMinor: Number(body.pricing.finalAmountMinor || 0),
+                promoCodeApplied: body.pricing.promoCodeApplied
+                  ? String(body.pricing.promoCodeApplied)
+                  : null,
+                promoDescription: body.pricing.promoDescription
+                  ? String(body.pricing.promoDescription)
+                  : null,
+              }
+            : undefined,
         },
         error: null,
       };
