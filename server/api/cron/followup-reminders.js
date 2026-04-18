@@ -6,8 +6,6 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const APP_BASE_URL = (process.env.APP_BASE_URL || process.env.PUBLIC_APP_URL || '').replace(/\/+$/, '');
 const FROM_EMAIL = process.env.MARKETING_FROM_EMAIL || '';
 const FROM_NAME = process.env.MARKETING_FROM_NAME || 'GetSoloDesk';
-const isSchemaCompatibilityError = (message = '') =>
-  /relation .* does not exist|column .* does not exist|Could not find .* in the schema cache/i.test(message);
 
 const json = (res, status, body) => {
   res.statusCode = status;
@@ -21,7 +19,17 @@ const getHeader = (req, name) => {
   return value || '';
 };
 
+const isSchemaCompatibilityError = (message = '') =>
+  /relation .* does not exist|column .* does not exist|Could not find .* in the schema cache/i.test(message);
+
 const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+
+const getConfigError = () => {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return 'Supabase environment not configured';
+  if (!RESEND_API_KEY) return 'RESEND_API_KEY is required';
+  if (!FROM_EMAIL || !isEmail(FROM_EMAIL)) return 'MARKETING_FROM_EMAIL must be a valid email';
+  return '';
+};
 
 const fetchAuthEmails = async (supabase, userIds, knownEmails) => {
   const missingUserIds = userIds.filter((userId) => !isEmail(knownEmails.get(userId)));
@@ -96,26 +104,11 @@ const isAuthorizedCronCall = (req) => {
   return Boolean(vercelCronHeader);
 };
 
-export default async function handler(req, res) {
-  if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' });
+export const validateFollowupReminderConfig = () => getConfigError();
 
-  if (!isAuthorizedCronCall(req)) {
-    return json(res, 401, { error: 'Unauthorized' });
-  }
+export const createFollowupReminderServiceClient = () => createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return json(res, 500, { error: 'Supabase environment not configured' });
-  }
-  if (!RESEND_API_KEY) {
-    return json(res, 500, { error: 'RESEND_API_KEY is required' });
-  }
-  if (!FROM_EMAIL || !isEmail(FROM_EMAIL)) {
-    return json(res, 500, { error: 'MARKETING_FROM_EMAIL must be a valid email' });
-  }
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const nowIso = new Date().toISOString();
-
+export const runFollowupReminderSweep = async ({ supabase, nowIso }) => {
   const { data: dueJobs, error: jobsError } = await supabase
     .from('jobs')
     .select('id,user_id,title,company,platform,status,followup_at,followup_last_reminder_at,deleted_at')
@@ -126,7 +119,7 @@ export default async function handler(req, res) {
     .order('followup_at', { ascending: true })
     .limit(200);
 
-  if (jobsError) return json(res, 500, { error: jobsError.message });
+  if (jobsError) throw new Error(jobsError.message || 'Failed to fetch due jobs');
 
   const candidates = (dueJobs || []).filter((job) => {
     if (!job.followup_at) return false;
@@ -135,28 +128,37 @@ export default async function handler(req, res) {
   });
 
   if (candidates.length === 0) {
-    return json(res, 200, { success: true, scanned: dueJobs?.length || 0, due: 0, sent: 0, skipped: 0, failed: 0 });
+    return {
+      scanned: dueJobs?.length || 0,
+      due: 0,
+      sent: 0,
+      skipped: 0,
+      skipped_no_email: 0,
+      skipped_disabled: 0,
+      failed: 0,
+    };
   }
 
-  const userIds = [...new Set(candidates.map((j) => j.user_id))];
-
+  const userIds = [...new Set(candidates.map((job) => job.user_id))];
   const [{ data: users, error: usersError }, { data: settingsRows, error: settingsError }] = await Promise.all([
     supabase.from('users').select('id,email').in('id', userIds),
     supabase.from('notification_settings').select('user_id,followup_reminders').in('user_id', userIds),
   ]);
 
   if (usersError && !isSchemaCompatibilityError(usersError.message || '')) {
-    return json(res, 500, { error: usersError.message });
+    throw new Error(usersError.message || 'Failed to load user emails');
   }
   if (settingsError && !isSchemaCompatibilityError(settingsError.message || '')) {
-    return json(res, 500, { error: settingsError.message });
+    throw new Error(settingsError.message || 'Failed to load notification settings');
   }
 
-  const userEmailById = new Map((users || []).map((u) => [u.id, u.email]));
+  const userEmailById = new Map((users || []).map((userRow) => [userRow.id, userRow.email]));
   const fallbackAuthEmails = await fetchAuthEmails(supabase, userIds, userEmailById);
   fallbackAuthEmails.forEach((email, userId) => userEmailById.set(userId, email));
 
-  const reminderPrefByUser = new Map((settingsRows || []).map((s) => [s.user_id, Boolean(s.followup_reminders)]));
+  const reminderPrefByUser = new Map(
+    (settingsRows || []).map((settingRow) => [settingRow.user_id, Boolean(settingRow.followup_reminders)])
+  );
 
   let sent = 0;
   let skipped = 0;
@@ -210,8 +212,7 @@ export default async function handler(req, res) {
     }
   }
 
-  return json(res, 200, {
-    success: true,
+  return {
     scanned: dueJobs?.length || 0,
     due: candidates.length,
     sent,
@@ -219,7 +220,30 @@ export default async function handler(req, res) {
     skipped_no_email: skippedNoEmail,
     skipped_disabled: skippedDisabled,
     failed,
-    timestamp: nowIso,
-  });
-}
+  };
+};
 
+export default async function handler(req, res) {
+  if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' });
+
+  if (!isAuthorizedCronCall(req)) {
+    return json(res, 401, { error: 'Unauthorized' });
+  }
+
+  const configError = validateFollowupReminderConfig();
+  if (configError) return json(res, 500, { error: configError });
+
+  const supabase = createFollowupReminderServiceClient();
+  const nowIso = new Date().toISOString();
+
+  try {
+    const result = await runFollowupReminderSweep({ supabase, nowIso });
+    return json(res, 200, {
+      success: true,
+      ...result,
+      timestamp: nowIso,
+    });
+  } catch (err) {
+    return json(res, 500, { error: err instanceof Error ? err.message : 'Failed to process follow-up reminders' });
+  }
+}
