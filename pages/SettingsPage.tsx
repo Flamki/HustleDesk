@@ -140,13 +140,7 @@ export const SettingsPage: React.FC = () => {
     currency: string;
   } | null>(null);
 
-  // -- Mock Data for other tabs --
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
-
-  const [sessions] = useState([
-      { id: 1, device: 'MacBook Pro', location: 'San Francisco, US', active: true, icon: Laptop },
-      { id: 2, device: 'iPhone 14', location: 'San Francisco, US', active: false, lastActive: '2 hours ago', icon: Smartphone },
-  ]);
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
@@ -839,67 +833,20 @@ export const SettingsPage: React.FC = () => {
 
                     <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
 
-                    {/* Middle Row: Payment Methods */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        
-                        <div>
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Payment Method</h3>
-                                <button className="text-sm font-bold text-indigo-600 hover:underline">+ Add New</button>
-                            </div>
-                            
-                            {/* Realistic Card UI */}
-                            <div className="relative w-full max-w-sm aspect-[1.586/1] rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-slate-800 to-black text-white p-6 flex flex-col justify-between transition-transform hover:scale-[1.02] duration-300">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                                
-                                <div className="flex justify-between items-start relative z-10">
-                                    <div className="w-12 h-8 bg-gradient-to-r from-yellow-200 to-yellow-400 rounded-md opacity-80"></div>
-                                    <span className="font-mono text-lg tracking-widest italic opacity-80">VISA</span>
-                                </div>
-
-                                <div className="relative z-10">
-                                    <div className="font-mono text-xl tracking-widest mb-4 flex gap-4">
-                                        <span>••••</span> <span>••••</span> <span>••••</span> <span>4242</span>
-                                    </div>
-                                    <div className="flex justify-between items-end">
-                                        <div>
-                                            <p className="text-[10px] uppercase opacity-60 mb-0.5">Card Holder</p>
-                                            <p className="font-medium text-sm tracking-wide uppercase">{user?.email?.split('@')[0] || 'YOUR NAME'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] uppercase opacity-60 mb-0.5">Expires</p>
-                                            <p className="font-medium text-sm tracking-wide">12/25</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Billing Details</h3>
-                                <button className="text-sm font-bold text-indigo-600 hover:underline">Edit</button>
-                            </div>
-                            <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Billing Name</span>
-                                    <span className="font-medium text-slate-900 dark:text-white">Acme Freelancing</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Billing Email</span>
-                                    <span className="font-medium text-slate-900 dark:text-white">{user?.email}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Address</span>
-                                    <span className="font-medium text-slate-900 dark:text-white text-right">123 Market St, Suite 400<br/>San Francisco, CA 94103</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Tax ID</span>
-                                    <span className="font-medium text-slate-900 dark:text-white">US-992831</span>
-                                </div>
-                            </div>
-                        </div>
-
+                    {/* Middle Row: Secure Billing Settings Information */}
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 text-center">
+                        <p className="text-slate-600 dark:text-slate-300 mb-4 font-medium text-sm">
+                          Your active payment method and billing details are securely vaulted and managed external to the app. 
+                        </p>
+                        <button
+                          onClick={() => {
+                            void openPortal();
+                          }}
+                          disabled={billingLoading}
+                          className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-sm font-bold shadow-sm hover:shadow-md transition-all disabled:opacity-60"
+                        >
+                          Manage Payment Details Securely
+                        </button>
                     </div>
 
                     <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
@@ -988,31 +935,9 @@ export const SettingsPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Active Sessions */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <Shield size={20} className="text-green-500" /> Active Sessions
-                        </h3>
-                        <div className="space-y-4">
-                            {sessions.map((session) => (
-                                <div key={session.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-600 text-slate-500">
-                                            <session.icon size={20} />
-                                        </div>
-                                        <div>
-                                            <div className="font-bold text-slate-900 dark:text-white text-sm">{session.device}</div>
-                                            <div className="text-xs text-slate-500">
-                                                {session.location} - {session.active ? <span className="text-green-600 font-bold">Active Now</span> : session.lastActive}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {!session.active && (
-                                        <button className="text-xs font-bold text-red-500 hover:text-red-600">Revoke</button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                    {/* Real session tracking is handled natively by Supabase, managed via Auth */}
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm text-slate-500 text-center">
+                        Your session security is natively managed by Supabase. To log out across all devices, change your password.
                     </div>
 
                 </div>
