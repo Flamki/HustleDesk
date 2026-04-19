@@ -66,24 +66,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
     const seed = user?.email || 'default';
     const gender = profile?.preferences?.profileSetup?.gender || 'female';
     
-    // Explicitly lock 'top' features to standard hair options to completely avoid any hats or religious symbols.
-    const maleTops = ['shortHairDreads01','shortHairDreads02','shortHairFrizzle','shortHairShaggyMullet','shortHairShortCurly','shortHairShortFlat','shortHairShortRound','shortHairShortWaved','shortHairSides','shortHairTheCaesar','shortHairTheCaesarAndSidePart'];
-    const femaleTops = ['longHairBigHair','longHairBob','longHairBun','longHairCurly','longHairCurvy','longHairDreads','longHairFrida','longHairFro','longHairFroBand','longHairNotTooLong','longHairShavedSides','longHairMiaWallace','longHairStraight','longHairStraight2','longHairStraightStrand'];
-    const nbTops = [...maleTops, ...femaleTops];
-    
-    let tops = femaleTops;
-    let seedPrefix = 'f-';
+    // Using distinct Dicebear 7.x styles that naturally avoid religious identifiers 
+    // and inherently map better to the requested gender aesthetics without causing 400 errors.
+    let style = 'lorelei'; // Default female-leaning aesthetic
     
     if (gender === 'male') {
-      tops = maleTops;
-      seedPrefix = 'm-';
-    } else if (gender === 'non_binary') {
-      tops = nbTops;
-      seedPrefix = 'nb-';
+      style = 'adventurer'; // Male-leaning aesthetic
+    } else if (gender === 'non_binary' || gender === 'prefer_not_to_say') {
+      style = 'notionists'; // Minimalist gender-neutral aesthetic
     }
 
-    const topsQuery = `top=${tops.join(',')}`;
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seedPrefix}${seed}&${topsQuery}`;
+    return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`;
   };
 
   // Check context

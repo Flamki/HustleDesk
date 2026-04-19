@@ -150,23 +150,15 @@ const getAssistantAvatarUrl = (profile: FreelancerProfile) => {
   const seed = profile.id || 'default';
   const gender = profile.preferences?.profileSetup?.gender || 'female';
   
-  const maleTops = ['shortHairDreads01','shortHairDreads02','shortHairFrizzle','shortHairShaggyMullet','shortHairShortCurly','shortHairShortFlat','shortHairShortRound','shortHairShortWaved','shortHairSides','shortHairTheCaesar','shortHairTheCaesarAndSidePart'];
-  const femaleTops = ['longHairBigHair','longHairBob','longHairBun','longHairCurly','longHairCurvy','longHairDreads','longHairFrida','longHairFro','longHairFroBand','longHairNotTooLong','longHairShavedSides','longHairMiaWallace','longHairStraight','longHairStraight2','longHairStraightStrand'];
-  const nbTops = [...maleTops, ...femaleTops];
-  
-  let tops = femaleTops;
-  let seedPrefix = 'f-';
+  let style = 'lorelei';
   
   if (gender === 'male') {
-    tops = maleTops;
-    seedPrefix = 'm-';
-  } else if (gender === 'non_binary') {
-    tops = nbTops;
-    seedPrefix = 'nb-';
+    style = 'adventurer';
+  } else if (gender === 'non_binary' || gender === 'prefer_not_to_say') {
+    style = 'notionists';
   }
 
-  const topsQuery = `top=${tops.join(',')}`;
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seedPrefix}${seed}&${topsQuery}`;
+  return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`;
 };
 
 export const ProfileAssistant: React.FC = () => {
