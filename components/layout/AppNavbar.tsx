@@ -2,12 +2,40 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, Plus, Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../context/ProfileContext';
 import { BrandLogo } from '../brand/BrandLogo';
 
 export const AppNavbar: React.FC = () => {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
+  const { profile } = useProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const getAvatarUrl = () => {
+    const seed = user?.email || 'default';
+    const gender = profile?.preferences?.profileSetup?.gender || 'female';
+    
+    // Explicitly lock 'top' features to standard hair options to completely avoid any hats or religious symbols.
+    const maleTops = ['shortHairDreads01','shortHairDreads02','shortHairFrizzle','shortHairShaggyMullet','shortHairShortCurly','shortHairShortFlat','shortHairShortRound','shortHairShortWaved','shortHairSides','shortHairTheCaesar','shortHairTheCaesarAndSidePart'];
+    const femaleTops = ['longHairBigHair','longHairBob','longHairBun','longHairCurly','longHairCurvy','longHairDreads','longHairFrida','longHairFro','longHairFroBand','longHairNotTooLong','longHairShavedSides','longHairMiaWallace','longHairStraight','longHairStraight2','longHairStraightStrand'];
+    const nbTops = [...maleTops, ...femaleTops];
+    
+    let tops = femaleTops;
+    let seedPrefix = 'f-';
+    
+    if (gender === 'male') {
+      tops = maleTops;
+      seedPrefix = 'm-';
+    } else if (gender === 'non_binary') {
+      tops = nbTops;
+      seedPrefix = 'nb-';
+    }
+
+    const topsQuery = `top=${tops.join(',')}`;
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seedPrefix}${seed}&${topsQuery}`;
+  };
 
   const isActive = (path: string) => {
      return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -66,7 +94,7 @@ export const AppNavbar: React.FC = () => {
 
             {/* User Avatar */}
             <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 border border-white dark:border-slate-600 shadow-sm overflow-hidden hidden sm:block">
-                <img loading="lazy" decoding="async" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" className="w-full h-full" />
+                <img loading="lazy" decoding="async" src={getAvatarUrl()} alt="Avatar" className="w-full h-full" />
             </div>
 
             {/* Mobile Menu Button */}
@@ -98,11 +126,11 @@ export const AppNavbar: React.FC = () => {
             </div>
              <div className="flex items-center gap-3 pt-2">
                 <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                    <img loading="lazy" decoding="async" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" className="w-full h-full" />
+                    <img loading="lazy" decoding="async" src={getAvatarUrl()} alt="Avatar" className="w-full h-full" />
                 </div>
                 <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">Felix The Cat</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">felix@example.com</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{user?.email?.split('@')[0] || 'User'}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email || 'Welcome'}</p>
                 </div>
             </div>
         </div>

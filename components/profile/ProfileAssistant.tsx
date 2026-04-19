@@ -146,6 +146,29 @@ const mergeProfilePatch = (current: FreelancerProfile, patch: Partial<Freelancer
   return next;
 };
 
+const getAssistantAvatarUrl = (profile: FreelancerProfile) => {
+  const seed = profile.id || 'default';
+  const gender = profile.preferences?.profileSetup?.gender || 'female';
+  
+  const maleTops = ['shortHairDreads01','shortHairDreads02','shortHairFrizzle','shortHairShaggyMullet','shortHairShortCurly','shortHairShortFlat','shortHairShortRound','shortHairShortWaved','shortHairSides','shortHairTheCaesar','shortHairTheCaesarAndSidePart'];
+  const femaleTops = ['longHairBigHair','longHairBob','longHairBun','longHairCurly','longHairCurvy','longHairDreads','longHairFrida','longHairFro','longHairFroBand','longHairNotTooLong','longHairShavedSides','longHairMiaWallace','longHairStraight','longHairStraight2','longHairStraightStrand'];
+  const nbTops = [...maleTops, ...femaleTops];
+  
+  let tops = femaleTops;
+  let seedPrefix = 'f-';
+  
+  if (gender === 'male') {
+    tops = maleTops;
+    seedPrefix = 'm-';
+  } else if (gender === 'non_binary') {
+    tops = nbTops;
+    seedPrefix = 'nb-';
+  }
+
+  const topsQuery = `top=${tops.join(',')}`;
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seedPrefix}${seed}&${topsQuery}`;
+};
+
 export const ProfileAssistant: React.FC = () => {
   const { profile, updateProfile } = useProfile();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -389,8 +412,7 @@ export const ProfileAssistant: React.FC = () => {
               <div className="w-full h-full rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden">
                 <img
                   loading="lazy"
-                  decoding="async"
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`}
+                  src={getAssistantAvatarUrl(profile)}
                   className="w-full h-full bg-cover"
                   alt="Avatar"
                 />

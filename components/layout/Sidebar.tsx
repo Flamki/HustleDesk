@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useProfile } from '../../context/ProfileContext';
 import { BrandLogo, BrandMark } from '../brand/BrandLogo';
 
 interface SidebarProps {
@@ -45,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
   const [searchParams] = useSearchParams();
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { profile } = useProfile();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const handleSignOut = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -58,6 +60,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
     setProfileMenuOpen(false);
     onClose?.();
     navigate(to);
+  };
+
+  const getAvatarUrl = () => {
+    const seed = user?.email || 'default';
+    const gender = profile?.preferences?.profileSetup?.gender || 'female';
+    
+    // Explicitly lock 'top' features to standard hair options to completely avoid any hats or religious symbols.
+    const maleTops = ['shortHairDreads01','shortHairDreads02','shortHairFrizzle','shortHairShaggyMullet','shortHairShortCurly','shortHairShortFlat','shortHairShortRound','shortHairShortWaved','shortHairSides','shortHairTheCaesar','shortHairTheCaesarAndSidePart'];
+    const femaleTops = ['longHairBigHair','longHairBob','longHairBun','longHairCurly','longHairCurvy','longHairDreads','longHairFrida','longHairFro','longHairFroBand','longHairNotTooLong','longHairShavedSides','longHairMiaWallace','longHairStraight','longHairStraight2','longHairStraightStrand'];
+    const nbTops = [...maleTops, ...femaleTops];
+    
+    let tops = femaleTops;
+    let seedPrefix = 'f-';
+    
+    if (gender === 'male') {
+      tops = maleTops;
+      seedPrefix = 'm-';
+    } else if (gender === 'non_binary') {
+      tops = nbTops;
+      seedPrefix = 'nb-';
+    }
+
+    const topsQuery = `top=${tops.join(',')}`;
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seedPrefix}${seed}&${topsQuery}`;
   };
 
   // Check context
@@ -297,7 +323,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
                 aria-expanded={profileMenuOpen}
             >
                 <img loading="lazy" decoding="async" 
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} 
+                    src={getAvatarUrl()} 
                     alt="User" 
                     className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 shadow-sm object-cover" 
                 />
