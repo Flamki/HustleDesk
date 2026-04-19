@@ -523,14 +523,18 @@ const resolveUserAfterAuth = async (
     // that existed before this login attempt.
     const loginStartedAtMs = getPendingOAuthIntentTimestamp();
     const cleanupResult = await rejectOAuthLoginOnlyAccount(accessToken, loginStartedAtMs);
-    if (cleanupResult === 'deleted' || cleanupResult === 'error') {
+    if (cleanupResult === 'deleted') {
+      // Account was truly new and got cleaned up — redirect to signup.
       clearOAuthIntent();
-      setOAuthErrorCode(cleanupResult === 'deleted' ? 'no_account' : 'oauth_failed');
+      setOAuthErrorCode('no_account');
       if (supabase) {
         await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
       }
       return null;
     }
+    // For 'error' or 'not_eligible', continue — don't block login on API failures.
+    // This is the key fix: previously 'error' also blocked login, causing failures
+    // when the API was slow or unreachable.
   }
 
   if (oauthIntent) {
@@ -539,40 +543,40 @@ const resolveUserAfterAuth = async (
 
   const shouldBootstrap =
     context === 'signup' || oauthIntent === 'signup';
-  let verifiedAccountReady = false;
-  if (accessToken) {
-    if (shouldBootstrap) {
-      await ensureProfileSetup(userId, accessToken, 'ensure');
-    } else if (oauthIntent === 'login') {
-      // Keep strict account checks for OAuth-login intent, but do not
-      // block password-based login/session restores on this endpoint.
-      const accountReady = await ensureProfileSetup(userId, accessToken, 'check');
-      if (!accountReady) {
-        setOAuthErrorCode('no_account');
-        if (supabase) {
-          await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-        }
-        return null;
-      }
-      verifiedAccountReady = true;
-    } else {
-      verifiedAccountReady = true;
-      void ensureProfileSetup(userId, accessToken, 'check');
-    }
+
+  // For returning session context (page reload), skip the expensive profile-check
+  // API call and go straight to DB lookup. This saves ~2-3s on page load.
+  if (context === 'session' && !oauthIntent) {
+    const user = await loadUserFromUsersTable(userId, email);
+    return user || buildFallbackUser(userId, email, createdAt);
   }
+
+  // For OAuth flows, run profile setup and user lookup in parallel.
+  if (accessToken) {
+    const profileMode = shouldBootstrap ? 'ensure' : (oauthIntent === 'login' ? 'check' : 'check');
+    const [profileResult, user] = await Promise.all([
+      ensureProfileSetup(userId, accessToken, profileMode).catch(() => false),
+      loadUserFromUsersTable(userId, email),
+    ]);
+    if (user) return user;
+    if (shouldBootstrap || profileResult) {
+      return buildFallbackUser(userId, email, createdAt);
+    }
+    if (oauthIntent === 'login' && !profileResult) {
+      // Profile check says account doesn't exist and this is a login attempt.
+      setOAuthErrorCode('no_account');
+      if (supabase) {
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+      }
+      return null;
+    }
+    return buildFallbackUser(userId, email, createdAt);
+  }
+
+  // No access token — try DB lookup as last resort.
   const user = await loadUserFromUsersTable(userId, email);
   if (user) return user;
-  if (!shouldBootstrap && verifiedAccountReady) {
-    return buildFallbackUser(userId, email, createdAt);
-  }
-  if (shouldBootstrap) {
-    return buildFallbackUser(userId, email, createdAt);
-  }
-  setOAuthErrorCode('no_account');
-  if (supabase) {
-    await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-  }
-  return null;
+  return buildFallbackUser(userId, email, createdAt);
 };
 
 const parseJsonSafe = async <T = any>(response: Response): Promise<T | null> => {
@@ -802,8 +806,7 @@ export const signInWithGoogle = async (
   returnTo?: string | null
 ): Promise<AuthResponse> => {
   if (!supabase) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return { user: null, error: null };
+    return { user: null, error: new Error('Auth is not configured. Missing Supabase client environment variables.') };
   }
 
   const callback = new URL(`${getAuthBaseUrl()}/auth/callback`);
@@ -849,28 +852,38 @@ export const getCurrentUser = async (): Promise<User | null> => {
     const sessionUser = session?.user;
     if (!sessionUser) return null;
 
+    // Use the session user directly for speed. The session is already validated
+    // by Supabase's token refresh mechanism. Only call getUser() if we suspect
+    // the token might be stale (expired).
     let resolvedUser = sessionUser;
-    try {
-      const userResult = await withTimeout(
-        Promise.resolve(supabase.auth.getUser()),
-        SESSION_VALIDATE_TIMEOUT_MS,
-        'Session validation timed out'
-      );
-      if (userResult.error) {
-        const msg = String(userResult.error.message || '').toLowerCase();
-        if (
-          msg.includes('jwt') ||
-          msg.includes('expired') ||
-          msg.includes('invalid') ||
-          msg.includes('unauthorized')
-        ) {
-          return null;
+    const sessionAge = session.expires_at
+      ? (session.expires_at * 1000) - Date.now()
+      : Infinity;
+    const isSessionFresh = sessionAge > 0;
+
+    if (!isSessionFresh) {
+      try {
+        const userResult = await withTimeout(
+          Promise.resolve(supabase.auth.getUser()),
+          SESSION_VALIDATE_TIMEOUT_MS,
+          'Session validation timed out'
+        );
+        if (userResult.error) {
+          const msg = String(userResult.error.message || '').toLowerCase();
+          if (
+            msg.includes('jwt') ||
+            msg.includes('expired') ||
+            msg.includes('invalid') ||
+            msg.includes('unauthorized')
+          ) {
+            return null;
+          }
+        } else if (userResult.data?.user) {
+          resolvedUser = userResult.data.user;
         }
-      } else if (userResult.data?.user) {
-        resolvedUser = userResult.data.user;
+      } catch {
+        // Keep using session user as best effort when validation endpoint is temporarily slow.
       }
-    } catch {
-      // Keep using session user as best effort when validation endpoint is temporarily slow.
     }
 
     return await resolveUserAfterAuth(

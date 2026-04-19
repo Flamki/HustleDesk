@@ -62,6 +62,20 @@ const resolveSupabaseUrl = (): string => {
 export const getSupabaseBaseUrl = (): string => resolveSupabaseUrl();
 export const hasSupabase = Boolean(getSupabaseBaseUrl() && supabaseAnonKey);
 
+// Robust localStorage wrapper for in-app browsers (Instagram, Facebook, etc.)
+// where localStorage may be unavailable or throw on access.
+const safeStorage = {
+  getItem: (key: string): string | null => {
+    try { return localStorage.getItem(key); } catch { return null; }
+  },
+  setItem: (key: string, value: string): void => {
+    try { localStorage.setItem(key, value); } catch { /* noop */ }
+  },
+  removeItem: (key: string): void => {
+    try { localStorage.removeItem(key); } catch { /* noop */ }
+  },
+};
+
 const createSupabaseClient = (): SupabaseBrowserClient | null => {
   const baseUrl = getSupabaseBaseUrl();
   if (!hasSupabase) return null;
@@ -71,8 +85,9 @@ const createSupabaseClient = (): SupabaseBrowserClient | null => {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: false,
+        detectSessionInUrl: true,
         flowType: 'pkce',
+        storage: safeStorage,
       },
     });
 
@@ -137,4 +152,3 @@ export const getAuthBaseUrl = (): string => {
   }
   return window.location.origin;
 };
-

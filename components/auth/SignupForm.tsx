@@ -29,6 +29,7 @@ export const SignupForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<AuthError>({});
   const [isEmailTouched, setIsEmailTouched] = useState(false);
   const [isPasswordTouched, setIsPasswordTouched] = useState(false);
@@ -168,12 +169,13 @@ export const SignupForm: React.FC = () => {
   };
 
   const handleGoogleSignup = async () => {
-      setLoading(true);
+      setGoogleLoading(true);
       const { error } = await authService.signInWithGoogle('signup', returnTo);
       if (error) {
         setErrors((prev) => ({ ...prev, general: getFriendlyOAuthError(error.message) }));
+        setGoogleLoading(false);
       }
-      setLoading(false);
+      // Don't reset on success — page redirects to Google.
   };
 
   return (
@@ -287,7 +289,7 @@ export const SignupForm: React.FC = () => {
         <button
           type="button"
           onClick={handleGoogleSignup}
-          disabled={loading}
+          disabled={loading || googleLoading}
           className="w-full flex justify-center items-center gap-3 px-4 py-3 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm bg-white dark:bg-slate-900 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-200"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">

@@ -25,8 +25,15 @@ export const AuthCallbackPage: React.FC = () => {
     [searchParams]
   );
 
+  // Detect if URL has OAuth artifacts — if not, this is a stale/broken callback.
   useEffect(() => {
-    const timer = window.setTimeout(() => setAllowFailureRedirect(true), 6500);
+    const url = new URL(window.location.href);
+    const hasCode = url.searchParams.has('code');
+    const hasHash = (url.hash || '').includes('access_token');
+    const hasError = url.searchParams.has('error') || (url.hash || '').includes('error');
+    // Faster timeout (1.5s) for stale callbacks, standard (3.5s) for real OAuth flows.
+    const timeoutMs = (!hasCode && !hasHash && !hasError) ? 1500 : 3500;
+    const timer = window.setTimeout(() => setAllowFailureRedirect(true), timeoutMs);
     return () => window.clearTimeout(timer);
   }, []);
 
