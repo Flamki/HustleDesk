@@ -75,6 +75,12 @@ const handleCreate = async (req, res) => {
     status: 'saved',
   };
 
+  // Safe lazy-provision to ensure the public.users entry exists (prevent jobs_user_id_fkey failures)
+  await supabase.from('users').upsert({
+    id: user.id,
+    email: user.email,
+  }, { onConflict: 'id' }).select('id').single();
+
   const { data: inserted, error: insertError } = await supabase.from('jobs').insert(payload).select('id').single();
   if (insertError) return json(res, 500, { error: insertError.message });
 

@@ -1256,6 +1256,10 @@ export const createJob = async (
   if (userError || !user) return { data: null, error: new Error('Unauthorized') };
 
   const dbPayload = mapCreatePayloadToDb(payload);
+  
+  // Lazy-provision public.users to prevent fkey constraint failures
+  await supabase.from('users').upsert({ id: user.id, email: user.email }, { onConflict: 'id' });
+
   const { data, error } = await supabase
     .from('jobs')
     .insert({ ...dbPayload, user_id: user.id })
