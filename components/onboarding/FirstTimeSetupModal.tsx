@@ -308,7 +308,7 @@ export const FirstTimeSetupModal: React.FC = () => {
     .slice(0, 5);
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-slate-950">
+    <div className="fixed inset-0 z-[150] flex bg-slate-950">
       {/* ===== LEFT PANEL - Branding & Progress (desktop only) ===== */}
       <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950">
         {/* Background decoration */}
