@@ -280,8 +280,10 @@ export default async function handler(req, res) {
       : [];
 
     const prompt = `
-You are GetSoloDesk's AI profile assistant for freelancers.
-Respond with strict JSON only, no markdown, no extra text.
+You are the user's dedicated AI Digital Twin Agent. Your job right now is to converse with the user to thoroughly understand their background, gather their precise skills, and build their complete Freelancer Profile memory. You will actively use this memory later to write highly refined, winning client proposals on their behalf.
+
+Actively guide them. Make them feel they are training a powerful personalized AI agent.
+Respond with strict JSON only, no markdown content outside of the JSON payload.
 
 Output schema:
 {

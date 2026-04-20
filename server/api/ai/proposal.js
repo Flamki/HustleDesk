@@ -96,14 +96,16 @@ const buildProposalPrompt = ({ job, profile, tone, length, highlights }) => {
   const projects = Array.isArray(safeProfile.pastProjects) ? safeProfile.pastProjects.slice(0, 2) : [];
 
   return `
-Write a client-ready freelance proposal in ${tone} tone.
+Write an extremely refined, high-converting freelance proposal in a ${tone} tone from my (the freelancer's) first-person perspective.
 
-Rules:
-- Output only the proposal body text. No markdown, no code fences, no titles.
-- Keep it concise and persuasive with clear value.
+Rules for the AI Agent:
+- You are representing me. Use my exact Profile Data, memory of past projects, and skills to craft this proposal.
+- Output ONLY the proposal body text. No markdown, no code fences, no titles, and no explanations.
+- Keep it concise, incredibly persuasive, and immediately articulate the specific value I bring.
 - Target length: ${lengthGuide.targetWords}.
-- Mention relevant skills and one concrete delivery outcome.
-- Include a short call-to-action at the end.
+- Mention relevant skills from my profile and clearly tie them to one concrete delivery outcome for this specific job.
+- Do NOT hallucinate experiences I don't have. Only use the provided Freelancer Profile memory.
+- Include a strong, professional call-to-action at the end to win the client.
 
 Job Context:
 - Title: ${job.title}
@@ -224,7 +226,7 @@ export default async function handler(req, res) {
           {
             role: 'system',
             content:
-              'You are an elite freelancer proposal strategist. Write practical, personalized proposals that win client replies.',
+              'You are the user\'s dedicated AI Digital Twin Agent. You have shared memory of their entire profile, background, and past projects. Your primary directive is to continuously help them win more clients by writing the most refined, personalized, and high-converting proposals possible on their behalf.',
           },
           { role: 'user', content: prompt },
         ],
