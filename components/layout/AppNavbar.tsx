@@ -5,6 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
 import { BrandLogo } from '../brand/BrandLogo';
+import { getUserAvatarUrl } from '../../utils/avatar';
 
 export const AppNavbar: React.FC = () => {
   const location = useLocation();
@@ -14,20 +15,7 @@ export const AppNavbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const getAvatarUrl = () => {
-    const seed = user?.email || 'default';
-    const gender = profile?.preferences?.profileSetup?.gender || 'female';
-    
-    // Using distinct Dicebear 7.x styles that naturally avoid religious identifiers 
-    // and inherently map better to the requested gender aesthetics without causing 400 errors.
-    let style = 'lorelei'; // Default female-leaning aesthetic
-    
-    if (gender === 'male') {
-      style = 'adventurer'; // Male-leaning aesthetic
-    } else if (gender === 'non_binary' || gender === 'prefer_not_to_say') {
-      style = 'notionists'; // Minimalist gender-neutral aesthetic
-    }
-
-    return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`;
+    return getUserAvatarUrl(profile, user);
   };
 
   const isActive = (path: string) => {

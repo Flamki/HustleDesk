@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
+import { getUserAvatarUrl } from '../utils/avatar';
 import * as authService from '../services/supabaseService';
 import type { BillingInvoice } from '../services/supabaseService';
 import type { FollowupReminderSweepResult } from '../services/supabaseService';
@@ -443,7 +444,7 @@ export const SettingsPage: React.FC = () => {
                                 <div className="relative flex justify-between items-end mt-8 mb-4">
                                     <div className="w-24 h-24 rounded-2xl bg-white dark:bg-slate-800 p-1.5 shadow-lg rotate-3 group-hover:rotate-0 transition-transform duration-500 ease-out">
                                         <img loading="lazy" decoding="async" 
-                                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} 
+                                            src={getUserAvatarUrl(profile, user)} 
                                             alt="Avatar" 
                                             className="w-full h-full rounded-xl bg-slate-100 dark:bg-slate-700 object-cover" 
                                         />

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, Sparkles, RefreshCcw, Paperclip, UploadCloud, Crown } from 'lucide-react';
 import type { FreelancerProfile } from '../../types';
 import { useProfile } from '../../context/ProfileContext';
+import { useAuth } from '../../context/AuthContext';
+import { getUserAvatarUrl } from '../../utils/avatar';
 import * as authService from '../../services/supabaseService';
 
 const PROFILE_ASSISTANT_STATE_PREFIX = 'profile_assistant_state_v1';
@@ -146,22 +148,12 @@ const mergeProfilePatch = (current: FreelancerProfile, patch: Partial<Freelancer
   return next;
 };
 
-const getAssistantAvatarUrl = (profile: FreelancerProfile) => {
-  const seed = profile.id || 'default';
-  const gender = profile.preferences?.profileSetup?.gender || 'female';
-  
-  let style = 'lorelei';
-  
-  if (gender === 'male') {
-    style = 'adventurer';
-  } else if (gender === 'non_binary' || gender === 'prefer_not_to_say') {
-    style = 'notionists';
-  }
-
-  return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`;
+const getAssistantAvatarUrl = (profile: FreelancerProfile, user: any) => {
+  return getUserAvatarUrl(profile, user);
 };
 
 export const ProfileAssistant: React.FC = () => {
+  const { user } = useAuth();
   const { profile, updateProfile } = useProfile();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -404,7 +396,7 @@ export const ProfileAssistant: React.FC = () => {
               <div className="w-full h-full rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden">
                 <img
                   loading="lazy"
-                  src={getAssistantAvatarUrl(profile)}
+                  src={getAssistantAvatarUrl(profile, user)}
                   className="w-full h-full bg-cover"
                   alt="Avatar"
                 />
