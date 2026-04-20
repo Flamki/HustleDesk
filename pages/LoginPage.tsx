@@ -114,7 +114,7 @@ export const LoginPage: React.FC = () => {
                     <ShieldCheck size={16} /> Secure Login
                 </span>
                 <span>•</span>
-                <span>© 2024 GetSoloDesk Inc.</span>
+                <span>© 2026 GetSoloDesk Inc.</span>
             </div>
         </div>
 

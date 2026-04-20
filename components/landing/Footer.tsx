@@ -46,7 +46,7 @@ export const Footer: React.FC = () => {
         </div>
         
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm">© 2024 GetSoloDesk Inc. All rights reserved.</p>
+          <p className="text-sm">© 2026 GetSoloDesk Inc. All rights reserved.</p>
           <div className="flex gap-4">
             {/* Social icons placeholders */}
             <div className="w-5 h-5 bg-slate-800 rounded hover:bg-slate-700 cursor-pointer transition-colors"></div>
