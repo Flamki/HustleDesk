@@ -44,6 +44,13 @@ export const SignupForm: React.FC = () => {
     () => `/login?returnTo=${encodeURIComponent(returnTo)}`,
     [returnTo]
   );
+  
+  useEffect(() => {
+    const codeFromUrl = searchParams.get('error');
+    if (codeFromUrl === 'no_account') {
+        setErrors(prev => ({ ...prev, general: 'No account exists for this Google login. Please sign up to create your free account.' }));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (retryAfterSeconds <= 0) return;

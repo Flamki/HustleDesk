@@ -19,42 +19,39 @@ export const AuthCallbackPage: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [allowFailureRedirect, setAllowFailureRedirect] = React.useState(false);
+
   const returnTo = React.useMemo(
     () => sanitizeReturnTo(searchParams.get('returnTo')) || '/app/dashboard',
     [searchParams]
   );
-
-  // Detect if URL has OAuth artifacts — if not, this is a stale/broken callback.
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const hasCode = url.searchParams.has('code');
-    const hasHash = (url.hash || '').includes('access_token');
-    const hasError = url.searchParams.has('error') || (url.hash || '').includes('error');
-    // Faster timeout (1.5s) for stale callbacks, standard (3.5s) for real OAuth flows.
-    const timeoutMs = (!hasCode && !hasHash && !hasError) ? 1500 : 3500;
-    const timer = window.setTimeout(() => setAllowFailureRedirect(true), timeoutMs);
-    return () => window.clearTimeout(timer);
-  }, []);
-
+  
   useEffect(() => {
     void import('./DashboardPage');
   }, []);
 
   useEffect(() => {
     if (loading) return;
+    
     if (user) {
       navigate(returnTo, { replace: true });
       return;
     }
-    if (!allowFailureRedirect) return;
+    
+    // Auth finished but no user: failed or rejected
     const oauthError = consumePendingOAuthErrorCode();
     const errorCode = oauthError || 'oauth_failed';
+    
+    // If they tried to Google Login without an account, bounce directly to signup
+    if (errorCode === 'no_account') {
+        navigate(`/signup?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
+        return;
+    }
+
     navigate(
       `/login?error=${encodeURIComponent(errorCode)}&returnTo=${encodeURIComponent(returnTo)}`,
       { replace: true }
     );
-  }, [allowFailureRedirect, loading, navigate, returnTo, user]);
+  }, [loading, navigate, returnTo, user]);
 
   return (
     <>
