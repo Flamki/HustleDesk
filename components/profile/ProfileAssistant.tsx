@@ -365,6 +365,7 @@ export const ProfileAssistant: React.FC = () => {
           <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
             <button
               type="button"
+              onClick={() => fileInputRef.current?.click()}
               className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
             >
               <Paperclip size={20} />

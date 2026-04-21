@@ -103,12 +103,6 @@ export const Navbar: React.FC = () => {
                         <ArrowRight size={12} />
                     </div>
                 </Link>
-                <Link
-                    to={proCheckoutPath}
-                    className="text-sm font-bold text-emerald-300 hover:text-emerald-200 transition-colors"
-                >
-                    Upgrade $9/mo
-                </Link>
             </div>
 
             {/* Mobile Toggle */}
