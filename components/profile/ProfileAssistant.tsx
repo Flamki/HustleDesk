@@ -284,6 +284,75 @@ export const ProfileAssistant: React.FC = () => {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !profile) return;
+    
+    // Clear input so same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    setIsTyping(true);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role: 'user', content: `[Uploaded File: ${file.name}]` }
+    ]);
+
+    try {
+      // Basic text extraction natively in browser
+      const text = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result;
+          if (typeof result !== 'string') return resolve('');
+          // Heuristic extraction for raw PDF/Docx streams to pull out readable ASCII strings
+          const extracted = result
+            .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .substring(0, 50000);
+          resolve(extracted);
+        };
+        reader.onerror = () => reject('Failed to read file');
+        reader.readAsText(file);
+      });
+
+      const userText = `Please read the following resume document and extract all available details into my profile. Here is the text: ${text.substring(0, 3000)}`;
+      
+      const step = STEPS[Math.max(0, Math.min(STEPS.length - 1, currentStepIndex))];
+      const result = await authService.generateProfileAssistantReply(
+        userText,
+        profile,
+        { mode: 'onboarding', currentStepId: step.id, nextStepPrompt: 'Extract all available details from resume.' },
+        messages.map((m) => ({ role: m.role, content: m.content }))
+      );
+
+      let mergedProfile = profile;
+      if (result.profilePatch && Object.keys(result.profilePatch).length > 0) {
+        mergedProfile = mergeProfilePatch(profile, result.profilePatch);
+        await updateProfile(mergedProfile);
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-assistant`,
+          role: 'assistant',
+          content: result.reply || "I've successfully processed your resume and updated your profile!"
+        }
+      ]);
+      
+      // Fast forward the conversation a bit
+      setCurrentStepIndex(prev => Math.min(STEPS.length - 1, prev + 1));
+      
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { id: `${Date.now()}-assistant-error`, role: 'assistant', content: 'Sorry, I had trouble parsing that document. Could you provide a generic Text/PDF or type it manually?' }
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
   const handleResetConversation = () => {
     if (!profile) return;
     const storageKey = `${PROFILE_ASSISTANT_STATE_PREFIX}:${profile.userId || profile.id}`;
@@ -454,7 +523,7 @@ export const ProfileAssistant: React.FC = () => {
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[200px]">
             Auto-fill your profile instantly by uploading a PDF.
           </p>
-          <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,.docx" />
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,.docx,.txt" />
         </div>
       </div>
     </div>
