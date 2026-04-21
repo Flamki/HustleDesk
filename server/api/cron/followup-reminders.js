@@ -207,7 +207,8 @@ export const runFollowupReminderSweep = async ({ supabase, nowIso }) => {
       }
 
       sent += 1;
-    } catch {
+    } catch (err) {
+      console.error(`Failed to send reminder for job ${job.id}:`, err);
       failed += 1;
     }
   }
