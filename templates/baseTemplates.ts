@@ -1,4 +1,4 @@
-export type TemplateCategory = 'Proposal' | 'Outreach' | 'Follow-up' | 'Client Mgmt';
+export type TemplateCategory = 'Proposal' | 'Outreach' | 'Follow-up' | 'Client Mgmt' | 'Pricing' | 'Social Proof';
 
 export type TemplateDef = {
   key: string;
@@ -552,6 +552,386 @@ Wishing you a smooth project,
 [Your Name]`,
     tags: ['Professional', 'Boundaries', 'Reputation'],
     likes: 520,
+  }),
+
+  // ═══════════════════════════════════════════════════════════
+  // Pricing & Negotiation
+  // ═══════════════════════════════════════════════════════════
+
+  asTemplate({
+    key: 'pricing_too_high_response',
+    title: '"Your Price Is Too High" Response',
+    description: 'Reframe the conversation on value instead of discounting. The #1 objection freelancers face.',
+    category: 'Pricing',
+    content: `Hi [Client Name],
+
+I understand that budget matters. Here is how I see the investment:
+
+What you get:
+- [Deliverable 1] that directly impacts [Metric]
+- [Deliverable 2] that saves [X hours/month]
+- [Quality guarantee / revision policy]
+
+What this prevents:
+- Rework from hiring someone cheaper who misses [Critical detail]
+- Lost revenue from [Delayed launch / poor UX / bugs]
+
+I can also offer a phased approach:
+- Phase 1: [Core deliverable] for [Lower price]
+- Phase 2: [Remaining work] once you see results
+
+Would a phased plan work better for your budget?
+
+Best,
+[Your Name]`,
+    tags: ['Negotiation', 'Objection handling', 'Value'],
+    likes: 1340,
+  }),
+  asTemplate({
+    key: 'pricing_rush_job_surcharge',
+    title: 'Rush Job Pricing Template',
+    description: 'Set a rush fee without sounding greedy. Protects your schedule and compensates for priority shifts.',
+    category: 'Pricing',
+    content: `Hi [Client Name],
+
+I can meet the [Date] deadline. For rush delivery, here is how pricing adjusts:
+
+Standard timeline ([X days]): [Standard price]
+Rush timeline ([Y days]): [Rush price] (includes [X]% priority surcharge)
+
+The surcharge covers:
+- Rescheduling other committed work
+- Extended hours to meet your deadline
+- Same quality standard, faster delivery
+
+If you confirm by [Date], I will start immediately.
+
+Best,
+[Your Name]`,
+    tags: ['Rush', 'Pricing', 'Boundaries'],
+    likes: 780,
+  }),
+  asTemplate({
+    key: 'pricing_negotiate_without_discount',
+    title: 'Negotiate Without Dropping Price',
+    description: 'Offer more value instead of less money. Keeps your rate intact while giving the client a win.',
+    category: 'Pricing',
+    content: `Hi [Client Name],
+
+I appreciate you sharing your budget. My rate reflects [Years] of experience and [Specialization], and I keep it consistent to maintain quality.
+
+Instead of lowering the price, I can add value:
+- Option A: Include [Extra deliverable] at no additional cost
+- Option B: Extend support to [X days] post-delivery
+- Option C: Add [Training session / documentation / template]
+
+This way you get more for your investment without compromising on quality.
+
+Which option appeals to you?
+
+Best,
+[Your Name]`,
+    tags: ['Negotiation', 'Value-add', 'Professional'],
+    likes: 920,
+  }),
+  asTemplate({
+    key: 'pricing_payment_terms',
+    title: 'Payment Terms Agreement',
+    description: 'Set clear payment expectations upfront. Prevents awkward conversations later.',
+    category: 'Pricing',
+    content: `Hi [Client Name],
+
+Before we kick off, here are my standard payment terms for [Project Name]:
+
+Payment structure:
+- [X]% upfront before work begins ([Amount])
+- [X]% at [Milestone] ([Amount])
+- [X]% on final delivery ([Amount])
+
+Payment details:
+- Method: [PayPal / Wise / Bank transfer / Platform escrow]
+- Due: within [X] days of invoice
+- Late payments: work pauses after [X] days overdue
+
+Invoices will include a clear breakdown of hours or deliverables.
+
+If you need different terms, let me know and we can adjust.
+
+Best,
+[Your Name]`,
+    tags: ['Payment', 'Terms', 'Professional'],
+    likes: 870,
+  }),
+
+  // ═══════════════════════════════════════════════════════════
+  // Social Proof & Testimonials
+  // ═══════════════════════════════════════════════════════════
+
+  asTemplate({
+    key: 'social_proof_testimonial_guided',
+    title: 'Guided Testimonial Request',
+    description: 'Make it easy for clients to write a great review by giving them 3 simple prompts.',
+    category: 'Social Proof',
+    content: `Hi [Client Name],
+
+I really enjoyed working on [Project Name]. If you have 2 minutes, a short testimonial would mean a lot for my business.
+
+To make it easy, you can just answer these 3 questions:
+1. What was the problem you needed help with?
+2. What did I deliver?
+3. What was the result or impact?
+
+Even 2-3 sentences is great. You can reply to this email or post directly on [Platform + link].
+
+Thanks,
+[Your Name]`,
+    tags: ['Testimonials', 'Reviews', 'Growth'],
+    likes: 1050,
+  }),
+  asTemplate({
+    key: 'social_proof_case_study_request',
+    title: 'Case Study Interview Request',
+    description: 'Turn a great project into marketing content. Clients often say yes when you make it effortless.',
+    category: 'Social Proof',
+    content: `Hi [Client Name],
+
+The results from [Project Name] were impressive: [Key metric or outcome].
+
+Would you be open to a short case study? Here is what it involves:
+- A 15-minute call where I ask 5 questions
+- I write the entire case study (you just approve it)
+- You get a copy to use in your own marketing
+
+Benefits for you:
+- Free exposure to my audience ([X] followers / visitors)
+- A polished piece you can share with your stakeholders
+
+Would next week work for a quick call?
+
+Best,
+[Your Name]`,
+    tags: ['Case study', 'Marketing', 'Growth'],
+    likes: 640,
+  }),
+  asTemplate({
+    key: 'social_proof_linkedin_recommendation',
+    title: 'LinkedIn Recommendation Request',
+    description: 'Platform-specific request for LinkedIn recommendations. Strongest social proof for B2B freelancers.',
+    category: 'Social Proof',
+    content: `Hi [Client Name],
+
+Thanks again for the opportunity to work on [Project Name]. I really enjoyed the collaboration.
+
+Would you be open to writing a short LinkedIn recommendation? It helps me attract more clients like you.
+
+Here is a direct link: https://www.linkedin.com/in/[your-profile]/edit/forms/recommendation/
+
+If it helps, here are some things you could mention:
+- The problem we solved
+- How the process went
+- The outcome or result
+
+No pressure at all. Either way, I would be happy to write one for you too.
+
+Best,
+[Your Name]`,
+    tags: ['LinkedIn', 'Social proof', 'B2B'],
+    likes: 580,
+  }),
+
+  // ═══════════════════════════════════════════════════════════
+  // Additional Client Management
+  // ═══════════════════════════════════════════════════════════
+
+  asTemplate({
+    key: 'client_mistake_recovery',
+    title: '"I Made a Mistake" Recovery Email',
+    description: 'Own mistakes professionally and present a fix. Builds more trust than pretending it did not happen.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+I want to flag something: [What went wrong].
+
+This was my responsibility and here is what I am doing about it:
+
+1. Immediate fix: [What you are doing right now]
+2. Root cause: [Why it happened]
+3. Prevention: [What changes you are making]
+
+Timeline to resolve: [X hours/days]
+
+I take quality seriously and this does not reflect my standard. The fix is my top priority today.
+
+Best,
+[Your Name]`,
+    tags: ['Recovery', 'Trust', 'Professional'],
+    likes: 760,
+  }),
+  asTemplate({
+    key: 'client_deadline_extension',
+    title: 'Deadline Extension Request',
+    description: 'Ask for more time without losing trust. Frames delay as quality-focused, not careless.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+Update on [Project Name]: I want to be upfront that the [Deliverable] needs [X more days] to meet the quality bar we agreed on.
+
+What happened:
+- [Reason: unexpected complexity / dependency / scope addition]
+
+What is done:
+- [Progress so far]
+
+What remains:
+- [Remaining work]
+
+New delivery date: [Date]
+
+I would rather deliver something excellent a few days late than rush something mediocre on time. If the original date is non-negotiable, I can [Alternative: deliver partial / cut scope].
+
+Best,
+[Your Name]`,
+    tags: ['Deadlines', 'Transparency', 'Trust'],
+    likes: 830,
+  }),
+  asTemplate({
+    key: 'client_free_work_decline',
+    title: '"Can You Do This For Free?" Decline',
+    description: 'Politely decline free work requests while keeping the relationship warm.',
+    category: 'Client Mgmt',
+    content: `Hi [Client Name],
+
+Thanks for thinking of me for [Request]. I appreciate the opportunity.
+
+Unfortunately, I am not able to take this on without compensation because [honest reason: full schedule / this is my livelihood / scope is significant].
+
+Here is what I can offer instead:
+- A paid mini-engagement: [X hours for $Y] to handle the core need
+- A quick pointer: [One specific tip they can act on themselves]
+- A referral to someone who might be available at a lower rate
+
+I hope one of these works. If budget opens up later, I would be happy to revisit.
+
+Best,
+[Your Name]`,
+    tags: ['Boundaries', 'Professional', 'Diplomacy'],
+    likes: 710,
+  }),
+
+  // ═══════════════════════════════════════════════════════════
+  // Additional Follow-ups
+  // ═══════════════════════════════════════════════════════════
+
+  asTemplate({
+    key: 'followup_thank_you_after_hired',
+    title: 'Thank You After Being Hired',
+    description: 'Sets a professional tone from day one. Small gesture that clients remember.',
+    category: 'Follow-up',
+    content: `Hi [Client Name],
+
+Thanks for choosing me for [Project Name]. I am excited to get started.
+
+Here is what happens next:
+1. I will review everything you shared by [Date]
+2. I will send my first update or questions by [Date]
+3. You can reach me at [Preferred channel] anytime
+
+If you think of anything else I should know before I start, just reply here.
+
+Looking forward to great results,
+[Your Name]`,
+    tags: ['Onboarding', 'Professional', 'Trust'],
+    likes: 650,
+  }),
+  asTemplate({
+    key: 'followup_quarterly_checkin',
+    title: 'Quarterly Client Check-In',
+    description: 'Reactivate past clients at the right time. Q4 and Q1 are when budgets refresh.',
+    category: 'Follow-up',
+    content: `Hi [Client Name],
+
+It has been a few months since we wrapped [Project Name] and I wanted to check in.
+
+A few things that might be relevant:
+- I recently helped a client with [Similar project] and got [Result]
+- I have availability opening up in [Month]
+- I added [New skill/tool] to my toolkit
+
+If you have any upcoming projects or know someone who needs [Your service], I would love to help.
+
+Either way, hope business is going well.
+
+Best,
+[Your Name]`,
+    tags: ['Reactivation', 'Seasonal', 'Revenue'],
+    likes: 590,
+  }),
+
+  // ═══════════════════════════════════════════════════════════
+  // Additional Proposals
+  // ═══════════════════════════════════════════════════════════
+
+  asTemplate({
+    key: 'proposal_counter_offer_underbid',
+    title: 'Counter-Offer When Underbid',
+    description: 'When someone bid lower, reframe the conversation on risk and quality. Win on value, not price.',
+    category: 'Proposal',
+    content: `Hi [Client Name],
+
+I understand there are lower bids for [Project Name]. Here is why my approach is different:
+
+What low bids often miss:
+- [Common shortcut that causes rework]
+- [Security / performance / scalability concern]
+- [Lack of documentation or handoff]
+
+What I include:
+- [Specific deliverable that prevents rework]
+- [Quality assurance step]
+- [Post-delivery support: X days]
+
+The real cost is not the bid price. It is the total cost including revisions, delays, and fixes.
+
+If you want, I can do a small paid test ([X hours, $Y]) so you can evaluate my work before committing to the full project.
+
+Best,
+[Your Name]`,
+    tags: ['Competition', 'Value', 'Differentiation'],
+    likes: 730,
+  }),
+  asTemplate({
+    key: 'proposal_platform_profile_bio',
+    title: 'Platform Profile / Bio Template',
+    description: 'Structured bio template for Upwork, Fiverr, or any freelance platform. First impression matters.',
+    category: 'Proposal',
+    content: `[Title]: [Your Specialty] | [Key differentiator]
+
+I help [Target client type] achieve [Outcome] through [Your service].
+
+What I do:
+- [Service 1]: [One-line benefit]
+- [Service 2]: [One-line benefit]
+- [Service 3]: [One-line benefit]
+
+Results:
+- [Metric 1]: [Number or percentage]
+- [Metric 2]: [Number or percentage]
+- [Client type] across [Industries]
+
+Tools: [Tool 1], [Tool 2], [Tool 3], [Tool 4]
+
+Process:
+1. Discovery call to understand your needs
+2. Clear scope and timeline before work starts
+3. Regular updates and revisions included
+4. Clean handoff with documentation
+
+Available for: [Hourly / Fixed-price / Retainer]
+Response time: within [X hours]
+
+[Your Name]`,
+    tags: ['Profile', 'Platform', 'First impression'],
+    likes: 1180,
   }),
 ];
 

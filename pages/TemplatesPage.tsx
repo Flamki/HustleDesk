@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Award,
   Briefcase,
   Check,
   Copy,
+  DollarSign,
   FileText,
   MessageSquare,
   Search,
@@ -121,6 +123,10 @@ export const TemplatesPage: React.FC = () => {
         return MessageSquare;
       case 'Client Mgmt':
         return Briefcase;
+      case 'Pricing':
+        return DollarSign;
+      case 'Social Proof':
+        return Award;
       default:
         return FileText;
     }
@@ -136,6 +142,10 @@ export const TemplatesPage: React.FC = () => {
         return 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400';
       case 'Client Mgmt':
         return 'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400';
+      case 'Pricing':
+        return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400';
+      case 'Social Proof':
+        return 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400';
       default:
         return 'bg-slate-100 text-slate-600';
     }
@@ -226,7 +236,7 @@ export const TemplatesPage: React.FC = () => {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-slate-200 dark:border-slate-800">
-        {(['All', 'Proposal', 'Outreach', 'Follow-up', 'Client Mgmt'] as UiTemplateCategory[]).map((cat) => (
+        {(['All', 'Proposal', 'Outreach', 'Follow-up', 'Client Mgmt', 'Pricing', 'Social Proof'] as UiTemplateCategory[]).map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
