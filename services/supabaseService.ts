@@ -419,6 +419,25 @@ const getSupabaseToken = async (): Promise<string | null> => {
   return data.session?.access_token ?? null;
 };
 
+/** Fire-and-forget welcome email — idempotent via server-side flag */
+const sendWelcomeEmail = async (accessToken: string): Promise<void> => {
+  try {
+    await fetchWithTimeout(
+      '/api/auth/welcome-email',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      },
+      8000
+    );
+  } catch {
+    // Best-effort — never block auth flow
+  }
+};
+
 const ensureProfileSetup = async (
   userId: string,
   accessToken: string | null,
@@ -558,6 +577,12 @@ const resolveUserAfterAuth = async (
       ensureProfileSetup(userId, accessToken, profileMode).catch(() => false),
       loadUserFromUsersTable(userId, email),
     ]);
+
+    // Fire welcome email on first signup (non-blocking)
+    if (shouldBootstrap && profileResult) {
+      sendWelcomeEmail(accessToken).catch(() => {});
+    }
+
     if (user) return user;
     if (shouldBootstrap || profileResult) {
       return buildFallbackUser(userId, email, createdAt);
