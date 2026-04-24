@@ -1,4 +1,4 @@
-export type TemplateCategory = 'Proposal' | 'Outreach' | 'Follow-up' | 'Client Mgmt' | 'Pricing' | 'Social Proof';
+export type TemplateCategory = 'Proposal' | 'Outreach' | 'Follow-up' | 'Client Mgmt' | 'Pricing' | 'Social Proof' | 'Contracts';
 
 export type TemplateDef = {
   key: string;
@@ -932,6 +932,258 @@ Response time: within [X hours]
 [Your Name]`,
     tags: ['Profile', 'Platform', 'First impression'],
     likes: 1180,
+  }),
+
+  // ═══════════════════════════════════════════════════════
+  // CONTRACTS
+  // ═══════════════════════════════════════════════════════
+  t({
+    key: 'contract_freelance_agreement',
+    title: 'Freelance Service Agreement',
+    category: 'Contracts',
+    description: 'A clear, professional freelance contract covering scope, payment, timeline, and IP rights.',
+    content: `FREELANCE SERVICE AGREEMENT
+
+This Agreement is entered into as of [Date] between:
+
+SERVICE PROVIDER: [Your Full Name]
+Email: [Your Email]
+Address: [Your Address]
+
+CLIENT: [Client Name / Company]
+Email: [Client Email]
+Address: [Client Address]
+
+1. SCOPE OF WORK
+The Service Provider agrees to perform the following services:
+- [Deliverable 1]
+- [Deliverable 2]
+- [Deliverable 3]
+
+2. TIMELINE
+- Project Start Date: [Date]
+- Estimated Completion: [Date]
+- Milestones: [List key milestones and dates]
+
+3. COMPENSATION
+- Total Project Fee: [Currency] [Amount]
+- Payment Schedule:
+  * [X]% deposit upon signing ([Currency] [Amount])
+  * [X]% upon [milestone] ([Currency] [Amount])
+  * [X]% upon final delivery ([Currency] [Amount])
+- Payment Method: [Bank transfer / PayPal / etc.]
+- Late Payment: Invoices unpaid after 14 days incur 1.5% monthly interest.
+
+4. REVISIONS
+- Included revisions: [X] rounds
+- Additional revisions billed at [Currency] [Rate]/hour
+
+5. INTELLECTUAL PROPERTY
+- All IP transfers to Client upon full payment.
+- Service Provider retains the right to display the work in their portfolio.
+
+6. CONFIDENTIALITY
+Both parties agree to keep project details confidential and not share proprietary information with third parties.
+
+7. TERMINATION
+Either party may terminate with [X] days written notice. Client pays for all work completed to date.
+
+8. LIABILITY
+Service Provider's total liability shall not exceed the total project fee.
+
+AGREED AND ACCEPTED:
+
+Service Provider: ___________________  Date: ________
+Client: ___________________  Date: ________`,
+    tags: ['Contract', 'Agreement', 'Legal', 'Scope'],
+    likes: 2340,
+  }),
+  t({
+    key: 'contract_nda',
+    title: 'Non-Disclosure Agreement (NDA)',
+    category: 'Contracts',
+    description: 'Mutual NDA to protect confidential information shared during a freelance engagement.',
+    content: `MUTUAL NON-DISCLOSURE AGREEMENT
+
+This NDA is entered into as of [Date] between:
+
+PARTY A: [Your Full Name] ("Service Provider")
+PARTY B: [Client Name / Company] ("Client")
+
+1. PURPOSE
+The parties wish to explore a potential business relationship regarding [Project Description] and may share confidential information.
+
+2. DEFINITION OF CONFIDENTIAL INFORMATION
+"Confidential Information" includes all non-public information shared by either party, including but not limited to:
+- Business plans, strategies, and financial data
+- Technical specifications, source code, and designs
+- Client lists, pricing, and marketing plans
+- Any information marked "Confidential"
+
+3. OBLIGATIONS
+Each party agrees to:
+- Use Confidential Information solely for the stated purpose
+- Not disclose to third parties without prior written consent
+- Protect information with the same care as their own confidential data
+
+4. EXCLUSIONS
+This NDA does not apply to information that:
+- Is publicly available through no fault of the receiving party
+- Was already known before disclosure
+- Is independently developed without use of confidential information
+- Is required to be disclosed by law
+
+5. TERM
+This NDA remains in effect for [2] years from the date of signing.
+
+6. RETURN OF INFORMATION
+Upon request or termination, each party shall return or destroy all confidential materials.
+
+AGREED AND ACCEPTED:
+
+Party A: ___________________  Date: ________
+Party B: ___________________  Date: ________`,
+    tags: ['NDA', 'Confidentiality', 'Legal'],
+    likes: 1890,
+  }),
+  t({
+    key: 'contract_scope_change',
+    title: 'Scope Change Amendment',
+    category: 'Contracts',
+    description: 'Formal amendment when project scope changes. Protects you from scope creep.',
+    content: `SCOPE CHANGE AMENDMENT
+
+Amendment to Agreement dated [Original Agreement Date]
+Between [Your Name] and [Client Name]
+
+Amendment Date: [Date]
+Amendment Number: [#]
+
+1. ORIGINAL SCOPE
+The original agreement covered:
+- [Original deliverable 1]
+- [Original deliverable 2]
+
+2. REQUESTED CHANGES
+The following changes have been requested by the Client:
+- [New/changed deliverable 1]
+- [New/changed deliverable 2]
+- [Removed item, if any]
+
+3. IMPACT ON TIMELINE
+- Original completion date: [Date]
+- Revised completion date: [Date]
+- Additional time required: [X] days/weeks
+
+4. IMPACT ON COST
+- Original project fee: [Currency] [Amount]
+- Additional cost for scope change: [Currency] [Amount]
+- Revised total fee: [Currency] [Amount]
+- Payment for additional work due: [Date/milestone]
+
+5. ALL OTHER TERMS
+All other terms and conditions of the original agreement remain unchanged and in full effect.
+
+AGREED AND ACCEPTED:
+
+Service Provider: ___________________  Date: ________
+Client: ___________________  Date: ________`,
+    tags: ['Scope creep', 'Amendment', 'Change order'],
+    likes: 1650,
+  }),
+  t({
+    key: 'contract_project_completion',
+    title: 'Project Completion & Handoff',
+    category: 'Contracts',
+    description: 'Formal sign-off document confirming project delivery and acceptance.',
+    content: `PROJECT COMPLETION & ACCEPTANCE
+
+Project: [Project Name]
+Agreement Date: [Original Agreement Date]
+Completion Date: [Date]
+
+Between: [Your Name] (Service Provider)
+And: [Client Name] (Client)
+
+1. DELIVERABLES COMPLETED
+The following deliverables have been completed and delivered:
+
+[x] [Deliverable 1] - Delivered [Date]
+[x] [Deliverable 2] - Delivered [Date]
+[x] [Deliverable 3] - Delivered [Date]
+
+2. FILES & ASSETS TRANSFERRED
+- [Source files / repository access]
+- [Design files (Figma/Sketch/PSD)]
+- [Documentation / user guides]
+- [Login credentials / API keys]
+- [Other assets]
+
+3. ACCEPTANCE
+By signing below, the Client acknowledges that:
+- All agreed deliverables have been received
+- The work meets the specifications outlined in the original agreement
+- The final payment of [Currency] [Amount] is due within [X] days
+- The revision period has concluded
+
+4. WARRANTY PERIOD
+The Service Provider offers a [30]-day warranty period for bug fixes related to the delivered work, starting from the date of this acceptance.
+
+5. POST-PROJECT SUPPORT
+Any work beyond the warranty period will be billed at [Currency] [Rate]/hour.
+
+ACCEPTED:
+
+Service Provider: ___________________  Date: ________
+Client: ___________________  Date: ________`,
+    tags: ['Completion', 'Handoff', 'Sign-off', 'Acceptance'],
+    likes: 1420,
+  }),
+  t({
+    key: 'contract_payment_terms',
+    title: 'Payment Terms Addendum',
+    category: 'Contracts',
+    description: 'Standalone payment terms document to attach to any agreement or send to new clients.',
+    content: `PAYMENT TERMS
+
+Effective Date: [Date]
+Service Provider: [Your Full Name]
+Client: [Client Name / Company]
+
+1. INVOICING
+- Invoices will be sent via email to [Client Email]
+- Payment is due within [14/30] days of invoice date
+- All amounts are in [Currency]
+
+2. PAYMENT METHODS ACCEPTED
+- Bank Transfer: [Bank Name, Account Details]
+- PayPal: [PayPal Email]
+- [Other: Wise / Payoneer / Razorpay]
+
+3. DEPOSIT POLICY
+- Projects over [Currency] [Amount] require a [50]% deposit before work begins
+- Deposits are non-refundable once work has commenced
+
+4. LATE PAYMENT
+- Invoices unpaid after [14] days incur a 1.5% monthly late fee
+- Work may be paused on accounts with invoices overdue by more than [30] days
+- Service Provider reserves the right to withhold deliverables until payment is received
+
+5. ADDITIONAL WORK
+- Work outside the agreed scope will be quoted separately
+- Additional work will not begin until the quote is approved in writing
+
+6. CANCELLATION
+- If the Client cancels mid-project, payment is due for all work completed
+- Unused deposit may be refunded at Service Provider's discretion
+
+These terms apply to all work performed unless superseded by a separate written agreement.
+
+ACKNOWLEDGED:
+
+Client: ___________________  Date: ________`,
+    tags: ['Payment', 'Terms', 'Invoice', 'Late fees'],
+    likes: 1560,
   }),
 ];
 
