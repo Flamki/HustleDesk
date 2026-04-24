@@ -937,7 +937,7 @@ Response time: within [X hours]
   // ═══════════════════════════════════════════════════════
   // CONTRACTS
   // ═══════════════════════════════════════════════════════
-  t({
+  asTemplate({
     key: 'contract_freelance_agreement',
     title: 'Freelance Service Agreement',
     category: 'Contracts',
@@ -998,7 +998,7 @@ Client: ___________________  Date: ________`,
     tags: ['Contract', 'Agreement', 'Legal', 'Scope'],
     likes: 2340,
   }),
-  t({
+  asTemplate({
     key: 'contract_nda',
     title: 'Non-Disclosure Agreement (NDA)',
     category: 'Contracts',
@@ -1046,7 +1046,7 @@ Party B: ___________________  Date: ________`,
     tags: ['NDA', 'Confidentiality', 'Legal'],
     likes: 1890,
   }),
-  t({
+  asTemplate({
     key: 'contract_scope_change',
     title: 'Scope Change Amendment',
     category: 'Contracts',
@@ -1091,7 +1091,7 @@ Client: ___________________  Date: ________`,
     tags: ['Scope creep', 'Amendment', 'Change order'],
     likes: 1650,
   }),
-  t({
+  asTemplate({
     key: 'contract_project_completion',
     title: 'Project Completion & Handoff',
     category: 'Contracts',
@@ -1139,7 +1139,7 @@ Client: ___________________  Date: ________`,
     tags: ['Completion', 'Handoff', 'Sign-off', 'Acceptance'],
     likes: 1420,
   }),
-  t({
+  asTemplate({
     key: 'contract_payment_terms',
     title: 'Payment Terms Addendum',
     category: 'Contracts',
