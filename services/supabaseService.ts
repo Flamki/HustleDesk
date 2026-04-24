@@ -2548,3 +2548,44 @@ export const runFollowupReminderSweepNow = async (): Promise<{
     return { data: null, error: new Error('Failed to run follow-up sweep') };
   }
 };
+
+// ── URL Job Scraper ────────────────────────────────────────────
+export type ScrapedJobData = {
+  title: string;
+  description: string;
+  company: string;
+  platform: string;
+  budgetMin: string;
+  budgetMax: string;
+  currency: string;
+};
+
+export const scrapeJobUrl = async (
+  jobUrl: string,
+): Promise<{ data: ScrapedJobData | null; error: Error | null }> => {
+  if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+  const token = await getSupabaseToken();
+  if (!token) return { data: null, error: new Error('Unauthorized') };
+
+  try {
+    const response = await fetchWithTimeout(
+      '/api/jobs/scrape-url',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: jobUrl }),
+      },
+      15000,
+    );
+    const body = await parseJsonSafe<ScrapedJobData & { success?: boolean; error?: string }>(response);
+    if (!response.ok || !(body as any)?.success) {
+      return { data: null, error: new Error((body as any)?.error || 'Failed to scrape job URL') };
+    }
+    return { data: body as ScrapedJobData, error: null };
+  } catch {
+    return { data: null, error: new Error('Failed to scrape job URL') };
+  }
+};

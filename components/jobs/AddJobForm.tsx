@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Save, Wand2, AlertCircle, Briefcase, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { Save, Wand2, AlertCircle, Briefcase, RotateCcw, CheckCircle2, Link2, Loader2 } from 'lucide-react';
 import { Input } from '../ui/Input';
 import * as authService from '../../services/supabaseService';
 import { useAuth } from '../../context/AuthContext';
@@ -92,6 +92,58 @@ export const AddJobForm: React.FC = () => {
   useEffect(() => {
     formDataRef.current = formData;
   }, [formData]);
+
+  // URL Import state
+  const [importUrl, setImportUrl] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState(false);
+
+  const handleUrlImport = async () => {
+    const urlToScrape = importUrl.trim();
+    if (!urlToScrape) return;
+
+    try {
+      new URL(urlToScrape);
+    } catch {
+      setImportError('Please enter a valid URL');
+      return;
+    }
+
+    setIsImporting(true);
+    setImportError(null);
+    setImportSuccess(false);
+
+    try {
+      const { data, error } = await authService.scrapeJobUrl(urlToScrape);
+
+      if (error || !data) {
+        setImportError(error?.message || 'Failed to import job details');
+        setIsImporting(false);
+        return;
+      }
+
+      // Auto-fill the form with scraped data
+      setFormData((prev) => ({
+        ...prev,
+        title: data.title || prev.title,
+        platform: data.platform || prev.platform,
+        company: data.company || prev.company,
+        description: data.description || prev.description,
+        budgetMin: data.budgetMin || prev.budgetMin,
+        budgetMax: data.budgetMax || prev.budgetMax,
+        currency: data.currency || prev.currency,
+      }));
+
+      setIsDirty(true);
+      setImportSuccess(true);
+      setTimeout(() => setImportSuccess(false), 3000);
+    } catch {
+      setImportError('Network error. Please try again.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   // Prefill sample draft via URL (?prefill=sample)
   useEffect(() => {
@@ -262,6 +314,81 @@ export const AddJobForm: React.FC = () => {
     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
       <div className="p-6 sm:p-8 space-y-8">
         
+        {/* ── URL Import ─────────────────────────────────── */}
+        <div className="relative rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-50/50 to-violet-50/50 dark:from-indigo-950/30 dark:to-violet-950/30 p-5 transition-all hover:border-indigo-300 dark:hover:border-indigo-700">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50">
+              <Link2 size={16} className="text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Import from URL</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Paste an Upwork, Fiverr, or LinkedIn job link to auto-fill</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input
+                type="url"
+                value={importUrl}
+                onChange={(e) => { setImportUrl(e.target.value); setImportError(null); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleUrlImport(); } }}
+                placeholder="https://www.upwork.com/jobs/~01..."
+                disabled={isImporting}
+                className="w-full rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 disabled:opacity-50"
+              />
+            </div>
+            <button
+              onClick={() => { void handleUrlImport(); }}
+              disabled={isImporting || !importUrl.trim()}
+              className="px-5 py-3 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/30 flex items-center gap-2 whitespace-nowrap"
+            >
+              {isImporting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Wand2 size={16} />
+                  Import
+                </>
+              )}
+            </button>
+          </div>
+          {importError && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400 animate-in fade-in slide-in-from-top-1">
+              <AlertCircle size={12} />
+              {importError}
+            </div>
+          )}
+          {importSuccess && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 animate-in fade-in slide-in-from-top-1">
+              <CheckCircle2 size={12} />
+              Job details imported successfully! Review and edit below.
+            </div>
+          )}
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Supported:</span>
+            <div className="flex gap-1.5">
+              {['Upwork', 'Fiverr', 'LinkedIn'].map((p) => (
+                <span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                  <PlatformIcon platform={p} className="w-3 h-3" />
+                  {p}
+                </span>
+              ))}
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                + Any URL
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative flex items-center">
+          <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+          <span className="mx-4 text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">or fill manually</span>
+          <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+        </div>
+
         {draftRestored && (
            <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-4 py-3 rounded-xl flex items-center gap-2 text-sm animate-in fade-in slide-in-from-top-2">
               <RotateCcw size={16} />
