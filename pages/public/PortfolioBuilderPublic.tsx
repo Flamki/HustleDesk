@@ -3,22 +3,26 @@ import { PublicPageTemplate } from './PublicPageTemplate';
 
 export const PortfolioBuilderPublic: React.FC = () => (
   <PublicPageTemplate
-    title="Portfolio Builder"
-    description="Build and publish your portfolio site with customizable templates, typography, and palettes."
+    title="Free Portfolio Builder for Freelancers"
+    description="Build a stunning freelance portfolio website in minutes. Choose from professional templates, customize colors and typography, and publish instantly — no coding required."
     path="/portfolio-builder"
     keywords={[
       'freelancer portfolio builder',
-      'portfolio website templates',
+      'free portfolio website builder',
       'online portfolio for freelancers',
-      'personal brand portfolio',
+      'portfolio website templates',
+      'freelance portfolio site',
+      'personal brand portfolio builder',
     ]}
-    heading="Portfolio Builder"
-    intro="Launch a branded portfolio quickly with templates designed for different creator styles."
+    heading="Portfolio Builder — Showcase Your Best Work"
+    intro="Your portfolio is your resume. GetSoloDesk makes it dead simple to build a professional portfolio site that wins clients — no design skills or coding needed."
     bullets={[
-      'Template library with full preview',
-      'Custom palette and typography controls',
-      'Editable content blocks and links',
-      'Publish to /w/:slug with analytics tracking',
+      'Professional templates designed for developers, designers, writers, and creatives',
+      'Full customization: colors, typography, layout, and content blocks',
+      'Publish instantly at your unique URL with SSL and fast loading',
+      'Mobile-responsive — looks perfect on every device',
+      'Built-in analytics to track who views your work',
+      'Connected to your CRM — add projects directly from completed jobs',
     ]}
   />
 );

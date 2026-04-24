@@ -3,25 +3,30 @@ import { PublicPageTemplate } from './PublicPageTemplate';
 
 export const ProposalGenerator: React.FC = () => (
   <PublicPageTemplate
-    title="Proposal Generator"
-    description="Generate client-ready proposals faster with editable templates in GetSoloDesk."
+    title="AI Proposal Generator for Freelancers"
+    description="Generate winning freelance proposals in seconds with AI. Personalized to each job, learns from your wins, and works for Upwork, Fiverr, and direct clients."
     path="/proposal-generator"
     keywords={[
-      'proposal generator for freelancers',
-      'ai proposal writing',
+      'ai proposal generator',
+      'freelance proposal generator',
+      'upwork proposal generator',
+      'ai proposal writer',
       'freelance cover letter generator',
-      'proposal templates',
+      'proposal templates for freelancers',
+      'how to write freelance proposals',
+      'best proposal generator',
     ]}
-    heading="Proposal Generator"
-    intro="Turn job details into polished proposals quickly, then customize for each client."
+    heading="AI Proposal Generator"
+    intro="Stop spending 30 minutes writing each proposal. Your personal AI agent generates tailored, high-converting proposals in seconds — learning from your wins to get better every time."
     bullets={[
-      'Template-based proposal generation',
-      'Override and personalize content per job',
-      'Consistent quality across outbound proposals',
-      'Faster response time to inbound leads',
+      'AI-powered proposals personalized to each job description and your unique skills',
+      'Learns from your wins and losses — every proposal gets smarter over time',
+      'Works for Upwork, Fiverr, Freelancer.com, LinkedIn, and direct clients',
+      '36 proven proposal templates you can customize and copy-paste instantly',
+      'Highlights your strongest skills and optimal pricing based on win data',
+      'Generate proposals 10x faster and respond to leads before competitors',
     ]}
   />
 );
 
 export default ProposalGenerator;
-

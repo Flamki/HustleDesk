@@ -3,22 +3,26 @@ import { PublicPageTemplate } from './PublicPageTemplate';
 
 export const LinkInBioPublic: React.FC = () => (
   <PublicPageTemplate
-    title="Link in Bio Builder"
-    description="Create high-converting link-in-bio pages with templates, social links, and custom branding."
+    title="Link-in-Bio Builder for Freelancers"
+    description="Create a beautiful link-in-bio page to share on Instagram, Twitter, and LinkedIn. Custom branding, social links, lead capture — free for freelancers."
     path="/link-in-bio"
     keywords={[
       'link in bio builder',
+      'free link in bio tool',
       'bio link page for freelancers',
-      'social media landing page',
-      'custom link in bio',
+      'linktree alternative for freelancers',
+      'social media landing page builder',
+      'custom link in bio page',
     ]}
-    heading="Link in Bio Builder"
-    intro="Build a conversion-focused bio page for social audiences with full customization."
+    heading="Link-in-Bio — Your Social Hub"
+    intro="One link to rule them all. Build a conversion-focused bio page that turns social followers into clients with custom branding and lead capture."
     bullets={[
-      'Template selection with live previews',
-      'Custom colors, fonts, and social links',
-      'Mobile-first public rendering',
-      'Lead capture and analytics events',
+      'Beautiful templates with live preview — launch in under 5 minutes',
+      'Custom colors, fonts, and social media links',
+      'Mobile-first design — optimized for Instagram, TikTok, and Twitter traffic',
+      'Lead capture forms to collect emails directly from your bio page',
+      'Click analytics — see which links get the most engagement',
+      'Free Linktree alternative built specifically for freelancers',
     ]}
   />
 );

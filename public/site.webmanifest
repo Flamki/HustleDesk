@@ -1,16 +1,20 @@
 {
-  "name": "GetSoloDesk",
+  "name": "GetSoloDesk — AI-Powered Freelancer CRM",
   "short_name": "GetSoloDesk",
-  "description": "Freelancer CRM for client management, proposals, and time tracking.",
+  "description": "AI-powered CRM for freelancers. Generate proposals, track jobs, manage clients, and get AI coaching — all free.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity"],
+  "lang": "en-US",
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
