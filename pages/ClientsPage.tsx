@@ -102,7 +102,6 @@ export const ClientsPage: React.FC = () => {
           <p className="text-slate-500 dark:text-slate-400 mt-1">
             Track relationships, spot upsell opportunities, and never lose a client.
           </p>
-        </div>
       </div>
 
       {error && (

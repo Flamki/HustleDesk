@@ -272,6 +272,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
                 <NavItem to="/app/jobs" icon={Briefcase} label="Jobs" />
                 <NavItem to="/app/time" icon={Timer} label="Time Tracker" badge="New" />
                 <NavItem to="/app/invoices" icon={Receipt} label="Invoices" badge="New" />
+                <NavItem to="/app/contracts" icon={Shield} label="Contracts" badge="New" />
                 <NavItem to="/app/profile" icon={UserCircle} label="Profile" />
                 <NavItem to="/app/templates" icon={FileText} label="Templates" />
 
