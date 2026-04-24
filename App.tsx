@@ -41,6 +41,10 @@ const TimeTrackerPage = React.lazy(async () => {
   const m = await import('./pages/TimeTrackerPage');
   return { default: m.TimeTrackerPage };
 });
+const InvoicesPage = React.lazy(async () => {
+  const m = await import('./pages/InvoicesPage');
+  return { default: m.InvoicesPage };
+});
 const ProposalGeneratorPage = React.lazy(async () => {
   const m = await import('./pages/ProposalGeneratorPage');
   return { default: m.ProposalGeneratorPage };
@@ -173,6 +177,7 @@ export const routes: RouteRecord[] = [
           { path: 'app/jobs', element: <JobsPage /> },
           { path: 'app/jobs/new', element: <AddJobPage /> },
           { path: 'app/time', element: <TimeTrackerPage /> },
+          { path: 'app/invoices', element: <InvoicesPage /> },
           { path: 'app/proposals/generate/:jobId', element: <ProposalGeneratorPage /> },
           { path: 'app/profile', element: <ProfilePage /> },
           { path: 'app/analytics', element: <AnalyticsPage /> },

@@ -26,7 +26,8 @@ import {
   PanelLeftOpen,
   Gift,
   MoreVertical,
-  Timer
+  Timer,
+  Receipt
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -270,6 +271,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
                 <NavItem to="/app/dashboard" icon={LayoutDashboard} label="Dashboard" />
                 <NavItem to="/app/jobs" icon={Briefcase} label="Jobs" />
                 <NavItem to="/app/time" icon={Timer} label="Time Tracker" badge="New" />
+                <NavItem to="/app/invoices" icon={Receipt} label="Invoices" badge="New" />
                 <NavItem to="/app/profile" icon={UserCircle} label="Profile" />
                 <NavItem to="/app/templates" icon={FileText} label="Templates" />
 
