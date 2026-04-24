@@ -97,16 +97,12 @@ export const ClientsPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
+      <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Clients</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
             Track relationships, spot upsell opportunities, and never lose a client.
           </p>
         </div>
-        <Link to="/app/jobs/new" className="hd-btn-primary px-5 py-2.5 flex items-center gap-2 w-fit">
-          <Plus size={18} /> New Job
-        </Link>
       </div>
 
       {error && (
