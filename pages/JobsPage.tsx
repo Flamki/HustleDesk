@@ -21,6 +21,7 @@ import { Badge } from '../components/ui/Badge';
 import { PlatformIcon } from '../components/ui/PlatformIcon';
 import { EmptyState, LoadingSpinner, ConfirmDialog, useToast } from '../components/ui';
 import * as authService from '../services/supabaseService';
+import { useAgent } from '../context/AgentContext';
 
 const PAGE_SIZE = 20;
 const STATUS_TABS: Array<'All' | JobStatus> = ['All', 'Saved', 'Applied', 'Replied', 'Won', 'Lost'];
@@ -81,6 +82,7 @@ export const JobsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
+  const { recordOutcome } = useAgent();
   const [showIntro, setShowIntro] = useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('jobs_intro_dismissed') !== 'true';
@@ -605,6 +607,7 @@ export const JobsPage: React.FC = () => {
             setIsEditMode(false);
           }}
           onSave={async (updatedJob) => {
+            const previousStatus = selectedJob?.status;
             const { data, error } = await authService.updateJob(updatedJob.id, updatedJob);
             if (error || !data) {
               showToast({
@@ -618,10 +621,29 @@ export const JobsPage: React.FC = () => {
             setJobs((prev) => prev.map((j) => (j.id === data.id ? data : j)));
             setSelectedJob(data);
             setIsEditMode(false);
-            showToast({
-              variant: 'success',
-              message: 'Job updated successfully',
-            });
+
+            // Trigger agent learning when status changes to Won or Lost
+            if (data.status !== previousStatus && (data.status === 'Won' || data.status === 'Lost')) {
+              const outcome = data.status === 'Won' ? 'win' : 'loss';
+              const result = await recordOutcome(data.id, outcome);
+              if (result?.insight) {
+                showToast({
+                  variant: 'success',
+                  title: `Job marked as ${data.status}`,
+                  message: `🧠 Agent learned: ${result.insight.insight}`,
+                });
+              } else {
+                showToast({
+                  variant: 'success',
+                  message: `Job marked as ${data.status} — agent updated`,
+                });
+              }
+            } else {
+              showToast({
+                variant: 'success',
+                message: 'Job updated successfully',
+              });
+            }
           }}
           onDelete={() => {
             setJobToDelete(selectedJob);

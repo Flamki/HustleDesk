@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, Sparkles, RefreshCcw, Paperclip, UploadCloud, Crown } from 'lucide-react';
+import { Send, Bot, Sparkles, RefreshCcw, Paperclip, UploadCloud, Crown, Brain, TrendingUp } from 'lucide-react';
 import type { FreelancerProfile } from '../../types';
 import { useProfile } from '../../context/ProfileContext';
 import { useAuth } from '../../context/AuthContext';
+import { useAgent } from '../../context/AgentContext';
 import { getUserAvatarUrl } from '../../utils/avatar';
 import * as authService from '../../services/supabaseService';
 
@@ -155,6 +156,7 @@ const getAssistantAvatarUrl = (profile: FreelancerProfile, user: any) => {
 export const ProfileAssistant: React.FC = () => {
   const { user } = useAuth();
   const { profile, updateProfile } = useProfile();
+  const { confidence, agentStatusLabel, winRate, agentContext } = useAgent();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -383,14 +385,25 @@ export const ProfileAssistant: React.FC = () => {
               <p className="text-xs text-slate-500 font-medium">Building your profile...</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleResetConversation}
-            className="text-slate-400 hover:text-indigo-600 transition-colors p-2 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800"
-            title="Reset conversation"
-          >
-            <RefreshCcw size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            {agentStatusLabel !== 'initializing' && (
+              <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                agentStatusLabel === 'optimizing'
+                  ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                  : 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+              }`}>
+                {agentStatusLabel === 'optimizing' ? '⚡ Optimizing' : '🧠 Learning'}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleResetConversation}
+              className="text-slate-400 hover:text-indigo-600 transition-colors p-2 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800"
+              title="Reset conversation"
+            >
+              <RefreshCcw size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 dark:bg-slate-950/50">
@@ -481,6 +494,25 @@ export const ProfileAssistant: React.FC = () => {
               <p className="text-indigo-600 dark:text-indigo-400 font-medium text-sm">
                 {profile.experienceLevel} - ${profile.hourlyRate}/hr
               </p>
+              {/* Agent stats */}
+              <div className="mt-3 flex items-center justify-center gap-4">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">{confidence}%</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Confidence</p>
+                </div>
+                {winRate > 0 && (
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-emerald-600">{winRate}%</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-semibold">Win Rate</p>
+                  </div>
+                )}
+                {agentContext?.agent?.strategy_version && agentContext.agent.strategy_version > 1 && (
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-purple-600">v{agentContext.agent.strategy_version}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-semibold">Strategy</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="mt-8 space-y-4">

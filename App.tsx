@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/ProfileContext';
+import { AgentProvider } from './context/AgentContext';
 import { ToastProvider } from './components/ui/Toast';
 import { StartupEnvGuard } from './components/system/StartupEnvGuard';
 import { validateEnvironment } from './utils/envValidation';
@@ -127,10 +128,12 @@ const RootLayout: React.FC = () => {
       <ToastProvider>
         <AuthProvider>
           <ProfileProvider>
-            <Suspense fallback={<RouteLoader label="Loading..." />}>
-              <Outlet />
-            </Suspense>
-            <Analytics />
+            <AgentProvider>
+              <Suspense fallback={<RouteLoader label="Loading..." />}>
+                <Outlet />
+              </Suspense>
+              <Analytics />
+            </AgentProvider>
           </ProfileProvider>
         </AuthProvider>
       </ToastProvider>

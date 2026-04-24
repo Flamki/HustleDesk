@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, Briefcase, MessageSquare, Clock3, Trophy, Wand2, CheckCircle2 } from 'lucide-react';
 import { DashboardStatsResponse, Job } from '../types';
 import * as authService from '../services/supabaseService';
+import { AgentInsightsPanel } from '../components/dashboard/AgentInsightsPanel';
 
 const DASHBOARD_CACHE_KEY = 'dashboard_stats_cache_v1';
 
@@ -245,6 +246,11 @@ export const DashboardPage: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* AI Agent Section */}
+      <div className="mt-2">
+        <AgentInsightsPanel />
       </div>
     </div>
   );

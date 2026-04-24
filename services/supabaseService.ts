@@ -2340,6 +2340,166 @@ export const verifyRazorpayPayment = async (
   }
 };
 
+// ═══════════════════════════════════════════════════════════
+// AI Agent — Per-user learning agent service functions
+// ═══════════════════════════════════════════════════════════
+
+export interface AgentMemory {
+  user_id: string;
+  total_proposals_generated: number;
+  total_wins: number;
+  total_losses: number;
+  current_win_rate: number;
+  current_streak: number;
+  best_win_streak: number;
+  platform_stats: Record<string, { wins: number; losses: number; avg_price: number; total_revenue: number }>;
+  avg_winning_price: number;
+  avg_losing_price: number;
+  winning_skills: Array<{ skill: string; count: number }>;
+  losing_patterns: Array<{ pattern: string; count: number }>;
+  best_performing_tone: string;
+  best_performing_length: string;
+  tone_stats: Record<string, { wins: number; losses: number }>;
+  learned_insights: AgentInsightEntry[];
+  strategy_version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentInsightEntry {
+  type: string;
+  insight: string;
+  pattern?: string;
+  recommendation?: string;
+  confidence: number;
+  job_title?: string;
+  platform?: string;
+  price?: number;
+  created_at: string;
+}
+
+export interface AgentContextResponse {
+  agent: {
+    memory: AgentMemory | null;
+    confidence: number;
+    strategy_version: number;
+    status: 'initializing' | 'learning' | 'optimizing';
+  };
+  profile: Record<string, unknown> | null;
+  stats: {
+    total_proposals: number;
+    total_wins: number;
+    total_losses: number;
+    active_applications: number;
+    live_win_rate: number;
+    avg_winning_price: number;
+    avg_losing_price: number;
+    best_platform: string | null;
+    best_platform_win_rate: number;
+    current_streak: number;
+    best_win_streak: number;
+  };
+  platform_breakdown: Record<string, { wins: number; losses: number; applied: number; total_revenue: number }>;
+  recent_wins: Array<{ id: string; title: string; company: string | null; platform: string; proposed_price: number; currency: string; closed_at: string }>;
+  recent_losses: Array<{ id: string; title: string; company: string | null; platform: string; proposed_price: number; currency: string; closed_at: string }>;
+  recent_interactions: Array<{ id: string; interaction_type: string; context: Record<string, unknown>; agent_response: string; outcome: string | null; confidence_score: number; created_at: string }>;
+}
+
+export interface AgentLearnResult {
+  success: boolean;
+  outcome: string;
+  updated_stats: {
+    total_wins: number;
+    total_losses: number;
+    win_rate: number;
+    current_streak: number;
+    best_win_streak: number;
+    strategy_version: number;
+  };
+  insight: AgentInsightEntry | null;
+  agent_analysis: Record<string, unknown> | null;
+}
+
+export interface AgentCoachingResponse {
+  insights: Array<{
+    type: 'strength' | 'weakness' | 'opportunity' | 'trend';
+    title: string;
+    detail: string;
+    priority: 'high' | 'medium' | 'low';
+    confidence: number;
+  }>;
+  coaching: {
+    summary: string;
+    next_action: string;
+    pricing_advice?: string;
+    platform_advice?: string;
+    skill_advice?: string;
+    weekly_goal?: string;
+    confidence: number;
+  };
+  agent_status: 'initializing' | 'learning' | 'optimizing';
+}
+
+export const getAgentContext = async (): Promise<{ data: AgentContextResponse | null; error: Error | null }> => {
+  if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+  const token = await getSupabaseToken();
+  if (!token) return { data: null, error: new Error('Unauthorized') };
+
+  try {
+    const response = await fetchWithTimeout('/api/ai/agent-context', {
+      headers: { Authorization: `Bearer ${token}` },
+    }, 12000);
+    const body = await parseJsonSafe<AgentContextResponse>(response);
+    if (!response.ok) return { data: null, error: new Error((body as any)?.error || 'Failed to fetch agent context') };
+    return { data: body, error: null };
+  } catch {
+    return { data: null, error: new Error('Failed to fetch agent context') };
+  }
+};
+
+export const recordAgentOutcome = async (
+  jobId: string,
+  outcome: 'win' | 'loss',
+  notes?: string
+): Promise<{ data: AgentLearnResult | null; error: Error | null }> => {
+  if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+  const token = await getSupabaseToken();
+  if (!token) return { data: null, error: new Error('Unauthorized') };
+
+  try {
+    const response = await fetchWithTimeout('/api/ai/agent-learn', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ jobId, outcome, notes }),
+    }, 20000);
+    const body = await parseJsonSafe<AgentLearnResult>(response);
+    if (!response.ok) return { data: null, error: new Error((body as any)?.error || 'Failed to record outcome') };
+    return { data: body, error: null };
+  } catch {
+    return { data: null, error: new Error('Failed to record outcome') };
+  }
+};
+
+export const getAgentInsights = async (): Promise<{ data: AgentCoachingResponse | null; error: Error | null }> => {
+  if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+  const token = await getSupabaseToken();
+  if (!token) return { data: null, error: new Error('Unauthorized') };
+
+  try {
+    const response = await fetchWithTimeout('/api/ai/agent-insights', {
+      headers: { Authorization: `Bearer ${token}` },
+    }, 25000);
+    const body = await parseJsonSafe<AgentCoachingResponse>(response);
+    if (!response.ok) return { data: null, error: new Error((body as any)?.error || 'Failed to fetch agent insights') };
+    return { data: body, error: null };
+  } catch {
+    return { data: null, error: new Error('Failed to fetch agent insights') };
+  }
+};
+
 export const runFollowupReminderSweepNow = async (): Promise<{
   data: FollowupReminderSweepResult | null;
   error: Error | null;

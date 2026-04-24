@@ -205,18 +205,53 @@ export default async function handler(req, res) {
       : [];
     const profile = body?.profile && typeof body.profile === 'object' ? body.profile : {};
 
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('id,title,company,platform,job_description,budget_min,budget_max,currency,notes')
-      .eq('id', jobId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    // Fetch job and agent memory in parallel
+    const [jobResult, agentMemoryResult] = await Promise.all([
+      supabase
+        .from('jobs')
+        .select('id,title,company,platform,job_description,budget_min,budget_max,currency,notes')
+        .eq('id', jobId)
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('agent_memory')
+        .select('total_wins,total_losses,current_win_rate,avg_winning_price,avg_losing_price,platform_stats,winning_skills,best_performing_tone,best_performing_length,learned_insights,strategy_version')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+    ]);
 
+    const { data: job, error: jobError } = jobResult;
     if (jobError) return secureJson(res, 500, { error: jobError.message });
     if (!job) return secureJson(res, 404, { error: 'Job not found' });
 
+    const agentMemory = agentMemoryResult.data;
+
+    // Build agent-enhanced prompt
     const lengthGuide = normalizeLengthGuidance(length);
-    const prompt = buildProposalPrompt({ job, profile, tone, length, highlights });
+    let agentContext = '';
+    if (agentMemory && (agentMemory.total_wins > 0 || agentMemory.total_losses > 0)) {
+      const platformStats = agentMemory.platform_stats || {};
+      const currentPlatformStats = platformStats[job.platform] || {};
+      const recentInsights = (agentMemory.learned_insights || []).slice(-3);
+      const topWinSkills = (agentMemory.winning_skills || []).slice(0, 5).map((s) => s.skill || s).join(', ');
+
+      agentContext = `
+Agent Memory (learned from ${agentMemory.total_wins + agentMemory.total_losses} past outcomes):
+- Win Rate: ${Math.round((agentMemory.current_win_rate || 0) * 100)}%
+- Avg Winning Price: $${Math.round(agentMemory.avg_winning_price || 0)}
+- Avg Losing Price: $${Math.round(agentMemory.avg_losing_price || 0)}
+- Best Performing Tone: ${agentMemory.best_performing_tone || tone}
+- Platform "${job.platform}" stats: ${currentPlatformStats.wins || 0} wins, ${currentPlatformStats.losses || 0} losses
+- Skills most correlated with wins: ${topWinSkills || 'Not enough data yet'}
+${recentInsights.length ? `- Recent learnings: ${recentInsights.map((i) => i.insight || '').filter(Boolean).join('; ')}` : ''}
+- Strategy version: v${agentMemory.strategy_version || 1}
+
+IMPORTANT: Use these learnings to optimize this proposal. Emphasize win-correlated skills, price within winning ranges, and apply the tone that historically performs best.`;
+    }
+
+    const basePrompt = buildProposalPrompt({ job, profile, tone, length, highlights });
+    const enhancedPrompt = agentContext ? `${basePrompt}\n\n${agentContext}` : basePrompt;
+
     let proposal = '';
     let provider = 'fireworks';
     let warning = null;
@@ -226,9 +261,9 @@ export default async function handler(req, res) {
           {
             role: 'system',
             content:
-              'You are the user\'s dedicated AI Digital Twin Agent. You have shared memory of their entire profile, background, and past projects. Your primary directive is to continuously help them win more clients by writing the most refined, personalized, and high-converting proposals possible on their behalf.',
+              'You are the user\'s dedicated AI Digital Twin Agent. You have shared memory of their entire profile, background, past projects, AND performance history (win/loss patterns, pricing insights, platform performance). Your primary directive is to continuously help them win more clients by writing the most refined, personalized, and high-converting proposals possible on their behalf. Use your learned patterns to maximize win probability.',
           },
-          { role: 'user', content: prompt },
+          { role: 'user', content: enhancedPrompt },
         ],
         temperature: 0.45,
         maxTokens: lengthGuide.maxTokens,
@@ -241,6 +276,39 @@ export default async function handler(req, res) {
       warning = `Fireworks generation failed: ${sanitizeError(generationError)}`;
       proposal = buildFallbackProposal({ job, profile, tone, length });
     }
+
+    // Update agent memory: increment proposals generated
+    if (agentMemory) {
+      supabase
+        .from('agent_memory')
+        .update({
+          total_proposals_generated: (agentMemory.total_proposals_generated || 0) + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id)
+        .then(() => {})
+        .catch(() => {});
+    }
+
+    // Log the proposal generation as an agent interaction
+    supabase
+      .from('agent_interactions')
+      .insert({
+        user_id: user.id,
+        interaction_type: 'proposal',
+        context: {
+          job_title: job.title,
+          platform: job.platform,
+          tone,
+          length,
+          strategy_version: agentMemory?.strategy_version || 1,
+        },
+        agent_response: `Generated ${length} ${tone} proposal for "${truncate(job.title, 80)}"`,
+        job_id: jobId,
+        confidence_score: agentMemory ? Math.min(1, (agentMemory.current_win_rate || 0) + 0.2) : 0.3,
+      })
+      .then(() => {})
+      .catch(() => {});
 
     let creditsRemaining = 0;
     const { data: usageRow } = await supabase
@@ -260,6 +328,8 @@ export default async function handler(req, res) {
       creditsRemaining,
       provider,
       warning,
+      agent_enhanced: Boolean(agentContext),
+      strategy_version: agentMemory?.strategy_version || 1,
     });
   } catch (error) {
     return secureJson(res, 500, { error: sanitizeError(error) });

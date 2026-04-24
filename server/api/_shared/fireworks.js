@@ -1,5 +1,5 @@
 const DEFAULT_FIREWORKS_BASE_URL = 'https://api.fireworks.ai/inference/v1';
-const DEFAULT_FIREWORKS_MODEL = 'accounts/fireworks/models/llama-v3p1-8b-instruct';
+const DEFAULT_FIREWORKS_MODEL = 'accounts/fireworks/models/llama-v3p3-70b-instruct';
 
 const asTrimmedString = (value) => String(value || '').trim();
 
