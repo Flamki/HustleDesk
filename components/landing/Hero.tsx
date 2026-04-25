@@ -109,14 +109,14 @@ export const Hero: React.FC = () => {
                     <div className="hero-scroll-track">
                       {/* First set of images */}
                       {[
-                        { src: '/hero-dashboard.png', label: 'CRM Dashboard' },
+                        { src: '/hero-dashboard.png', label: 'Dashboard Overview' },
                         { src: '/hero-proposals.png', label: 'AI Proposal Generator' },
-                        { src: '/hero-clients.png', label: 'Client Management' },
+                        { src: '/hero-clients.png', label: 'Job Pipeline Tracker' },
                         { src: '/hero-analytics.png', label: 'Analytics & Insights' },
                         /* Duplicate for seamless loop */
-                        { src: '/hero-dashboard.png', label: 'CRM Dashboard' },
+                        { src: '/hero-dashboard.png', label: 'Dashboard Overview' },
                         { src: '/hero-proposals.png', label: 'AI Proposal Generator' },
-                        { src: '/hero-clients.png', label: 'Client Management' },
+                        { src: '/hero-clients.png', label: 'Job Pipeline Tracker' },
                         { src: '/hero-analytics.png', label: 'Analytics & Insights' },
                       ].map((item, i) => (
                         <div key={i} className="flex-shrink-0 h-full px-2 first:pl-0" style={{ width: 'calc(100vw * 0.55)' }}>
