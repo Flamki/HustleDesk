@@ -37,13 +37,12 @@ const writeCachedUser = (user: User | null): void => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const cached = readCachedUser();
-    return cached;
+    return readCachedUser();
   });
-  const [loading, setLoading] = useState<boolean>(() => {
-    const cached = readCachedUser();
-    return !cached;
-  });
+  // ALWAYS start loading=true so pages wait for real session validation.
+  // The cached user is only used to avoid a flash of the login page for
+  // genuinely authenticated users, but we must still verify the session.
+  const [loading, setLoading] = useState<boolean>(true);
   const bootstrappedRef = useRef(false);
 
   useEffect(() => {

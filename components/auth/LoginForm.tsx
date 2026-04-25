@@ -29,6 +29,7 @@ export const LoginForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSignupHint, setShowSignupHint] = useState(false);
 
   const getFriendlyAuthError = (code: string | null): string | null => {
     if (code === 'oauth_failed') {
@@ -43,27 +44,27 @@ export const LoginForm: React.FC = () => {
     return null;
   };
 
-  const getFriendlyLoginError = (message: string): string => {
+  const getFriendlyLoginError = (message: string): { text: string; isNoAccount: boolean } => {
     const normalized = message.toLowerCase();
     if (normalized.includes('invalid login credentials') || normalized.includes('invalid_credentials')) {
-      return 'Incorrect email or password. Please check your credentials and try again.';
+      return { text: 'Incorrect email or password. If you haven\'t signed up yet, create an account first.', isNoAccount: true };
     }
     if (normalized.includes('email not confirmed')) {
-      return 'Your email has not been confirmed yet. Check your inbox for a verification link, or sign up again.';
+      return { text: 'Your email has not been confirmed yet. Check your inbox for a verification link, or sign up again.', isNoAccount: false };
     }
     if (normalized.includes('rate limit') || normalized.includes('too many requests')) {
-      return 'Too many login attempts. Please wait a moment and try again.';
+      return { text: 'Too many login attempts. Please wait a moment and try again.', isNoAccount: false };
     }
     if (normalized.includes('network') || normalized.includes('fetch') || normalized.includes('failed to fetch')) {
-      return 'Network error. Please check your internet connection and try again.';
+      return { text: 'Network error. Please check your internet connection and try again.', isNoAccount: false };
     }
     if (normalized.includes('timeout') || normalized.includes('timed out')) {
-      return 'The request timed out. Please try again.';
+      return { text: 'The request timed out. Please try again.', isNoAccount: false };
     }
     if (normalized.includes('user not found')) {
-      return 'No account found with this email. Please sign up first.';
+      return { text: 'No account found with this email. Please sign up first.', isNoAccount: true };
     }
-    return message;
+    return { text: message, isNoAccount: false };
   };
 
   const redirectPath = React.useMemo(() => {
@@ -123,12 +124,15 @@ export const LoginForm: React.FC = () => {
     }
 
     setLoading(true);
+    setShowSignupHint(false);
 
     try {
       const { user, error: authError } = await signIn(email, password);
       
       if (authError) {
-        setError(getFriendlyLoginError(authError.message));
+        const friendly = getFriendlyLoginError(authError.message);
+        setError(friendly.text);
+        setShowSignupHint(friendly.isNoAccount);
       } else if (user) {
         navigate(redirectPath, { replace: true });
       } else {
@@ -136,7 +140,9 @@ export const LoginForm: React.FC = () => {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
-      setError(getFriendlyLoginError(msg || 'An unexpected error occurred. Please try again.'));
+      const friendly = getFriendlyLoginError(msg || 'An unexpected error occurred. Please try again.');
+      setError(friendly.text);
+      setShowSignupHint(friendly.isNoAccount);
     } finally {
       setLoading(false);
     }
@@ -169,9 +175,19 @@ export const LoginForm: React.FC = () => {
         </div>
 
         {error && (
-          <div className="p-4 rounded-[10px] bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-            <div className="h-2 w-2 rounded-full bg-red-500" />
-            {error}
+          <div className="p-4 rounded-[10px] bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-sm animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <div className="h-2 w-2 rounded-full bg-red-500 flex-shrink-0" />
+              {error}
+            </div>
+            {showSignupHint && (
+              <Link
+                to={signupPath}
+                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-colors"
+              >
+                Create a Free Account →
+              </Link>
+            )}
           </div>
         )}
 
