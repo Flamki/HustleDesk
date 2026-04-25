@@ -1,62 +1,111 @@
 import React from 'react';
-import {
-  Palette,
-  Layout,
-  Globe,
-  Smartphone,
-  BarChart3,
-  Layers,
-  Type,
-  Image,
-  Blocks,
-} from 'lucide-react';
-import { PublicPageTemplate } from './PublicPageTemplate';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Layout, Palette, Globe, Smartphone, BarChart3, Layers, Type, Image, Blocks } from 'lucide-react';
+import SEO from '../../components/SEO';
+import { PublicPageLayout } from './PublicPageLayout';
 
-export const PortfolioBuilderPublic: React.FC = () => (
-  <PublicPageTemplate
-    title="Free Portfolio Builder for Freelancers"
-    description="Build a stunning freelance portfolio website in minutes. Choose from professional templates, customize colors and typography, and publish instantly — no coding required."
-    path="/portfolio-builder"
-    keywords={[
-      'freelancer portfolio builder', 'free portfolio website builder',
-      'online portfolio for freelancers', 'portfolio website templates',
-      'freelance portfolio site', 'personal brand portfolio builder',
-    ]}
-    badge="Portfolio"
-    badgeColor="from-rose-400 to-pink-500"
-    heading="Showcase Work That "
-    headingAccent="Wins Clients"
-    intro="Your portfolio is your resume. GetSoloDesk makes it dead simple to build a professional portfolio site that wins clients — no design skills or coding needed."
-    accentFrom="#f43f5e"
-    accentTo="#ec4899"
-    stats={[
-      { value: '5 min', label: 'To publish' },
-      { value: 'SSL', label: 'Free security' },
-      { value: '100%', label: 'Mobile responsive' },
-      { value: '$0', label: 'No hosting fees' },
-    ]}
-    features={[
-      { icon: Layout, title: 'Professional Templates', desc: 'Choose from templates designed for developers, designers, writers, and creatives. Every template is conversion-optimized.' },
-      { icon: Palette, title: 'Full Customization', desc: 'Custom colors, typography, layout, and content blocks. Make it truly yours without touching code.' },
-      { icon: Globe, title: 'Instant Publishing', desc: 'Publish at your unique URL with SSL and fast loading. Your portfolio is live in minutes, not days.' },
-      { icon: Smartphone, title: 'Mobile Responsive', desc: 'Looks perfect on every device. Your portfolio adapts to phones, tablets, and desktops automatically.' },
-      { icon: BarChart3, title: 'Built-In Analytics', desc: 'Track who views your work, which projects get the most attention, and where your traffic comes from.' },
-      { icon: Layers, title: 'CRM Connected', desc: 'Add portfolio pieces directly from completed jobs in your CRM. No double entry needed.' },
-      { icon: Type, title: 'Typography Controls', desc: 'Choose from premium fonts and adjust sizes, weights, and spacing to match your personal brand.' },
-      { icon: Image, title: 'Rich Media Support', desc: 'Add images, videos, and embeds to your case studies. Tell the full story of every project.' },
-      { icon: Blocks, title: 'Modular Sections', desc: 'Add, remove, and reorder sections like About, Skills, Projects, Testimonials, and Contact.' },
-    ]}
-    bullets={[
-      'Professional templates designed for developers, designers, writers, and creatives',
-      'Full customization: colors, typography, layout, and content blocks',
-      'Publish instantly at your unique URL with SSL and fast loading',
-      'Mobile-responsive — looks perfect on every device',
-      'Built-in analytics to track who views your work',
-      'Connected to your CRM — add projects directly from completed jobs',
-    ]}
-    ctaHeading="Your best work deserves a stage."
-    ctaSub="Build a portfolio that turns visitors into clients in under 5 minutes."
-  />
-);
+export const PortfolioBuilderPublic: React.FC = () => {
+  const cta = `/signup?returnTo=${encodeURIComponent('/app/dashboard?source=portfolio-builder')}`;
+
+  return (
+    <PublicPageLayout>
+      <SEO
+        title="Free Portfolio Builder for Freelancers"
+        description="Build a stunning freelance portfolio website in minutes. Professional templates, full customization, instant publishing."
+        path="/portfolio-builder"
+        keywords={['freelancer portfolio builder', 'free portfolio website builder', 'online portfolio for freelancers']}
+      />
+
+      {/* ═══ HERO — Full-width dark with floating cards ═══ */}
+      <section className="bg-[#0a0a1a] relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-rose-500/[0.04] rounded-full blur-[150px]" />
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] mb-6">
+            <Palette size={12} className="text-rose-400" />
+            <span className="text-[11px] font-semibold text-white/50 uppercase tracking-[0.15em]">Portfolio Builder</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-[1.1] mb-6">
+            Your work speaks.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-500">
+              Let it be heard.
+            </span>
+          </h1>
+          <p className="text-base md:text-lg text-white/40 max-w-xl mx-auto leading-relaxed mb-10">
+            Build a professional portfolio site in 5 minutes. No coding, no design skills, no hosting fees. Just your best work, beautifully presented.
+          </p>
+          <Link to={cta} className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-white text-slate-900 rounded-xl font-bold text-sm hover:scale-[1.03] transition-all shadow-lg group">
+            Build Your Portfolio <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+
+        {/* Floating capability cards */}
+        <div className="max-w-6xl mx-auto px-4 pb-20 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { icon: Layout, label: 'Templates' },
+            { icon: Type, label: 'Typography' },
+            { icon: Image, label: 'Rich Media' },
+            { icon: Blocks, label: 'Modular' },
+          ].map((c, i) => (
+            <div key={i} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-center hover:bg-white/[0.06] transition-colors">
+              <c.icon size={20} className="text-rose-400 mx-auto mb-2" />
+              <span className="text-xs font-semibold text-white/50">{c.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ FEATURES — Bento grid ═══ */}
+      <section className="bg-white py-20 lg:py-28">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight text-center mb-4">Everything to showcase your craft</h2>
+          <p className="text-slate-500 text-center mb-14 max-w-xl mx-auto">No compromises. Full creative control.</p>
+
+          {/* Bento layout */}
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Large card */}
+            <div className="md:col-span-2 bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl border border-rose-100 p-8">
+              <Layout size={28} className="text-rose-500 mb-4" />
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Professional Templates</h3>
+              <p className="text-slate-500 leading-relaxed max-w-md">
+                Choose from templates designed for developers, designers, writers, and creatives. Every template is conversion-optimized to turn visitors into clients.
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+              <Globe size={24} className="text-rose-500 mb-3" />
+              <h3 className="text-base font-bold text-slate-900 mb-1">Instant Publishing</h3>
+              <p className="text-sm text-slate-500">Your unique URL with SSL. Live in minutes.</p>
+            </div>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+              <Smartphone size={24} className="text-rose-500 mb-3" />
+              <h3 className="text-base font-bold text-slate-900 mb-1">Mobile Responsive</h3>
+              <p className="text-sm text-slate-500">Looks perfect on every device, automatically.</p>
+            </div>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+              <BarChart3 size={24} className="text-rose-500 mb-3" />
+              <h3 className="text-base font-bold text-slate-900 mb-1">Built-In Analytics</h3>
+              <p className="text-sm text-slate-500">Track views, engagement, and traffic sources.</p>
+            </div>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+              <Layers size={24} className="text-rose-500 mb-3" />
+              <h3 className="text-base font-bold text-slate-900 mb-1">CRM Connected</h3>
+              <p className="text-sm text-slate-500">Add projects from completed jobs. No double entry.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ CTA ═══ */}
+      <section className="bg-gradient-to-br from-rose-500 to-pink-600 py-20">
+        <div className="max-w-3xl mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-4">Your best work deserves a stage.</h2>
+          <p className="text-rose-100/60 mb-8">Free. No coding. Publish in 5 minutes.</p>
+          <Link to={cta} className="inline-flex items-center gap-2.5 px-8 py-4 bg-white text-rose-600 rounded-xl font-bold text-sm hover:scale-[1.03] transition-all shadow-lg group">
+            Build It Now <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+      </section>
+    </PublicPageLayout>
+  );
+};
 
 export default PortfolioBuilderPublic;
