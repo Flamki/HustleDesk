@@ -536,32 +536,18 @@ const resolveUserAfterAuth = async (
   createdAt?: string,
   context: AuthResolutionContext = 'session'
 ): Promise<User | null> => {
+  // Google OAuth: always clear intent, never reject.
+  // Both login and signup with Google should behave identically:
+  // - If profile exists → log in
+  // - If profile doesn't exist → create it (just like signup)
+  // This is standard SaaS behavior (Google, GitHub, Notion, etc.)
   const oauthIntent = getPendingOAuthIntent();
-  if (oauthIntent === 'login') {
-    // Strict login behavior: a Login flow must only continue for accounts
-    // that existed before this login attempt.
-    const loginStartedAtMs = getPendingOAuthIntentTimestamp();
-    const cleanupResult = await rejectOAuthLoginOnlyAccount(accessToken, loginStartedAtMs);
-    if (cleanupResult === 'deleted') {
-      // Account was truly new and got cleaned up — redirect to signup.
-      clearOAuthIntent();
-      setOAuthErrorCode('no_account');
-      if (supabase) {
-        await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-      }
-      return null;
-    }
-    // For 'error' or 'not_eligible', continue — don't block login on API failures.
-    // This is the key fix: previously 'error' also blocked login, causing failures
-    // when the API was slow or unreachable.
-  }
-
   if (oauthIntent) {
     clearOAuthIntent();
   }
 
-  const shouldBootstrap =
-    context === 'signup' || oauthIntent === 'signup';
+  // Any OAuth flow should bootstrap the profile if needed
+  const shouldBootstrap = context === 'signup' || !!oauthIntent;
 
   // For returning session context (page reload), skip the expensive profile-check
   // API call and go straight to DB lookup. This saves ~2-3s on page load.
@@ -572,7 +558,7 @@ const resolveUserAfterAuth = async (
 
   // For OAuth flows, run profile setup and user lookup in parallel.
   if (accessToken) {
-    const profileMode = shouldBootstrap ? 'ensure' : (oauthIntent === 'login' ? 'check' : 'check');
+    const profileMode = shouldBootstrap ? 'ensure' : 'check';
     const [profileResult, user] = await Promise.all([
       ensureProfileSetup(userId, accessToken, profileMode).catch(() => false),
       loadUserFromUsersTable(userId, email),
@@ -584,17 +570,6 @@ const resolveUserAfterAuth = async (
     }
 
     if (user) return user;
-    if (shouldBootstrap || profileResult) {
-      return buildFallbackUser(userId, email, createdAt);
-    }
-    if (oauthIntent === 'login' && !profileResult) {
-      // Profile check says account doesn't exist and this is a login attempt.
-      setOAuthErrorCode('no_account');
-      if (supabase) {
-        await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-      }
-      return null;
-    }
     return buildFallbackUser(userId, email, createdAt);
   }
 
