@@ -777,6 +777,15 @@ export const signUp = async (email: string, password: string): Promise<AuthRespo
     if (error) return { user: null, error };
     if (!data.user) return { user: null, error: null };
 
+    // Detect duplicate: Supabase returns user with empty identities when email already exists
+    const identities = (data.user as any).identities;
+    if (Array.isArray(identities) && identities.length === 0) {
+      return {
+        user: null,
+        error: new Error('An account with this email already exists. Please log in instead.'),
+      };
+    }
+
     // Case 1: Supabase returned a session (email confirmation disabled) → auto-login
     if (data.session?.access_token) {
       const user = await resolveUserAfterAuth(
