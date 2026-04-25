@@ -236,7 +236,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
       </div>
 
       {/* Navigation Scroll Area */}
-      <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-visible custom-scrollbar ${isCollapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
+      <div className={`flex-1 min-h-0 ${isCollapsed ? 'px-2 py-3' : 'px-3 py-3'}`} style={{ overflow: isCollapsed ? 'visible' : 'auto' }}>
         
         {isSettings ? (
             // --- SETTINGS NAV ---
