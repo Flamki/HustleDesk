@@ -24,6 +24,7 @@ import { TimeTracking } from './pages/public/TimeTracking';
 import { ClientPortal } from './pages/public/ClientPortal';
 import { PortfolioBuilderPublic } from './pages/public/PortfolioBuilderPublic';
 import { LinkInBioPublic } from './pages/public/LinkInBioPublic';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 
 const DashboardPage = React.lazy(async () => {
   const m = await import('./pages/DashboardPage');
@@ -166,6 +167,7 @@ export const routes: RouteRecord[] = [
 
       { path: 'signup', element: <SignupPage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
       { path: 'auth/check-email', element: <CheckEmailPage /> },
       { path: 'auth/callback', element: <AuthCallbackPage /> },
       { path: 'unsubscribe', element: <UnsubscribePage /> },

@@ -776,17 +776,44 @@ export const signUp = async (email: string, password: string): Promise<AuthRespo
 
     if (error) return { user: null, error };
     if (!data.user) return { user: null, error: null };
-    // Email-confirmation mode: no active session yet, treat as successful signup.
-    if (!data.session?.access_token) return { user: null, error: null };
 
-    const user = await resolveUserAfterAuth(
-      data.user.id,
-      data.user.email ?? email,
-      data.session.access_token,
-      (data.user as { created_at?: string }).created_at,
-      'signup'
-    );
-    return { user, error: null };
+    // Case 1: Supabase returned a session (email confirmation disabled) → auto-login
+    if (data.session?.access_token) {
+      const user = await resolveUserAfterAuth(
+        data.user.id,
+        data.user.email ?? email,
+        data.session.access_token,
+        (data.user as { created_at?: string }).created_at,
+        'signup'
+      );
+      return { user, error: null };
+    }
+
+    // Case 2: No session (email confirmation enabled). Try signing in directly
+    // in case Supabase auto-confirmed (e.g., when confirm email is turned off at
+    // the project level but the SDK response is ambiguous).
+    try {
+      const { data: loginData, error: loginError } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+        AUTH_CALL_TIMEOUT_MS,
+        'Auto-login timed out.'
+      );
+      if (!loginError && loginData.user && loginData.session?.access_token) {
+        const user = await resolveUserAfterAuth(
+          loginData.user.id,
+          loginData.user.email ?? email,
+          loginData.session.access_token,
+          (loginData.user as { created_at?: string }).created_at,
+          'signup'
+        );
+        return { user, error: null };
+      }
+    } catch {
+      // Auto-login failed, fall through to "check email" flow
+    }
+
+    // Case 3: Email confirmation truly required — return null user so UI shows check-email
+    return { user: null, error: null };
   } catch (err) {
     return {
       user: null,
@@ -864,6 +891,40 @@ export const signOut = async (): Promise<void> => {
     4000,
     'Remote sign-out timed out'
   ).catch(() => undefined);
+};
+
+export const resetPasswordForEmail = async (email: string): Promise<{ error: Error | null }> => {
+  if (!supabase) {
+    return { error: new Error('Auth is not configured.') };
+  }
+  try {
+    const { error } = await withTimeout(
+      supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${getAuthBaseUrl()}/auth/callback?returnTo=/app/settings`,
+      }),
+      AUTH_CALL_TIMEOUT_MS,
+      'Password reset request timed out.'
+    );
+    return { error: error ?? null };
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error('Failed to send reset email.') };
+  }
+};
+
+export const updatePassword = async (newPassword: string): Promise<{ error: Error | null }> => {
+  if (!supabase) {
+    return { error: new Error('Auth is not configured.') };
+  }
+  try {
+    const { error } = await withTimeout(
+      supabase.auth.updateUser({ password: newPassword }),
+      AUTH_CALL_TIMEOUT_MS,
+      'Password update timed out.'
+    );
+    return { error: error ?? null };
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error('Failed to update password.') };
+  }
 };
 
 export const getCurrentUser = async (): Promise<User | null> => {

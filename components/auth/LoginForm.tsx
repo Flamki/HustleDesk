@@ -170,9 +170,9 @@ export const LoginForm: React.FC = () => {
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Password
                 </label>
-                <a href="#" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:underline">
+                <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:underline">
                     Forgot password?
-                </a>
+                </Link>
             </div>
             <div className="relative">
                 <Input

@@ -18,6 +18,7 @@ const SEO_ROUTES = [
 const APP_AUTH_ROUTES = [
   '/login',
   '/signup',
+  '/forgot-password',
   '/auth/callback',
   '/auth/check-email',
   '/unsubscribe',
