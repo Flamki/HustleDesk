@@ -16,6 +16,7 @@ import {
   Mail,
   UserCircle,
   ArrowLeft,
+  ScrollText,
   Shield,
   CreditCard,
   Bell,
@@ -89,10 +90,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
       <Link
         to={to}
         onClick={onClose}
-        title={isCollapsed ? label : undefined}
-        aria-label={isCollapsed ? label : undefined}
+        aria-label={label}
         className={`
-          relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 group
+          relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 group/nav
           ${isCollapsed ? 'p-2.5' : 'px-3 py-2.5'}
           ${active
             ? 'bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-500 rounded-r-full"></div>
         )}
 
-        <div className={`relative flex items-center justify-center transition-colors ${active ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`}>
+        <div className={`relative flex items-center justify-center transition-colors ${active ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 group-hover/nav:text-slate-600 dark:group-hover/nav:text-slate-300'}`}>
             <Icon size={20} strokeWidth={active ? 2.5 : 2} />
             {badge && isCollapsed && (
                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-500 border-2 border-white dark:border-slate-900 rounded-full"></span>
@@ -122,6 +122,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
                     </span>
                 )}
             </div>
+        )}
+
+        {/* Floating tooltip when collapsed */}
+        {isCollapsed && (
+          <div className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-semibold whitespace-nowrap shadow-lg opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible transition-all duration-150 pointer-events-none z-50">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 rotate-45 bg-slate-900 dark:bg-white"></div>
+            {label}
+            {badge && <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500 text-white dark:bg-indigo-500 dark:text-white">{badge}</span>}
+          </div>
         )}
       </Link>
     );
@@ -272,7 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onClose, isCollapse
                 <NavItem to="/app/jobs" icon={Briefcase} label="Jobs" />
                 <NavItem to="/app/time" icon={Timer} label="Time Tracker" badge="New" />
                 <NavItem to="/app/invoices" icon={Receipt} label="Invoices" badge="New" />
-                <NavItem to="/app/contracts" icon={Shield} label="Contracts" badge="New" />
+                <NavItem to="/app/contracts" icon={ScrollText} label="Contracts" badge="New" />
                 <NavItem to="/app/profile" icon={UserCircle} label="Profile" />
                 <NavItem to="/app/templates" icon={FileText} label="Templates" />
 
