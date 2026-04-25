@@ -4,160 +4,148 @@ import { Link } from 'react-router-dom';
 import {
   X,
   Check,
-  StickyNote,
-  BellOff,
-  PenOff,
-  EyeOff,
-  LayoutDashboard,
-  BellRing,
-  Sparkles,
-  TrendingUp,
   ArrowRight,
   Zap,
 } from 'lucide-react';
 
 const painPoints = [
-  { icon: StickyNote, text: "Scattered notes in Notion, Excel, and sticky notes" },
-  { icon: BellOff, text: "Forgetting to follow up and losing $1,000s" },
-  { icon: PenOff, text: "Writer's block staring at blank proposals" },
-  { icon: EyeOff, text: "No idea what your actual monthly revenue is" },
+  "Scattered notes across Notion, Excel & sticky notes",
+  "Forgetting to follow up — losing $1,000s silently",
+  "Writer's block on every single proposal",
+  "Zero visibility into your actual revenue",
 ];
 
 const gainPoints = [
-  { icon: LayoutDashboard, text: "One central command center for every opportunity" },
-  { icon: BellRing, text: "Automated reminders so you never miss a deal" },
-  { icon: Sparkles, text: "AI drafts winning proposals in 5 seconds" },
-  { icon: TrendingUp, text: "Live revenue dashboards to track growth" },
+  "One command center for every opportunity",
+  "Smart reminders — never miss a deal again",
+  "AI writes winning proposals in 5 seconds",
+  "Live dashboards that track your growth",
 ];
 
 export const Manifesto: React.FC = () => {
   const startFreePath = `/signup?returnTo=${encodeURIComponent('/app/dashboard?source=landing_manifesto')}`;
 
   return (
-    <section id="why" className="py-24 lg:py-32 bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+    <section id="why" className="relative overflow-hidden">
+      {/* Dark immersive background */}
+      <div className="bg-[#0a0a1a] py-24 lg:py-32">
 
-      {/* Background textures */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]"></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px]"></div>
+        {/* Ambient glow */}
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-red-500/[0.04] rounded-full blur-[150px]"></div>
+        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/[0.06] rounded-full blur-[150px]"></div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
-        {/* Header */}
-        <div className="text-center mb-16 lg:mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/10 to-teal-500/10 border border-indigo-200 dark:border-indigo-800/50 mb-6">
-            <Zap size={14} className="text-indigo-500" />
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Level Up</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-5 tracking-tight">
-            The Freelancer{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-teal-500 dark:from-indigo-400 dark:to-teal-300">
-              Upgrade
-            </span>
-          </h2>
-          <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Most freelancers are stuck in Level 1. GetSoloDesk is the cheat code to get to Level 2.
-          </p>
-        </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
-        {/* Two-column comparison */}
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-8 items-stretch relative">
-          
-          {/* VS Badge (center) */}
-          <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-            <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center rotate-12 hover:rotate-0 transition-transform duration-300">
-              <span className="text-sm font-black text-slate-900 dark:text-white -rotate-12 hover:rotate-0 transition-transform">VS</span>
+          {/* Header */}
+          <div className="text-center mb-16 lg:mb-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] mb-6">
+              <Zap size={12} className="text-amber-400" />
+              <span className="text-[11px] font-semibold text-white/50 uppercase tracking-[0.15em]">The Upgrade</span>
             </div>
+            <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-white mb-5 tracking-tight leading-[1.1]">
+              Stop freelancing like it's<br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-400 to-orange-400">
+                2015.
+              </span>
+            </h2>
+            <p className="text-base md:text-lg text-white/40 max-w-lg mx-auto leading-relaxed">
+              The difference between struggling freelancers and thriving ones isn't talent — it's systems.
+            </p>
           </div>
 
-          {/* ❌ The Freelancer Trap */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-red-500/5 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative bg-white dark:bg-slate-900 p-8 md:p-10 lg:p-12 rounded-3xl border border-slate-200 dark:border-slate-800 h-full shadow-sm hover:shadow-lg transition-shadow duration-300">
-              
-              <div className="flex items-center gap-3 mb-10">
-                <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-                  <X size={20} className="text-red-500" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">The Freelancer Trap</h3>
-              </div>
-              
-              <div className="space-y-5">
-                {painPoints.map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex gap-4 items-start p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-red-200 dark:hover:border-red-900/30 transition-colors group/item"
-                  >
-                    <div className="min-w-[40px] h-10 rounded-xl bg-red-50 dark:bg-red-900/10 flex items-center justify-center group-hover/item:bg-red-100 dark:group-hover/item:bg-red-900/20 transition-colors">
-                      <item.icon size={18} className="text-red-400 dark:text-red-400" />
-                    </div>
-                    <div>
-                      <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed">{item.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* Comparison Cards */}
+          <div className="grid md:grid-cols-2 gap-0 relative max-w-5xl mx-auto">
 
-              {/* Decorative strikethrough */}
-              <div className="mt-8 flex items-center gap-3 opacity-50">
-                <div className="h-px flex-1 bg-red-200 dark:bg-red-900/30"></div>
-                <span className="text-xs font-semibold text-red-300 dark:text-red-800 uppercase tracking-wider">Stop losing money</span>
-                <div className="h-px flex-1 bg-red-200 dark:bg-red-900/30"></div>
+            {/* VS Badge (center) */}
+            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-indigo-500 rounded-2xl blur-md opacity-60"></div>
+                <div className="relative w-14 h-14 rounded-2xl bg-[#0a0a1a] border border-white/10 flex items-center justify-center">
+                  <span className="text-sm font-black text-white tracking-wider">VS</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* ✅ The GetSoloDesk Way */}
-          <div className="relative group">
-            {/* Glow */}
-            <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500 via-purple-500 to-teal-500 rounded-[28px] opacity-20 group-hover:opacity-30 blur-sm transition-opacity duration-500"></div>
-            
-            <div className="relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 dark:from-indigo-900 dark:via-indigo-950 dark:to-purple-950 p-8 md:p-10 lg:p-12 rounded-3xl border border-indigo-400/20 h-full shadow-2xl overflow-hidden">
-              
-              {/* Decorative orbs */}
-              <div className="absolute top-0 right-0 w-80 h-80 bg-teal-400/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-400/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
-              
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-10">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-                    <Check size={20} className="text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white">The GetSoloDesk Way</h3>
-                  <div className="ml-auto px-2.5 py-0.5 rounded-full bg-emerald-400/20 border border-emerald-400/30">
-                    <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Recommended</span>
-                  </div>
+            {/* ❌ WITHOUT — The old way */}
+            <div className="relative">
+              <div className="h-full bg-white/[0.02] backdrop-blur-sm border border-white/[0.06] rounded-3xl md:rounded-r-none p-8 md:p-10 lg:p-12">
+
+                {/* Tag */}
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/10 mb-8">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+                  <span className="text-xs font-bold text-red-400/80 uppercase tracking-wider">Without GetSoloDesk</span>
                 </div>
-                
-                <div className="space-y-5">
-                  {gainPoints.map((item, i) => (
+
+                <div className="space-y-4">
+                  {painPoints.map((item, i) => (
                     <div
                       key={i}
-                      className="flex gap-4 items-start p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group/item backdrop-blur-sm"
+                      className="flex gap-3.5 items-center group"
                     >
-                      <div className="min-w-[40px] h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover/item:bg-white/20 transition-colors">
-                        <item.icon size={18} className="text-teal-300" />
+                      <div className="min-w-[32px] h-8 rounded-lg bg-red-500/[0.07] flex items-center justify-center group-hover:bg-red-500/[0.12] transition-colors">
+                        <X size={14} className="text-red-400/70" />
                       </div>
-                      <div>
-                        <p className="text-indigo-50 font-medium text-[15px] leading-relaxed">{item.text}</p>
-                      </div>
+                      <p className="text-white/40 text-[15px] leading-relaxed group-hover:text-white/55 transition-colors line-through decoration-white/10">{item}</p>
                     </div>
                   ))}
                 </div>
 
-                {/* CTA */}
-                <div className="mt-10">
-                  <Link
-                    to={startFreePath}
-                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-white text-indigo-700 rounded-full font-bold text-sm hover:bg-indigo-50 hover:scale-105 transition-all shadow-xl shadow-black/20"
-                  >
-                    Start Free — No Credit Card
-                    <ArrowRight size={16} />
-                  </Link>
+                {/* Bottom stat */}
+                <div className="mt-10 pt-8 border-t border-white/[0.04]">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-red-400/60">73%</span>
+                    <span className="text-xs text-white/25 font-medium">of freelancers quit within 2 years</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
+            {/* ✅ WITH — The new way */}
+            <div className="relative group mt-4 md:mt-0">
+              {/* Animated gradient border glow */}
+              <div className="absolute -inset-[1px] bg-gradient-to-br from-indigo-500/40 via-teal-500/20 to-purple-500/40 rounded-3xl md:rounded-l-none opacity-60 group-hover:opacity-100 transition-opacity duration-700 blur-[1px]"></div>
+
+              <div className="relative h-full bg-gradient-to-br from-[#0f0f2a] to-[#0a0a1a] backdrop-blur-sm border border-white/[0.08] rounded-3xl md:rounded-l-none p-8 md:p-10 lg:p-12 overflow-hidden">
+
+                {/* Decorative orb */}
+                <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/[0.07] rounded-full blur-[80px] -translate-y-1/3 translate-x-1/4"></div>
+
+                <div className="relative z-10">
+                  {/* Tag */}
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/15 mb-8">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span className="text-xs font-bold text-emerald-400/80 uppercase tracking-wider">With GetSoloDesk</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {gainPoints.map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex gap-3.5 items-center group/item"
+                      >
+                        <div className="min-w-[32px] h-8 rounded-lg bg-emerald-500/[0.08] flex items-center justify-center group-hover/item:bg-emerald-500/[0.15] transition-colors">
+                          <Check size={14} className="text-emerald-400" />
+                        </div>
+                        <p className="text-white/70 text-[15px] leading-relaxed group-hover/item:text-white/90 transition-colors font-medium">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bottom CTA */}
+                  <div className="mt-10 pt-8 border-t border-white/[0.06]">
+                    <Link
+                      to={startFreePath}
+                      className="inline-flex items-center gap-2.5 px-6 py-3 bg-white text-slate-900 rounded-full font-bold text-sm hover:scale-[1.03] active:scale-[0.98] transition-all shadow-lg shadow-white/10 group/cta"
+                    >
+                      Make the switch — it's free
+                      <ArrowRight size={14} className="group-hover/cta:translate-x-0.5 transition-transform" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </section>
