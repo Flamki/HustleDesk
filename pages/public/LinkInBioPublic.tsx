@@ -21,6 +21,7 @@ export const LinkInBioPublic: React.FC = () => {
         title="Link-in-Bio Builder for Freelancers"
         description="Create a beautiful link-in-bio page. Custom branding, social links, lead capture — free for freelancers."
         path="/link-in-bio"
+        noindex={true}
         keywords={['link in bio builder', 'free link in bio tool', 'linktree alternative for freelancers']}
       />
 

@@ -13,6 +13,7 @@ export const PortfolioBuilderPublic: React.FC = () => {
         title="Free Portfolio Builder for Freelancers"
         description="Build a stunning freelance portfolio website in minutes. Professional templates, full customization, instant publishing."
         path="/portfolio-builder"
+        noindex={true}
         keywords={['freelancer portfolio builder', 'free portfolio website builder', 'online portfolio for freelancers']}
       />
 
