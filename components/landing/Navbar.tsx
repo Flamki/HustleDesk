@@ -165,18 +165,18 @@ export const Navbar: React.FC = () => {
                     />
                   </button>
 
-                  {/* Dropdown Panel — Wide Mega Menu */}
+                  {/* Dropdown Panel — Glass Mega Menu */}
                   {productsOpen && (
                     <div
                       className="absolute top-full right-0 pt-3"
                       onMouseEnter={openDropdown}
                       onMouseLeave={closeDropdown}
                     >
-                      <div className="w-[680px] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/10 dark:shadow-black/30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="w-[680px] bg-slate-900/85 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl shadow-black/30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                         {/* Header */}
                         <div className="px-5 pt-4 pb-2 flex items-center justify-between">
                           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Products</p>
-                          <p className="text-[10px] text-slate-400">{productPages.length} tools</p>
+                          <p className="text-[10px] text-slate-500">{productPages.length} tools</p>
                         </div>
 
                         {/* 2-Column Grid */}
@@ -185,16 +185,16 @@ export const Navbar: React.FC = () => {
                             <Link
                               key={page.href}
                               to={page.href}
-                              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+                              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.07] transition-colors group"
                             >
-                              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors flex-shrink-0">
-                                <page.icon size={15} className="text-indigo-500 dark:text-indigo-400" />
+                              <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.06] flex items-center justify-center group-hover:bg-indigo-500/15 group-hover:border-indigo-500/20 transition-colors flex-shrink-0">
+                                <page.icon size={15} className="text-indigo-400 group-hover:text-indigo-300 transition-colors" />
                               </div>
                               <div className="min-w-0">
-                                <p className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
+                                <p className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors leading-tight">
                                   {page.label}
                                 </p>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug truncate">
+                                <p className="text-[11px] text-slate-500 group-hover:text-slate-400 leading-snug truncate transition-colors">
                                   {page.desc}
                                 </p>
                               </div>
@@ -203,10 +203,10 @@ export const Navbar: React.FC = () => {
                         </div>
 
                         {/* Footer CTA */}
-                        <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
+                        <div className="px-4 py-3 border-t border-white/[0.06] bg-white/[0.03]">
                           <Link
                             to="/features"
-                            className="flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors group"
+                            className="flex items-center justify-between text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors group"
                           >
                             <div className="flex items-center gap-2">
                               <Sparkles size={12} />
