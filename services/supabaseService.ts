@@ -842,14 +842,21 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
       AUTH_CALL_TIMEOUT_MS,
       'Login request timed out. Please try again.'
     );
-    if (error || !data.user) {
-      return { user: null, error: error ?? new Error('Invalid login credentials') };
+    if (error) {
+      return { user: null, error };
+    }
+    if (!data.user) {
+      return { user: null, error: new Error('Invalid login credentials') };
+    }
+    // Edge case: user exists but no session (email not confirmed)
+    if (!data.session?.access_token) {
+      return { user: null, error: new Error('Email not confirmed. Please check your inbox for a verification link.') };
     }
 
     const user = await resolveUserAfterAuth(
       data.user.id,
       data.user.email ?? email,
-      data.session?.access_token ?? null,
+      data.session.access_token,
       (data.user as { created_at?: string }).created_at,
       'login'
     );
@@ -886,10 +893,20 @@ export const signInWithGoogle = async (
 };
 
 export const signOut = async (): Promise<void> => {
+  // Clear all auth-related storage
   localStorage.removeItem(AUTH_STORAGE_KEY);
+  localStorage.removeItem(PROFILE_STORAGE_KEY);
+  localStorage.removeItem('last_signup_email');
   clearOAuthIntent();
   consumePendingOAuthErrorCode();
   clearOAuthArtifactsFromUrl();
+
+  // Clear in-memory caches
+  jobsListCache.clear();
+  dashboardCache.clear();
+  profileSetupInflight.clear();
+  profileSetupResultByUser.clear();
+
   if (!supabase) return;
 
   // Clear local session immediately for responsive UX.

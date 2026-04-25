@@ -63,7 +63,10 @@ export const SignupForm: React.FC = () => {
   const getFriendlySignupError = (message: string): { text: string; retryAfter: number } => {
     const normalized = message.toLowerCase();
 
-    if (normalized.includes('email rate limit exceeded')) {
+    if (normalized.includes('already exists') || normalized.includes('already registered') || normalized.includes('already been registered')) {
+      return { text: 'An account with this email already exists. Please log in instead.', retryAfter: 0 };
+    }
+    if (normalized.includes('email rate limit exceeded') || normalized.includes('rate limit')) {
       const match = normalized.match(/(\d+)\s*(second|seconds|sec|s|minute|minutes|min|m)/);
       let seconds = 60;
       if (match) {
@@ -72,9 +75,18 @@ export const SignupForm: React.FC = () => {
         seconds = unit.startsWith('m') ? value * 60 : value;
       }
       return {
-        text: `Too many signup emails were requested. Please wait ${seconds}s and try again. For production reliability, configure custom SMTP in Supabase Authentication settings.`,
+        text: `Too many attempts. Please wait ${seconds}s and try again.`,
         retryAfter: seconds,
       };
+    }
+    if (normalized.includes('password') && (normalized.includes('weak') || normalized.includes('short') || normalized.includes('at least'))) {
+      return { text: 'Password is too weak. Please use at least 8 characters with a mix of letters and numbers.', retryAfter: 0 };
+    }
+    if (normalized.includes('network') || normalized.includes('fetch') || normalized.includes('failed to fetch')) {
+      return { text: 'Network error. Please check your internet connection and try again.', retryAfter: 0 };
+    }
+    if (normalized.includes('timeout') || normalized.includes('timed out')) {
+      return { text: 'The request timed out. Please try again.', retryAfter: 0 };
     }
 
     return { text: message, retryAfter: 0 };

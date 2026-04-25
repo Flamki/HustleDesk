@@ -43,6 +43,29 @@ export const LoginForm: React.FC = () => {
     return null;
   };
 
+  const getFriendlyLoginError = (message: string): string => {
+    const normalized = message.toLowerCase();
+    if (normalized.includes('invalid login credentials') || normalized.includes('invalid_credentials')) {
+      return 'Incorrect email or password. Please check your credentials and try again.';
+    }
+    if (normalized.includes('email not confirmed')) {
+      return 'Your email has not been confirmed yet. Check your inbox for a verification link, or sign up again.';
+    }
+    if (normalized.includes('rate limit') || normalized.includes('too many requests')) {
+      return 'Too many login attempts. Please wait a moment and try again.';
+    }
+    if (normalized.includes('network') || normalized.includes('fetch') || normalized.includes('failed to fetch')) {
+      return 'Network error. Please check your internet connection and try again.';
+    }
+    if (normalized.includes('timeout') || normalized.includes('timed out')) {
+      return 'The request timed out. Please try again.';
+    }
+    if (normalized.includes('user not found')) {
+      return 'No account found with this email. Please sign up first.';
+    }
+    return message;
+  };
+
   const redirectPath = React.useMemo(() => {
     const fromQuery = sanitizeReturnTo(searchParams.get('returnTo'));
     if (fromQuery) return fromQuery;
@@ -105,14 +128,15 @@ export const LoginForm: React.FC = () => {
       const { user, error: authError } = await signIn(email, password);
       
       if (authError) {
-        setError(authError.message);
+        setError(getFriendlyLoginError(authError.message));
       } else if (user) {
         navigate(redirectPath, { replace: true });
       } else {
         setError('Login did not complete. Please try again.');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
+      const msg = err instanceof Error ? err.message : '';
+      setError(getFriendlyLoginError(msg || 'An unexpected error occurred. Please try again.'));
     } finally {
       setLoading(false);
     }
