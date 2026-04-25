@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, PlayCircle, ShieldCheck } from 'lucide-react';
+import { ArrowRight, PlayCircle } from 'lucide-react';
 
 export const Hero: React.FC = () => {
   const startFreePath = `/signup?returnTo=${encodeURIComponent('/app/dashboard?source=landing_hero')}`;
@@ -71,7 +71,7 @@ export const Hero: React.FC = () => {
           </a>
         </div>
 
-        {/* 3D Dashboard Mockup */}
+        {/* Auto-Scrolling Feature Showcase */}
         <div className="mt-20 relative w-full max-w-6xl group perspective-1000">
             {/* Glow effect behind */}
             <div className="absolute inset-0 bg-indigo-500/30 blur-[80px] rounded-full transform scale-75 group-hover:bg-teal-500/30 transition-colors duration-1000"></div>
@@ -84,58 +84,60 @@ export const Hero: React.FC = () => {
                     <div className="w-3 h-3 rounded-full bg-red-400"></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                    <div className="ml-4 w-64 h-4 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+                    <div className="ml-4 flex-1 max-w-xs h-4 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center px-3">
+                      <span className="text-[8px] text-slate-400 font-mono">getsolodesk.com/app/dashboard</span>
+                    </div>
                 </div>
 
-                {/* Dashboard Image/Content */}
-                <div className="aspect-[16/9] bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
-                    {/* Abstract Representation of Dashboard */}
-                    <div className="p-6 grid grid-cols-4 gap-6 h-full">
-                        {/* Sidebar */}
-                        <div className="col-span-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 h-full p-4 space-y-4">
-                            <div className="h-8 w-24 bg-slate-100 dark:bg-slate-800 rounded mb-6"></div>
-                            {[1,2,3,4,5].map(i => (
-                                <div key={i} className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded"></div>
-                            ))}
-                        </div>
-                        {/* Main Area */}
-                        <div className="col-span-3 space-y-6">
-                            {/* Top Stats */}
-                            <div className="grid grid-cols-3 gap-4">
-                                {[1,2,3].map(i => (
-                                    <div key={i} className="h-24 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4">
-                                        <div className="h-8 w-8 bg-indigo-100 dark:bg-indigo-900/50 rounded-full mb-3"></div>
-                                        <div className="h-4 w-16 bg-slate-100 dark:bg-slate-800 rounded"></div>
-                                    </div>
-                                ))}
+                {/* Infinite Scrolling Screenshots */}
+                <div className="aspect-[16/9] bg-slate-950 relative overflow-hidden">
+                    <style>{`
+                      @keyframes hero-scroll {
+                        0% { transform: translateX(0); }
+                        100% { transform: translateX(-50%); }
+                      }
+                      .hero-scroll-track {
+                        display: flex;
+                        animation: hero-scroll 30s linear infinite;
+                        width: max-content;
+                        height: 100%;
+                      }
+                      .hero-scroll-track:hover {
+                        animation-play-state: paused;
+                      }
+                    `}</style>
+                    <div className="hero-scroll-track">
+                      {/* First set of images */}
+                      {[
+                        { src: '/hero-dashboard.png', label: 'CRM Dashboard' },
+                        { src: '/hero-proposals.png', label: 'AI Proposal Generator' },
+                        { src: '/hero-clients.png', label: 'Client Management' },
+                        { src: '/hero-analytics.png', label: 'Analytics & Insights' },
+                        /* Duplicate for seamless loop */
+                        { src: '/hero-dashboard.png', label: 'CRM Dashboard' },
+                        { src: '/hero-proposals.png', label: 'AI Proposal Generator' },
+                        { src: '/hero-clients.png', label: 'Client Management' },
+                        { src: '/hero-analytics.png', label: 'Analytics & Insights' },
+                      ].map((item, i) => (
+                        <div key={i} className="flex-shrink-0 h-full px-2 first:pl-0" style={{ width: 'calc(100vw * 0.55)' }}>
+                          <div className="relative h-full rounded-lg overflow-hidden group/card">
+                            <img
+                              src={item.src}
+                              alt={item.label}
+                              className="w-full h-full object-cover object-top"
+                              loading={i < 4 ? 'eager' : 'lazy'}
+                              decoding="async"
+                            />
+                            {/* Label overlay */}
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4 pt-12">
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-white text-xs font-semibold border border-white/10">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                {item.label}
+                              </span>
                             </div>
-                            {/* Pipeline Board */}
-                            <div className="flex gap-4 h-64">
-                                {[1,2,3].map(i => (
-                                    <div key={i} className="flex-1 bg-slate-100 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-3">
-                                        <div className="h-3 w-12 bg-slate-200 dark:bg-slate-800 rounded mb-2"></div>
-                                        <div className="bg-white dark:bg-slate-900 p-3 rounded shadow-sm border border-slate-200 dark:border-slate-800 h-20"></div>
-                                        <div className="bg-white dark:bg-slate-900 p-3 rounded shadow-sm border border-slate-200 dark:border-slate-800 h-20"></div>
-                                    </div>
-                                ))}
-                            </div>
+                          </div>
                         </div>
-                    </div>
-
-                    {/* Floating Overlay Card */}
-                    <div className="absolute bottom-10 right-10 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-64 animate-bounce-slow">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                                <ShieldCheck size={16} />
-                            </div>
-                            <div>
-                                <div className="text-xs font-bold text-slate-900 dark:text-white">Offer Accepted</div>
-                                <div className="text-[10px] text-slate-500">Just now</div>
-                            </div>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-green-500 w-[100%]"></div>
-                        </div>
+                      ))}
                     </div>
                 </div>
             </div>
