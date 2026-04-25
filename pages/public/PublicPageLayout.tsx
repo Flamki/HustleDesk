@@ -12,6 +12,10 @@ import {
   ArrowRight,
   Menu,
   X,
+  Receipt,
+  FileSignature,
+  BookOpen,
+  Mail,
 } from 'lucide-react';
 import { BrandLogo } from '../../components/brand/BrandLogo';
 
@@ -23,9 +27,13 @@ const productPages = [
   { href: '/freelancer-crm', label: 'Freelancer CRM', desc: 'Track leads, clients & deals', icon: LayoutDashboard },
   { href: '/proposal-generator', label: 'AI Proposals', desc: 'Win more with AI-written proposals', icon: FileText },
   { href: '/time-tracking', label: 'Time Tracking', desc: 'Log hours & bill accurately', icon: Clock },
+  { href: '/invoice-generator', label: 'Invoicing', desc: 'Send invoices, get paid via Stripe', icon: Receipt },
+  { href: '/contract-builder', label: 'Contracts', desc: 'AI-generated freelance contracts', icon: FileSignature },
   { href: '/client-portal', label: 'Client Portal', desc: 'Share project updates with clients', icon: Users },
   { href: '/portfolio-builder', label: 'Portfolio Builder', desc: 'Showcase your best work', icon: Briefcase },
   { href: '/link-in-bio', label: 'Link in Bio', desc: 'One link for all your profiles', icon: LinkIcon },
+  { href: '/templates', label: 'Templates', desc: '36+ proven freelance templates', icon: BookOpen },
+  { href: '/email-marketing', label: 'Email Marketing', desc: 'Nurture leads on autopilot', icon: Mail },
 ];
 
 export const PublicPageLayout: React.FC<Props> = ({ children }) => {

@@ -24,6 +24,10 @@ import { TimeTracking } from './pages/public/TimeTracking';
 import { ClientPortal } from './pages/public/ClientPortal';
 import { PortfolioBuilderPublic } from './pages/public/PortfolioBuilderPublic';
 import { LinkInBioPublic } from './pages/public/LinkInBioPublic';
+import { InvoiceGenerator } from './pages/public/InvoiceGenerator';
+import { ContractBuilder } from './pages/public/ContractBuilder';
+import { TemplateMarketplace } from './pages/public/TemplateMarketplace';
+import { EmailMarketing } from './pages/public/EmailMarketing';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 
 const DashboardPage = React.lazy(async () => {
@@ -164,6 +168,10 @@ export const routes: RouteRecord[] = [
       { path: 'client-portal', element: <ClientPortal /> },
       { path: 'portfolio-builder', element: <PortfolioBuilderPublic /> },
       { path: 'link-in-bio', element: <LinkInBioPublic /> },
+      { path: 'invoice-generator', element: <InvoiceGenerator /> },
+      { path: 'contract-builder', element: <ContractBuilder /> },
+      { path: 'templates', element: <TemplateMarketplace /> },
+      { path: 'email-marketing', element: <EmailMarketing /> },
 
       { path: 'signup', element: <SignupPage /> },
       { path: 'login', element: <LoginPage /> },

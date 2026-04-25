@@ -13,6 +13,10 @@ const SEO_ROUTES = [
   '/client-portal',
   '/portfolio-builder',
   '/link-in-bio',
+  '/invoice-generator',
+  '/contract-builder',
+  '/templates',
+  '/email-marketing',
 ];
 
 const APP_AUTH_ROUTES = [

@@ -13,6 +13,10 @@ import {
   FileText,
   LayoutDashboard,
   Users,
+  Receipt,
+  FileSignature,
+  BookOpen,
+  Mail,
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import { PublicPageLayout } from './PublicPageLayout';
@@ -21,9 +25,13 @@ const products = [
   { icon: LayoutDashboard, title: 'Freelancer CRM', desc: 'Track leads, manage clients, and close deals from one visual pipeline.', href: '/freelancer-crm', color: '#10b981' },
   { icon: Sparkles, title: 'AI Proposal Generator', desc: 'Write winning proposals in seconds. AI learns from your wins.', href: '/proposal-generator', color: '#8b5cf6' },
   { icon: Clock, title: 'Time Tracking', desc: 'One-click timer with auto rate calculations and shareable sessions.', href: '/time-tracking', color: '#3b82f6' },
+  { icon: Receipt, title: 'Invoice Generator', desc: 'Create invoices from tracked time. Accept payments via Stripe.', href: '/invoice-generator', color: '#22c55e' },
+  { icon: FileSignature, title: 'Contract Builder', desc: 'AI-generated contracts with e-signatures. Protect your work.', href: '/contract-builder', color: '#475569' },
   { icon: Users, title: 'Client Portal', desc: 'Share progress with clients through branded, professional pages.', href: '/client-portal', color: '#f59e0b' },
   { icon: Briefcase, title: 'Portfolio Builder', desc: 'Publish a stunning portfolio site. Templates, customization, analytics.', href: '/portfolio-builder', color: '#f43f5e' },
   { icon: LinkIcon, title: 'Link in Bio', desc: 'One conversion-focused page for all your social profiles and CTAs.', href: '/link-in-bio', color: '#0ea5e9' },
+  { icon: BookOpen, title: 'Template Library', desc: '36+ battle-tested templates for proposals, follow-ups, and outreach.', href: '/templates', color: '#6366f1' },
+  { icon: Mail, title: 'Email Marketing', desc: 'Automated drip campaigns connected to your CRM pipeline.', href: '/email-marketing', color: '#d946ef' },
 ];
 
 const capabilities = [
@@ -71,7 +79,7 @@ export const Features: React.FC = () => {
       {/* ═══ PRODUCT GRID — Each card links to its page ═══ */}
       <section className="bg-slate-50 py-20 lg:py-28 border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-slate-900 text-center mb-12">Six products, one subscription</h2>
+          <h2 className="text-2xl font-bold text-slate-900 text-center mb-12">Ten products, one subscription</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {products.map((p) => (
               <Link
