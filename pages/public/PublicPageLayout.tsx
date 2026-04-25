@@ -95,36 +95,37 @@ export const PublicPageLayout: React.FC<Props> = ({ children }) => {
                 />
               </button>
 
-              {/* Dropdown Panel */}
+              {/* Dropdown Panel — Wide */}
               {productsOpen && (
                 <div
-                  className="absolute top-full left-1/2 -translate-x-1/2 pt-3"
+                  className="absolute top-full right-0 pt-3"
                   onMouseEnter={openDropdown}
                   onMouseLeave={closeDropdown}
                 >
-                  <div className="w-[400px] bg-white rounded-2xl border border-slate-200 shadow-2xl shadow-slate-900/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="w-[680px] bg-white rounded-2xl border border-slate-200 shadow-2xl shadow-slate-900/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* Header */}
-                    <div className="px-5 pt-4 pb-2">
+                    <div className="px-5 pt-4 pb-2 flex items-center justify-between">
                       <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Products</p>
+                      <p className="text-[10px] text-slate-400">{productPages.length} tools</p>
                     </div>
 
-                    {/* Links */}
-                    <div className="px-2 pb-2">
+                    {/* 2-Column Grid */}
+                    <div className="grid grid-cols-2 gap-0.5 px-2 pb-2">
                       {productPages.map((page) => (
                         <Link
                           key={page.href}
                           to={page.href}
                           onClick={() => setProductsOpen(false)}
-                          className="flex items-start gap-3.5 px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors group"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
                         >
-                          <div className="min-w-[36px] h-9 rounded-lg bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
-                            <page.icon size={16} className="text-indigo-500" />
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition-colors flex-shrink-0">
+                            <page.icon size={15} className="text-indigo-500" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                            <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight">
                               {page.label}
                             </p>
-                            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                            <p className="text-[11px] text-slate-500 leading-snug truncate">
                               {page.desc}
                             </p>
                           </div>
