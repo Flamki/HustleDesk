@@ -16,6 +16,7 @@ export type BlogPost = {
   stat: string;
   statLabel: string;
   gradient: string;
+  image: string;
 };
 
 export const blogPosts: BlogPost[] = [
@@ -31,6 +32,7 @@ export const blogPosts: BlogPost[] = [
     stat: '40%',
     statLabel: 'win rate',
     gradient: 'from-violet-500 to-purple-600',
+    image: '/blog-proposals.png',
   },
   {
     slug: 'freelancer-crm-why-you-need-one',
@@ -44,6 +46,7 @@ export const blogPosts: BlogPost[] = [
     stat: '$18K',
     statLabel: 'saved / yr',
     gradient: 'from-emerald-500 to-teal-600',
+    image: '/blog-crm.png',
   },
   {
     slug: 'upwork-proposal-tips',
@@ -57,6 +60,7 @@ export const blogPosts: BlogPost[] = [
     stat: '3x',
     statLabel: 'more wins',
     gradient: 'from-blue-500 to-indigo-600',
+    image: '/blog-upwork.png',
   },
   {
     slug: 'track-freelance-income',
@@ -70,6 +74,7 @@ export const blogPosts: BlogPost[] = [
     stat: '2.5h',
     statLabel: 'saved / day',
     gradient: 'from-amber-500 to-orange-600',
+    image: '/blog-income.png',
   },
   {
     slug: 'freelance-follow-up-email-templates',
@@ -83,6 +88,7 @@ export const blogPosts: BlogPost[] = [
     stat: '80%',
     statLabel: 'close rate',
     gradient: 'from-indigo-500 to-violet-600',
+    image: '/blog-followup.png',
   },
 ];
 
@@ -101,9 +107,9 @@ export const BlogIndex: React.FC = () => {
         keywords={['freelance blog', 'freelancer tips', 'upwork tips', 'freelance proposal tips']}
       />
 
-      {/* ═══ HEADER + FILTERS ═══ */}
+      {/* ═══ HEADER ═══ */}
       <section className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Blog</h1>
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
@@ -123,28 +129,22 @@ export const BlogIndex: React.FC = () => {
         </div>
       </section>
 
-      {/* ═══ FEATURED (first post — wide) ═══ */}
+      {/* ═══ FEATURED (first post) ═══ */}
       {posts.length > 0 && (
         <section className="bg-white border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Link
               to={`/blog/${posts[0].slug}`}
               className="group grid md:grid-cols-2 gap-6 items-center"
             >
-              {/* Visual */}
-              <div className={`relative bg-gradient-to-br ${posts[0].gradient} rounded-2xl p-8 md:p-10 aspect-[16/9] md:aspect-[16/10] flex items-end overflow-hidden`}>
-                <div className="absolute inset-0 opacity-[0.06]" style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                }} />
-                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
-                <div className="absolute bottom-6 right-6 w-20 h-20 rounded-full bg-white/10" />
-                <div className="relative">
-                  <p className="text-5xl md:text-6xl font-black text-white/90 tracking-tighter leading-none">{posts[0].stat}</p>
-                  <p className="text-xs text-white/50 mt-1 font-medium">{posts[0].statLabel}</p>
-                </div>
+              <div className="rounded-2xl overflow-hidden aspect-[16/10]">
+                <img
+                  src={posts[0].image}
+                  alt={posts[0].title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="eager"
+                />
               </div>
-
-              {/* Content */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-[9px] font-bold uppercase tracking-[0.18em] px-2 py-0.5 rounded-md"
@@ -166,9 +166,9 @@ export const BlogIndex: React.FC = () => {
         </section>
       )}
 
-      {/* ═══ 3-COLUMN GRID ═══ */}
+      {/* ═══ 4-COLUMN GRID WITH REAL IMAGES ═══ */}
       {posts.length > 1 && (
-        <section className="bg-slate-50 py-10">
+        <section className="bg-slate-50 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {posts.slice(1).map((post) => (
@@ -177,13 +177,14 @@ export const BlogIndex: React.FC = () => {
                   to={`/blog/${post.slug}`}
                   className="group bg-white rounded-xl border border-slate-200/80 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-300 transition-all duration-200"
                 >
-                  {/* Color bar top */}
-                  <div className={`bg-gradient-to-r ${post.gradient} h-24 relative overflow-hidden flex items-center justify-center`}>
-                    <div className="absolute inset-0 opacity-[0.06]" style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                    }} />
-                    <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-white/10" />
-                    <p className="relative text-3xl font-black text-white/90 tracking-tighter">{post.stat}</p>
+                  {/* Image */}
+                  <div className="aspect-[16/10] overflow-hidden">
+                    <img
+                      src={post.image}
+                      alt={post.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
                   </div>
 
                   <div className="p-4">
@@ -207,7 +208,7 @@ export const BlogIndex: React.FC = () => {
       )}
 
       {/* ═══ CTA ═══ */}
-      <section className="bg-white border-t border-slate-200 py-12">
+      <section className="bg-white border-t border-slate-200 py-10">
         <div className="max-w-2xl mx-auto px-4 text-center">
           <h2 className="text-xl font-bold text-slate-900 mb-3">Every strategy here is built into GetSoloDesk</h2>
           <p className="text-sm text-slate-500 mb-6">CRM, AI proposals, follow-up automation, time tracking, invoicing — one tool for freelancers.</p>
