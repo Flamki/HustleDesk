@@ -656,6 +656,10 @@ const OAUTH_HASH_KEYS = [
 export const clearOAuthArtifactsFromUrl = (): void => {
   if (typeof window === 'undefined') return;
 
+  // Clear stale OAuth error codes and intent from localStorage
+  window.localStorage.removeItem(OAUTH_ERROR_STORAGE_KEY);
+  clearOAuthIntent();
+
   const url = new URL(window.location.href);
   const hashParams = new URLSearchParams((url.hash || '').replace(/^#/, ''));
 

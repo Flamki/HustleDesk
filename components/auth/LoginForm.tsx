@@ -89,12 +89,22 @@ export const LoginForm: React.FC = () => {
   }, [location.state, searchParams]);
 
   React.useEffect(() => {
+    // Only show OAuth errors from fresh URL redirects (e.g. /login?error=oauth_failed)
+    // Don't read from localStorage — stale errors from previous attempts poison the UX
     const codeFromUrl = searchParams.get('error');
-    const codeFromStorage = codeFromUrl ? null : authService.consumePendingOAuthErrorCode();
-    const nextError = getFriendlyAuthError(codeFromUrl || codeFromStorage);
-    if (nextError) {
-      setError(nextError);
+    if (codeFromUrl) {
+      const nextError = getFriendlyAuthError(codeFromUrl);
+      if (nextError) {
+        setError(nextError);
+      }
+      // Clean the URL param after reading
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('error');
+      const newUrl = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+      window.history.replaceState({}, '', newUrl);
     }
+    // Always clear any stale OAuth error codes from localStorage
+    authService.consumePendingOAuthErrorCode();
   }, [searchParams]);
 
   React.useEffect(() => {
