@@ -17,6 +17,12 @@ const SEO_ROUTES = [
   '/contract-builder',
   '/templates',
   '/email-marketing',
+  '/blog',
+  '/blog/how-to-write-freelance-proposal-that-wins',
+  '/blog/freelancer-crm-why-you-need-one',
+  '/blog/upwork-proposal-tips',
+  '/blog/track-freelance-income',
+  '/blog/freelance-follow-up-email-templates',
 ];
 
 const APP_AUTH_ROUTES = [

@@ -140,6 +140,12 @@ export const Navbar: React.FC = () => {
                         {item.label}
                     </a>
                 ))}
+                <Link
+                  to="/blog"
+                  className={`text-sm font-medium transition-colors hover:text-indigo-400 ${isScrolled ? 'text-slate-300' : 'text-slate-600 dark:text-slate-300'}`}
+                >
+                  Blog
+                </Link>
 
                 {/* Products Dropdown */}
                 <div
@@ -261,6 +267,14 @@ export const Navbar: React.FC = () => {
                             {item.label}
                         </a>
                     ))}
+
+                    <Link
+                      to="/blog"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-xl font-medium text-slate-300 hover:text-white py-2"
+                    >
+                      Blog
+                    </Link>
 
                     {/* Mobile Products Accordion */}
                     <button

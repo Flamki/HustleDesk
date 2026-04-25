@@ -28,6 +28,8 @@ import { InvoiceGenerator } from './pages/public/InvoiceGenerator';
 import { ContractBuilder } from './pages/public/ContractBuilder';
 import { TemplateMarketplace } from './pages/public/TemplateMarketplace';
 import { EmailMarketing } from './pages/public/EmailMarketing';
+import { BlogIndex } from './pages/public/BlogIndex';
+import { BlogPost } from './pages/public/BlogPost';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 
 const DashboardPage = React.lazy(async () => {
@@ -172,6 +174,8 @@ export const routes: RouteRecord[] = [
       { path: 'contract-builder', element: <ContractBuilder /> },
       { path: 'templates', element: <TemplateMarketplace /> },
       { path: 'email-marketing', element: <EmailMarketing /> },
+      { path: 'blog', element: <BlogIndex /> },
+      { path: 'blog/:slug', element: <BlogPost /> },
 
       { path: 'signup', element: <SignupPage /> },
       { path: 'login', element: <LoginPage /> },

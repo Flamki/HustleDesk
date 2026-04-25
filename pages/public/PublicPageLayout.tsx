@@ -173,6 +173,8 @@ export const PublicPageLayout: React.FC<Props> = ({ children }) => {
               <Link to="/features" onClick={() => setMobileMenuOpen(false)} className="py-3 text-base font-medium text-slate-700 hover:text-slate-900">Features</Link>
               <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="py-3 text-base font-medium text-slate-700 hover:text-slate-900">Pricing</Link>
 
+              <Link to="/blog" onClick={() => setMobileMenuOpen(false)} className="py-3 text-base font-medium text-slate-700 hover:text-slate-900">Blog</Link>
+
               {/* Products Accordion */}
               <button
                 onClick={() => setMobileProductsOpen(!mobileProductsOpen)}
@@ -213,11 +215,16 @@ export const PublicPageLayout: React.FC<Props> = ({ children }) => {
       <main>{children}</main>
 
       <footer className="border-t border-slate-200 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-slate-500">
-          <div className="flex items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
             <BrandLogo className="h-7 w-auto" />
+            <p className="mt-1 text-sm text-slate-500">Freelancer CRM, proposals, time tracking, and client growth tools.</p>
           </div>
-          <p className="mt-1">Freelancer CRM, proposals, time tracking, and client growth tools.</p>
+          <div className="flex gap-6 text-sm text-slate-500">
+            <Link to="/features" className="hover:text-slate-900 transition-colors">Features</Link>
+            <Link to="/pricing" className="hover:text-slate-900 transition-colors">Pricing</Link>
+            <Link to="/blog" className="hover:text-slate-900 transition-colors">Blog</Link>
+          </div>
         </div>
       </footer>
     </div>
