@@ -14,8 +14,10 @@ import {
   Shield,
   Rocket,
   Check,
+  LogOut,
 } from 'lucide-react';
 import { useProfile } from '../../context/ProfileContext';
+import { useAuth } from '../../context/AuthContext';
 import type {
   FreelancerProfile,
   FreelancerSpecialization,
@@ -166,6 +168,7 @@ const inputClassName = `
 
 export const FirstTimeSetupModal: React.FC = () => {
   const { profile, updateProfile } = useProfile();
+  const { signOut } = useAuth();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -726,7 +729,14 @@ export const FirstTimeSetupModal: React.FC = () => {
                   Back
                 </button>
               ) : (
-                <div />
+                <button
+                  type="button"
+                  onClick={() => { void signOut(); }}
+                  className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                >
+                  <LogOut size={14} />
+                  Sign Out
+                </button>
               )}
             </div>
 

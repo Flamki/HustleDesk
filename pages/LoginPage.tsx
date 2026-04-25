@@ -50,11 +50,8 @@ export const LoginPage: React.FC = () => {
     void import('./DashboardPage');
   }, []);
 
-  useEffect(() => {
-    if (!loading && user) {
-      navigate(redirectPath, { replace: true });
-    }
-  }, [loading, user, navigate, redirectPath]);
+  // If user is already logged in, don't auto-redirect — show them a choice
+  const isAuthenticated = !loading && !!user;
 
   return (
     <>
@@ -139,7 +136,29 @@ export const LoginPage: React.FC = () => {
             {/* Form Container */}
             <div className="flex-1 flex items-center justify-center p-6 sm:p-12 lg:p-24">
                 <div className="w-full max-w-sm space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <LoginForm />
+                    {isAuthenticated ? (
+                      <div className="text-center space-y-6">
+                        <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">You're already signed in</h2>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Signed in as <strong className="text-slate-700 dark:text-slate-200">{user?.email}</strong></p>
+                        </div>
+                        <div className="space-y-3">
+                          <button onClick={() => navigate(redirectPath, { replace: true })}
+                            className="w-full py-3 px-4 rounded-xl text-white bg-emerald-500 hover:bg-emerald-400 font-bold shadow-lg shadow-emerald-500/20 transition-all">
+                            Go to Dashboard →
+                          </button>
+                          <button onClick={() => { import('../services/supabaseService').then(m => m.signOut()); window.location.href = '/login'; }}
+                            className="w-full py-3 px-4 rounded-xl text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-all text-sm">
+                            Sign out & use a different account
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <LoginForm />
+                    )}
                 </div>
             </div>
         </div>

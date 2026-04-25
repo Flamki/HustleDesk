@@ -961,41 +961,32 @@ export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
-    const sessionUser = session?.user;
-    if (!sessionUser) return null;
+    if (!session?.user) return null;
 
-    // Use the session user directly for speed. The session is already validated
-    // by Supabase's token refresh mechanism. Only call getUser() if we suspect
-    // the token might be stale (expired).
-    let resolvedUser = sessionUser;
-    const sessionAge = session.expires_at
-      ? (session.expires_at * 1000) - Date.now()
-      : Infinity;
-    const isSessionFresh = sessionAge > 0;
-
-    if (!isSessionFresh) {
-      try {
-        const userResult = await withTimeout(
-          Promise.resolve(supabase.auth.getUser()),
-          SESSION_VALIDATE_TIMEOUT_MS,
-          'Session validation timed out'
-        );
-        if (userResult.error) {
-          const msg = String(userResult.error.message || '').toLowerCase();
-          if (
-            msg.includes('jwt') ||
-            msg.includes('expired') ||
-            msg.includes('invalid') ||
-            msg.includes('unauthorized')
-          ) {
-            return null;
-          }
-        } else if (userResult.data?.user) {
-          resolvedUser = userResult.data.user;
-        }
-      } catch {
-        // Keep using session user as best effort when validation endpoint is temporarily slow.
+    // ALWAYS validate the session against Supabase server.
+    // Local session tokens can be revoked server-side, so we can't
+    // trust expires_at alone. This prevents the "stuck in dashboard
+    // with 401/403 errors" bug.
+    let resolvedUser = session.user;
+    try {
+      const userResult = await withTimeout(
+        Promise.resolve(supabase.auth.getUser()),
+        SESSION_VALIDATE_TIMEOUT_MS,
+        'Session validation timed out'
+      );
+      if (userResult.error) {
+        // Session is invalid — clear it and return null
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(PROFILE_STORAGE_KEY);
+        return null;
       }
+      if (userResult.data?.user) {
+        resolvedUser = userResult.data.user;
+      }
+    } catch {
+      // Network error during validation — trust local session as fallback
+      // so users aren't kicked out on flaky connections
     }
 
     return await resolveUserAfterAuth(
