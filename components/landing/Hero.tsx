@@ -37,9 +37,9 @@ export const Hero: React.FC = () => {
         
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+          <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-            New: Project Management for Freelancers
+            Powered by AI Agents — proposals, follow-ups, coaching
           </span>
         </div>
         
@@ -53,7 +53,7 @@ export const Hero: React.FC = () => {
         
         {/* Subhead */}
         <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-          Track leads, get follow-up reminders, and send AI proposals that win work.
+          CRM, AI-generated proposals, smart follow-ups, and a personal AI coach — all in one workspace built for independent professionals.
         </p>
         
         {/* CTA */}
