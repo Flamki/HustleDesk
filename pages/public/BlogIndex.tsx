@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, TrendingUp, Zap, Target, BookOpen } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BookOpen } from 'lucide-react';
 import SEO from '../../components/SEO';
 import { PublicPageLayout } from './PublicPageLayout';
 
@@ -15,6 +15,7 @@ export type BlogPost = {
   emoji: string;
   stat: string;
   statLabel: string;
+  gradient: string;
 };
 
 export const blogPosts: BlogPost[] = [
@@ -28,7 +29,8 @@ export const blogPosts: BlogPost[] = [
     categoryColor: '#8b5cf6',
     emoji: '🎯',
     stat: '40%',
-    statLabel: 'avg win rate with this framework',
+    statLabel: 'win rate',
+    gradient: 'from-violet-500/90 to-purple-600/90',
   },
   {
     slug: 'freelancer-crm-why-you-need-one',
@@ -40,7 +42,8 @@ export const blogPosts: BlogPost[] = [
     categoryColor: '#10b981',
     emoji: '📊',
     stat: '$18K',
-    statLabel: 'lost yearly from missed follow-ups',
+    statLabel: 'saved / year',
+    gradient: 'from-emerald-500/90 to-teal-600/90',
   },
   {
     slug: 'upwork-proposal-tips',
@@ -52,7 +55,8 @@ export const blogPosts: BlogPost[] = [
     categoryColor: '#3b82f6',
     emoji: '🚀',
     stat: '3x',
-    statLabel: 'win rate increase',
+    statLabel: 'more wins',
+    gradient: 'from-blue-500/90 to-indigo-600/90',
   },
   {
     slug: 'track-freelance-income',
@@ -64,7 +68,8 @@ export const blogPosts: BlogPost[] = [
     categoryColor: '#f59e0b',
     emoji: '💰',
     stat: '2.5h',
-    statLabel: 'lost daily to untracked work',
+    statLabel: 'saved / day',
+    gradient: 'from-amber-500/90 to-orange-600/90',
   },
   {
     slug: 'freelance-follow-up-email-templates',
@@ -76,7 +81,8 @@ export const blogPosts: BlogPost[] = [
     categoryColor: '#6366f1',
     emoji: '✉️',
     stat: '80%',
-    statLabel: 'of deals won after 5th follow-up',
+    statLabel: 'close after 5th',
+    gradient: 'from-indigo-500/90 to-violet-600/90',
   },
 ];
 
@@ -88,8 +94,6 @@ export const BlogIndex: React.FC = () => {
     ? blogPosts
     : blogPosts.filter((p) => p.category === activeCategory);
 
-  const [featured, ...rest] = filtered;
-
   return (
     <PublicPageLayout>
       <SEO
@@ -99,210 +103,132 @@ export const BlogIndex: React.FC = () => {
         keywords={['freelance blog', 'freelancer tips', 'upwork tips', 'freelance proposal tips']}
       />
 
-      {/* ═══ EDITORIAL HERO ═══ */}
-      <section className="relative bg-white overflow-hidden border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 lg:pt-16 pb-10">
-          {/* Masthead */}
-          <div className="flex items-end justify-between mb-10">
+      {/* ═══ MINIMAL HEADER ═══ */}
+      <section className="bg-white border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-14 pb-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div>
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
-                  <BookOpen size={14} className="text-white" />
-                </div>
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">The Solo Desk</span>
-              </div>
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-slate-400 mb-2">Blog</p>
               <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
-                Insights for independent professionals
+                The Freelancer's Playbook
               </h1>
             </div>
-            <div className="hidden md:flex items-center gap-1 text-xs text-slate-400">
-              <TrendingUp size={12} />
-              <span>{blogPosts.length} articles</span>
-            </div>
-          </div>
 
-          {/* Category filter pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`
-                  px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all whitespace-nowrap
-                  ${activeCategory === cat
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
-                  }
-                `}
-              >
-                {cat}
-              </button>
-            ))}
+            {/* Category pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`
+                    px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap
+                    ${activeCategory === cat
+                      ? 'bg-slate-900 text-white'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                    }
+                  `}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {featured && (
-        <>
-          {/* ═══ FEATURED — FULL-WIDTH EDITORIAL CARD ═══ */}
-          <section className="bg-slate-50 py-10 lg:py-14 border-b border-slate-200">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-              <Link
-                to={`/blog/${featured.slug}`}
-                className="group grid lg:grid-cols-5 gap-6 lg:gap-0 items-stretch bg-white rounded-3xl border border-slate-200 overflow-hidden hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300"
-              >
-                {/* Left — Visual stat block */}
-                <div
-                  className="lg:col-span-2 relative flex flex-col items-center justify-center py-12 lg:py-0"
-                  style={{ background: `linear-gradient(145deg, ${featured.categoryColor}08, ${featured.categoryColor}03)` }}
-                >
-                  {/* Large stat */}
-                  <div className="text-center">
-                    <p
-                      className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none"
-                      style={{ color: featured.categoryColor }}
-                    >
-                      {featured.stat}
-                    </p>
-                    <p className="text-xs font-medium text-slate-400 mt-2 max-w-[160px] mx-auto leading-snug">
-                      {featured.statLabel}
-                    </p>
-                  </div>
+      {/* ═══ HORIZONTAL CARDS ═══ */}
+      <section className="bg-slate-50 py-10 lg:py-14">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
+          {filtered.map((post, i) => (
+            <Link
+              key={post.slug}
+              to={`/blog/${post.slug}`}
+              className="group grid grid-cols-1 md:grid-cols-12 bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 hover:border-slate-300 transition-all duration-300"
+            >
+              {/* ── Left: Visual Panel ── */}
+              <div className={`md:col-span-4 lg:col-span-3 relative bg-gradient-to-br ${post.gradient} p-6 md:p-8 flex flex-col justify-between min-h-[160px] md:min-h-[220px]`}>
+                {/* Noise overlay */}
+                <div className="absolute inset-0 opacity-[0.08]" style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+                }} />
 
-                  {/* Decorative circles */}
-                  <div
-                    className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full opacity-[0.07]"
-                    style={{ background: featured.categoryColor }}
-                  />
-                  <div
-                    className="absolute -top-4 -right-4 w-16 h-16 rounded-full opacity-[0.05]"
-                    style={{ background: featured.categoryColor }}
-                  />
-                </div>
-
-                {/* Right — Content */}
-                <div className="lg:col-span-3 p-7 md:p-10 flex flex-col justify-center">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span
-                      className="text-[9px] font-bold uppercase tracking-[0.18em] px-2.5 py-1 rounded-md"
-                      style={{ backgroundColor: `${featured.categoryColor}12`, color: featured.categoryColor }}
-                    >
-                      {featured.category}
-                    </span>
-                    <span className="text-[11px] text-slate-400">{featured.date}</span>
-                    <span className="text-[11px] text-slate-400">·</span>
-                    <span className="text-[11px] text-slate-400">{featured.readTime}</span>
-                  </div>
-
-                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight mb-3 group-hover:text-indigo-600 transition-colors">
-                    {featured.title}
-                  </h2>
-                  <p className="text-slate-500 leading-relaxed mb-6 max-w-lg">
-                    {featured.description}
+                {/* Big stat */}
+                <div className="relative">
+                  <p className="text-4xl md:text-5xl font-black text-white/95 tracking-tighter leading-none">
+                    {post.stat}
                   </p>
-
-                  <div className="flex items-center gap-4">
-                    <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                      Read this guide
-                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  </div>
+                  <p className="text-[11px] font-medium text-white/60 mt-1">{post.statLabel}</p>
                 </div>
-              </Link>
-            </div>
-          </section>
 
-          {/* ═══ ARTICLE LIST — CLEAN EDITORIAL ROWS ═══ */}
-          {rest.length > 0 && (
-            <section className="bg-white py-10 lg:py-14">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="divide-y divide-slate-100">
-                  {rest.map((post, i) => (
-                    <Link
-                      key={post.slug}
-                      to={`/blog/${post.slug}`}
-                      className="group flex items-start gap-5 md:gap-8 py-7 first:pt-0 last:pb-0"
-                    >
-                      {/* Number */}
-                      <span className="hidden md:flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 text-sm font-bold text-slate-300 group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors flex-shrink-0 mt-1">
-                        {String(i + 2).padStart(2, '0')}
-                      </span>
+                {/* Category badge */}
+                <div className="relative flex items-center gap-2 mt-4">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/70 bg-white/15 px-2.5 py-1 rounded-md backdrop-blur-sm">
+                    {post.category}
+                  </span>
+                </div>
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span
-                            className="text-[9px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-md"
-                            style={{ backgroundColor: `${post.categoryColor}12`, color: post.categoryColor }}
-                          >
-                            {post.category}
-                          </span>
-                          <span className="text-[11px] text-slate-400">{post.readTime}</span>
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug mb-1">
-                          {post.title}
-                        </h3>
-                        <p className="text-sm text-slate-500 line-clamp-1 md:line-clamp-2">{post.description}</p>
-                      </div>
+                {/* Decorative circle */}
+                <div className="absolute -bottom-8 -right-8 w-28 h-28 rounded-full bg-white/10" />
+                <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-white/10" />
+              </div>
 
-                      {/* Stat chip */}
-                      <div className="hidden sm:flex flex-col items-center flex-shrink-0 mt-1">
-                        <div
-                          className="px-4 py-3 rounded-xl text-center"
-                          style={{ background: `${post.categoryColor}08` }}
-                        >
-                          <p
-                            className="text-xl font-black leading-none"
-                            style={{ color: post.categoryColor }}
-                          >
-                            {post.stat}
-                          </p>
-                          <p className="text-[9px] text-slate-400 mt-1 max-w-[80px] leading-tight">
-                            {post.statLabel}
-                          </p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+              {/* ── Right: Content ── */}
+              <div className="md:col-span-8 lg:col-span-9 p-6 md:p-8 flex flex-col justify-center">
+                <div className="flex items-center gap-3 text-[11px] text-slate-400 mb-3">
+                  <span>{post.date}</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300" />
+                  <span>{post.readTime} read</span>
+                  {i === 0 && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-slate-300" />
+                      <span className="text-emerald-600 font-bold uppercase tracking-wider text-[9px]">Latest</span>
+                    </>
+                  )}
+                </div>
+
+                <h2 className="text-xl md:text-2xl font-bold text-slate-900 leading-snug mb-2 group-hover:text-indigo-600 transition-colors">
+                  {post.title}
+                </h2>
+                <p className="text-sm md:text-base text-slate-500 leading-relaxed mb-5 max-w-xl">
+                  {post.description}
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                    Read article
+                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-200" />
+                  </span>
                 </div>
               </div>
-            </section>
-          )}
-        </>
-      )}
+            </Link>
+          ))}
+        </div>
+      </section>
 
-      {/* ═══ NEWSLETTER / CTA ═══ */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-emerald-500/10 rounded-full blur-3xl" />
-
-        <div className="relative max-w-3xl mx-auto px-4 py-16 lg:py-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-1.5 mb-6">
-            <Zap size={12} className="text-amber-400" />
-            <span className="text-xs font-bold text-white/70">Join 2,000+ freelancers</span>
-          </div>
-
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
-            Stop reading. Start winning.
+      {/* ═══ BOTTOM CTA ═══ */}
+      <section className="bg-white border-t border-slate-200 py-14 lg:py-18">
+        <div className="max-w-3xl mx-auto px-4 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-slate-400 mb-3">Stop reading, start doing</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4 tracking-tight">
+            Every strategy here is built into GetSoloDesk
           </h2>
-          <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
-            These strategies work. But only if you execute. GetSoloDesk automates the boring parts so you can focus on what matters.
+          <p className="text-slate-500 mb-8 max-w-md mx-auto">
+            CRM, AI proposals, follow-up automation, time tracking, invoicing — all in one tool built for solo freelancers.
           </p>
-
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/signup"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-slate-900 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all group shadow-xl"
+              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all group"
             >
-              Try GetSoloDesk Free
+              Start Free
               <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <Link
               to="/features"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-white/15 text-white/80 rounded-xl font-semibold text-sm hover:bg-white/5 hover:text-white transition-all"
+              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 transition-all"
             >
-              See all features
+              Explore features
+              <ArrowUpRight size={14} />
             </Link>
           </div>
         </div>
