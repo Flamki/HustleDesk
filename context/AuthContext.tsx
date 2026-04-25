@@ -50,13 +50,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const bootstrap = async () => {
+      let hydrationFailed = false;
       try {
         await authService.hydrateSessionFromUrl();
       } catch (err) {
         console.error('OAuth callback processing failed:', err);
+        hydrationFailed = true;
       }
 
-      const currentUser = await authService.getCurrentUser();
+      let currentUser = await authService.getCurrentUser();
+      
+      // If hydration failed or user is null but we're on a callback URL,
+      // wait and retry — Supabase's internal listener may still be processing
+      if (!currentUser && (hydrationFailed || window.location.pathname.includes('/auth/callback'))) {
+        await new Promise((r) => setTimeout(r, 1500));
+        currentUser = await authService.getCurrentUser();
+      }
+
       if (!mounted) return;
 
       bootstrappedRef.current = true;

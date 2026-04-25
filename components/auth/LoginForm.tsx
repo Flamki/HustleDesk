@@ -32,10 +32,13 @@ export const LoginForm: React.FC = () => {
 
   const getFriendlyAuthError = (code: string | null): string | null => {
     if (code === 'oauth_failed') {
-      return 'Google login could not be completed. Please try again.';
+      return 'Google login could not be completed. Make sure cookies are enabled and try again. If the problem persists, try email/password login instead.';
     }
     if (code === 'no_account') {
       return 'No account exists for this login. Please sign up first.';
+    }
+    if (code === 'session_expired') {
+      return 'Your sign-in session expired. Please try logging in again.';
     }
     return null;
   };
