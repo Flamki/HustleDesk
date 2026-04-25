@@ -96,12 +96,17 @@ const handleCreate = async (req, res) => {
   // Ensure the entry belongs to the authenticated user.
   const { data: entry, error: entryError } = await supabase
     .from('time_entries')
-    .select('id')
+    .select('id, end_time')
     .eq('id', timeEntryId)
     .eq('user_id', user.id)
     .maybeSingle();
   if (entryError) return json(res, 500, { error: entryError.message });
   if (!entry) return json(res, 404, { error: 'Time entry not found' });
+
+  // Prevent sharing while the timer is still running
+  if (!entry.end_time) {
+    return json(res, 400, { error: 'Please stop the timer before sharing this session. You can share it once the session is complete.' });
+  }
 
   // Idempotency: reuse an existing active link for the same settings unless the user forces a new one.
   if (!forceNew) {
@@ -125,7 +130,8 @@ const handleCreate = async (req, res) => {
     if (existing) return json(res, 200, { link: existing, reused: true });
   }
 
-  const token = crypto.randomBytes(24).toString('base64url');
+  // Use hex encoding — alphanumeric only — to satisfy the DB check constraint
+  const token = crypto.randomBytes(24).toString('hex');
 
   const { data, error: insertError } = await supabase
     .from('time_entry_share_links')
