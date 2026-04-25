@@ -653,7 +653,7 @@ const OAUTH_HASH_KEYS = [
   'error_description',
 ];
 
-const clearOAuthArtifactsFromUrl = (): void => {
+export const clearOAuthArtifactsFromUrl = (): void => {
   if (typeof window === 'undefined') return;
 
   const url = new URL(window.location.href);
