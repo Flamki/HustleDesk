@@ -81,27 +81,21 @@ GetSoloDesk is a **freelancer operations platform** with strong product-market f
 
 ---
 
-## 💰 Revenue Impact Projection
+## 💰 Revenue & Traction (Honest Status)
 
-### Current State (Baseline)
-- **MRR:** ~$X,XXX (exact figure TBD)
-- **Pricing:** Free / Pro ($XX/mo)
-- **Conversion:** ~X% (industry avg: 2-5%)
+### Current State (April 2026)
+- **MRR:** $0 (pre-revenue, launched free-tier April 2026)
+- **Pricing:** Free (all core features) / Pro ($9/mo)
+- **Signups:** Early organic signups via landing page
+- **Stage:** Product-complete, validating demand
+- **AI Proposals Generated:** Tracking in-app (agent_memory table)
 
-### 6-Month Projection (Post-Implementation)
-- **MRR:** 3x baseline
-- **Pricing:** 3 tiers + usage-based AI credits
-- **Conversion:** 8% (improved onboarding + pricing)
-- **New Revenue Streams:**
-  - Template marketplace: $500-2,000/mo
-  - Referral-driven growth: 25% lower CAC
-  - Annual prepay: 20% of customers (better cash flow)
-
-### 12-Month Projection (Full Execution)
-- **MRR:** 10x baseline
-- **Enterprise:** 3-5 customers at $199-499/mo
-- **API/Integration:** Additional usage-based revenue
-- **White-label:** 2-3 agency customers at $199+/mo
+### Near-Term Targets (Next 90 Days)
+- **Signups:** 200+
+- **Weekly Active Users:** 50+
+- **First Paying Customers:** 10+ at $9/mo
+- **Agent Memory Validation:** Prove win rate improvement with real data
+- **Primary Acquisition Channel:** r/freelance, Upwork forums, LinkedIn freelancer groups
 
 ---
 
