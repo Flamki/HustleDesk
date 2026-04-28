@@ -86,20 +86,18 @@ export const LoginPage: React.FC = () => {
                         <Quote size={24} fill="currentColor" />
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold leading-tight mb-6">
-                        "GetSoloDesk isn't just a tool; it's my COO."
+                        "Really helpful for managing day-to-day progress."
                     </h2>
                     <p className="text-lg text-slate-400 leading-relaxed mb-8">
-                         I spend less time managing chaos and more time serving the clients I love. The AI proposals alone save me 10 hours a week.
+                         Helpful for people who work with multiple clients. One workspace to manage everything — proposals, follow-ups, and client progress.
                     </p>
                     <div className="flex items-center gap-4">
-                        <img loading="lazy" decoding="async" 
-                            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" 
-                            alt="User" 
-                            className="w-12 h-12 rounded-full border-2 border-white/10 bg-slate-800"
-                        />
+                        <div className="w-12 h-12 rounded-full border-2 border-white/10 bg-gradient-to-br from-indigo-500 to-teal-400 flex items-center justify-center text-white font-bold text-lg">
+                            F
+                        </div>
                         <div>
-                            <div className="font-bold text-white">Sarah Jenkins</div>
-                            <div className="text-sm text-slate-500">Product Designer @ Stripe</div>
+                            <div className="font-bold text-white">Feroz</div>
+                            <div className="text-sm text-slate-500">Freelance Product Designer · Early Access</div>
                         </div>
                     </div>
                 </div>

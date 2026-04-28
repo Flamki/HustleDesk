@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { SignupForm } from '../components/auth/SignupForm';
-import { Sun, Moon, ArrowLeft, Rocket, BarChart3, Star } from 'lucide-react';
+import { Sun, Moon, ArrowLeft, Rocket, BarChart3 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import SEO from '../components/SEO';
 import { BrandLogo } from '../components/brand/BrandLogo';
@@ -44,7 +44,7 @@ export const SignupPage: React.FC = () => {
                 </h2>
                 
                 <p className="text-lg text-slate-400 mb-10 leading-relaxed">
-                    Stop juggling spreadsheets and writer's block. Join the top 1% of freelancers who automate their workflow.
+                    Stop juggling spreadsheets and writer's block. One workspace to manage proposals, clients, and follow-ups — powered by AI that learns your winning patterns.
                 </p>
 
                 <div className="space-y-6">
@@ -72,24 +72,14 @@ export const SignupPage: React.FC = () => {
 
             {/* Footer */}
             <div className="relative z-10 flex items-center gap-4">
-                <div className="flex -space-x-3">
-                    {[1,2,3,4].map(i => (
-                        <img loading="lazy" decoding="async" key={i} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i * 123}`} className="w-10 h-10 rounded-full border-2 border-slate-950 bg-slate-800" alt="User" />
-                    ))}
-                    <div className="w-10 h-10 rounded-full border-2 border-slate-950 bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">
-                        +2k
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
+                        <Rocket size={16} className="text-indigo-400" />
                     </div>
-                </div>
-                <div className="h-8 w-px bg-white/10"></div>
-                <div className="flex flex-col">
-                     <div className="flex text-amber-400">
-                        <Star size={14} fill="currentColor" />
-                        <Star size={14} fill="currentColor" />
-                        <Star size={14} fill="currentColor" />
-                        <Star size={14} fill="currentColor" />
-                        <Star size={14} fill="currentColor" />
-                     </div>
-                     <span className="text-xs font-medium text-slate-400 mt-1">Trusted by 2,000+ Freelancers</span>
+                    <div className="flex flex-col">
+                         <span className="text-sm font-bold text-white">Free to start</span>
+                         <span className="text-xs text-slate-500">No credit card required</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -124,5 +114,3 @@ export const SignupPage: React.FC = () => {
     </>
   );
 };
-
-
