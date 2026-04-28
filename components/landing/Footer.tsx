@@ -11,7 +11,7 @@ export const Footer: React.FC = () => {
                 <BrandLogo className="h-8 w-auto" tone="inverse" />
              </div>
              <p className="text-sm">
-               The operating system for modern high-performance teams.
+               The AI-powered operating system for independent freelancers.
              </p>
           </div>
           
@@ -41,9 +41,9 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="text-white font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="/#faq" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="/#faq" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="/#faq" className="hover:text-white transition-colors">Security</a></li>
+              <li><a href="mailto:legal@getsolodesk.com" className="hover:text-white transition-colors">Privacy Policy</a></li>
+              <li><a href="mailto:legal@getsolodesk.com" className="hover:text-white transition-colors">Terms of Service</a></li>
+              <li><a href="mailto:legal@getsolodesk.com" className="hover:text-white transition-colors">Security</a></li>
             </ul>
           </div>
         </div>

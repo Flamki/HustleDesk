@@ -56,7 +56,7 @@ export const PublicPageTemplate: React.FC<Props> = ({
   features,
   bullets,
   ctaHeading = 'Ready to level up your freelance game?',
-  ctaSub = 'Join thousands of freelancers growing their business with GetSoloDesk.',
+  ctaSub = 'Free to start. No credit card required. Set up in under 2 minutes.',
 }) => {
   const canonicalPath = path.startsWith('/') ? path : `/${path}`;
   const canonicalUrl = `https://getsolodesk.com${canonicalPath === '/' ? '' : canonicalPath}`;

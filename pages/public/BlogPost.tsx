@@ -10,7 +10,7 @@ const articles: Record<string, React.ReactNode> = {
   'how-to-write-freelance-proposal-that-wins': (
     <>
       <p>Writing freelance proposals is a numbers game — but it doesn't have to be a losing one. The difference between a 5% win rate and a 40% win rate comes down to structure, personalization, and timing.</p>
-      <p>After analyzing thousands of proposals through GetSoloDesk's AI engine, we've identified the exact patterns that separate winning proposals from the ones that get ignored.</p>
+      <p>Based on research into what top-performing freelancers do differently, we've identified the patterns that separate winning proposals from the ones that get ignored.</p>
 
       <h2>The 5-Part Proposal Framework</h2>
       <p>Every high-converting proposal follows this structure:</p>
@@ -80,7 +80,7 @@ const articles: Record<string, React.ReactNode> = {
 
   'upwork-proposal-tips': (
     <>
-      <p>After 500+ proposals on Upwork and a 28% win rate (top 5% of the platform), these are the 7 tactics that consistently get responses.</p>
+      <p>These are 7 proven tactics that top-performing Upwork freelancers use to consistently get responses — backed by platform data and community best practices.</p>
 
       <h2>1. Apply Within the First Hour</h2>
       <p>Upwork's algorithm boosts early proposals. Jobs posted in the last 60 minutes have 3x fewer applicants. Set up alerts for your keywords and respond fast. An AI proposal generator helps here — speed without sacrificing quality.</p>
