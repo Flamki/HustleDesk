@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { ToastProvider } from '../../components/ui/Toast';
+import { AgentProvider } from '../../context/AgentContext';
 import { JobsPage } from '../../pages/JobsPage';
 import type { Job } from '../../types';
 
@@ -32,7 +33,9 @@ const renderJobsPage = () => {
   return render(
     <MemoryRouter>
       <ToastProvider>
-        <JobsPage />
+        <AgentProvider>
+          <JobsPage />
+        </AgentProvider>
       </ToastProvider>
     </MemoryRouter>
   );

@@ -31,6 +31,8 @@ import { EmailMarketing } from './pages/public/EmailMarketing';
 import { BlogIndex } from './pages/public/BlogIndex';
 import { BlogPost } from './pages/public/BlogPost';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { PrivacyPolicy } from './pages/public/PrivacyPolicy';
+import { TermsOfService } from './pages/public/TermsOfService';
 
 const DashboardPage = React.lazy(async () => {
   const m = await import('./pages/DashboardPage');
@@ -176,6 +178,8 @@ export const routes: RouteRecord[] = [
       { path: 'email-marketing', element: <EmailMarketing /> },
       { path: 'blog', element: <BlogIndex /> },
       { path: 'blog/:slug', element: <BlogPost /> },
+      { path: 'privacy', element: <PrivacyPolicy /> },
+      { path: 'terms', element: <TermsOfService /> },
 
       { path: 'signup', element: <SignupPage /> },
       { path: 'login', element: <LoginPage /> },
