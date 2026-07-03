@@ -307,8 +307,10 @@ export const ProfileAssistant: React.FC = () => {
           const result = e.target?.result;
           if (typeof result !== 'string') return resolve('');
           // Heuristic extraction for raw PDF/Docx streams to pull out readable ASCII strings
-          const extracted = result
-            .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')
+          const extracted = Array.from(result, (char) => {
+            const code = char.charCodeAt(0);
+            return code <= 31 || (code >= 127 && code <= 159) ? ' ' : char;
+          }).join('')
             .replace(/\s+/g, ' ')
             .substring(0, 50000);
           resolve(extracted);
