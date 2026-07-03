@@ -17,6 +17,11 @@
 - [ ] `STRIPE_SECRET_KEY` is set
 - [ ] `STRIPE_WEBHOOK_SECRET` is set
 - [ ] `STRIPE_PRICE_ID_PRO_MONTHLY` is set
+- [ ] `VITE_GOOGLE_ADSENSE_CLIENT_ID` is set to your approved AdSense client ID (`ca-pub-...`)
+- [ ] `VITE_GOOGLE_ADSENSE_BLOG_INDEX_SLOT` is set to a real AdSense ad unit slot ID
+- [ ] `VITE_GOOGLE_ADSENSE_BLOG_POST_TOP_SLOT` is set to a real AdSense ad unit slot ID
+- [ ] `VITE_GOOGLE_ADSENSE_BLOG_POST_BOTTOM_SLOT` is set to a real AdSense ad unit slot ID
+- [ ] `public/ads.txt` exists with your real `pub-...` publisher ID and is reachable at `https://<your-domain>/ads.txt`
 - [ ] `UPSTASH_REDIS_REST_URL` is set (global API rate limiting)
 - [ ] `UPSTASH_REDIS_REST_TOKEN` is set (global API rate limiting)
 
@@ -64,4 +69,6 @@
 - [ ] Check browser console for errors in production
 - [ ] Check `/api/auth/health` with `x-health-token` header
 - [ ] Confirm favicon and static assets load with 200 responses
+- [ ] Confirm `/ads.txt` loads with a 200 response and contains your real AdSense publisher ID
+- [ ] Confirm `/blog` and at least one `/blog/<slug>` page request AdSense only after the real env vars are deployed
 - [ ] Verify logout fully clears session and redirects to `/login`

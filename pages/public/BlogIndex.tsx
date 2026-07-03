@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import SEO from '../../components/SEO';
+import { AdSenseUnit, hasAdSenseClient } from '../../components/ads/AdSenseUnit';
 import { PublicPageLayout } from './PublicPageLayout';
 
 export type BlogPost = {
@@ -93,6 +94,7 @@ export const blogPosts: BlogPost[] = [
 ];
 
 const categories = ['All', 'Proposals', 'CRM', 'Upwork', 'Finance', 'Templates'];
+const blogIndexAdSlot = (import.meta.env.VITE_GOOGLE_ADSENSE_BLOG_INDEX_SLOT || '').trim();
 
 export const BlogIndex: React.FC = () => {
   const [active, setActive] = useState('All');
@@ -165,6 +167,14 @@ export const BlogIndex: React.FC = () => {
           </div>
         </section>
       )}
+
+      {hasAdSenseClient && blogIndexAdSlot ? (
+        <section className="bg-white border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <AdSenseUnit slot={blogIndexAdSlot} label="Blog index" />
+          </div>
+        </section>
+      ) : null}
 
       {/* ═══ 4-COLUMN GRID WITH REAL IMAGES ═══ */}
       {posts.length > 1 && (

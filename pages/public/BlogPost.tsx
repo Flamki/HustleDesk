@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, ArrowRight } from 'lucide-react';
 import SEO from '../../components/SEO';
+import { AdSenseUnit, hasAdSenseClient } from '../../components/ads/AdSenseUnit';
 import { PublicPageLayout } from './PublicPageLayout';
 import { blogPosts } from './BlogIndex';
 
@@ -168,6 +169,9 @@ const articles: Record<string, React.ReactNode> = {
   ),
 };
 
+const blogPostTopAdSlot = (import.meta.env.VITE_GOOGLE_ADSENSE_BLOG_POST_TOP_SLOT || '').trim();
+const blogPostBottomAdSlot = (import.meta.env.VITE_GOOGLE_ADSENSE_BLOG_POST_BOTTOM_SLOT || '').trim();
+
 export const BlogPost: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
 
@@ -227,11 +231,35 @@ export const BlogPost: React.FC = () => {
         </div>
       </section>
 
+      {hasAdSenseClient && blogPostTopAdSlot ? (
+        <section className="bg-white border-b border-slate-100">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <AdSenseUnit
+              key={`${post.slug}-top-ad`}
+              slot={blogPostTopAdSlot}
+              label={`${post.title} top`}
+            />
+          </div>
+        </section>
+      ) : null}
+
       <article className="bg-white py-12">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 blog-article">
           {content}
         </div>
       </article>
+
+      {hasAdSenseClient && blogPostBottomAdSlot ? (
+        <section className="bg-white border-t border-slate-100">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <AdSenseUnit
+              key={`${post.slug}-bottom-ad`}
+              slot={blogPostBottomAdSlot}
+              label={`${post.title} bottom`}
+            />
+          </div>
+        </section>
+      ) : null}
 
       {/* CTA Banner */}
       <section className="bg-slate-50 border-y border-slate-200 py-12">

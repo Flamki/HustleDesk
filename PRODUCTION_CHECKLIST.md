@@ -11,6 +11,11 @@ Complete production deployment checklist for GetSoloDesk. Follow this guide to e
 - [ ] `VITE_SUPABASE_ANON_KEY` - Set to production publishable/anon key
 - [ ] `VITE_AUTH_REDIRECT_ORIGIN` - Set to production app URL (no localhost)
 - [ ] `VITE_STRIPE_PRICE_ID_PRO_MONTHLY` - Set to production Stripe price ID
+- [ ] `VITE_GOOGLE_ADSENSE_CLIENT_ID` - Set to approved AdSense client ID (`ca-pub-...`)
+- [ ] `VITE_GOOGLE_ADSENSE_BLOG_INDEX_SLOT` - Set to blog index ad unit slot ID
+- [ ] `VITE_GOOGLE_ADSENSE_BLOG_POST_TOP_SLOT` - Set to blog post top ad unit slot ID
+- [ ] `VITE_GOOGLE_ADSENSE_BLOG_POST_BOTTOM_SLOT` - Set to blog post bottom ad unit slot ID
+- [ ] `VITE_GOOGLE_ADSENSE_TEST_MODE` - Keep `false` in production
 - [ ] Verify no localhost URLs in production environment variables
 
 #### Backend Environment Variables
@@ -43,6 +48,11 @@ Complete production deployment checklist for GetSoloDesk. Follow this guide to e
 #### Optional Features
 - [ ] `GEMINI_API_KEY` - If using AI features
 - [ ] Any other third-party API keys configured
+
+#### Blog Monetization
+- [ ] Site is approved in Google AdSense before expecting live PPC ads to render
+- [ ] `public/ads.txt` is created from `public/ads.txt.example` with your real `pub-...` publisher ID
+- [ ] `https://<your-domain>/ads.txt` returns a 200 response with the AdSense seller line
 
 ### 2. Supabase Configuration
 

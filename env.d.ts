@@ -32,4 +32,5 @@ interface RazorpayOptions {
 
 interface Window {
   Razorpay?: new (options: RazorpayOptions) => RazorpayInstance;
+  adsbygoogle?: unknown[];
 }

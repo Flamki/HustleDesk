@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Head } from 'vite-react-ssg';
 import { Link } from 'react-router-dom';
 import {
   ChevronDown,
@@ -17,6 +18,12 @@ import {
   BookOpen,
   Mail,
 } from 'lucide-react';
+import {
+  adSenseAccountId,
+  adSenseScriptId,
+  adSenseScriptSrc,
+  hasAdSenseClient,
+} from '../../components/ads/AdSenseUnit';
 import { BrandLogo } from '../../components/brand/BrandLogo';
 
 type Props = {
@@ -65,6 +72,13 @@ export const PublicPageLayout: React.FC<Props> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
+      {hasAdSenseClient ? (
+        <Head>
+          <meta name="google-adsense-account" content={adSenseAccountId} />
+          <script id={adSenseScriptId} async src={adSenseScriptSrc} crossOrigin="anonymous" />
+        </Head>
+      ) : null}
+
       <header className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center">
